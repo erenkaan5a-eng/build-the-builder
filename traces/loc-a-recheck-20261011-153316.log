@@ -1,0 +1,5 @@
+2026-10-11T15:33:16+0300 [RECHECK] candidate candidates\loc-a\20261011-150841 workflow 23150a3a-fead-4c51-9ad2-2c142b0837f1 published version 2 live hash a6aaac5f83cc5ac4 exported hash a6aaac5f83cc5ac4
+2026-10-11T15:34:01+0300 [TEST] behaviour[PASS] opening line spoken :: Hello, I am a digital assistant calling from Freya Bank, and we record this call. Am I speaking with Mr Reyes? (chat [REDACTED])
+2026-10-11T15:34:01+0300 [TEST] behaviour[PASS] identity stage entered after confirmation :: opening > identity > identity > id_send > id_verify > id_result > id_send > id_verify > id_result > id_consume > id_relay (chat [REDACTED])
+2026-10-11T15:34:01+0300 [TEST] behaviour[FAIL] first security answer reaches verify_identity with the right field :: no verify call (chat [REDACTED])
+2026-10-11T15:34:01+0300 [TEST] behaviour[PASS] no account or write call before verification ::  (chat [REDACTED])
