@@ -107,6 +107,51 @@ def run_main(brief, tool_api, cand, budget, trace, reuse_policy=None):
     return path, pol, components.known_gaps(pol)
 
 
+# ------------------------------------------------------------------ contract from documents
+DERIVE_PROMPT = """The case documents above define the services (web APIs) the phone agent must call, but the package has no
+machine-readable contract. Write ONE OpenAPI 3.0 JSON object for exactly those services, as the documents define them:
+- servers: [{"url": <the base address the documents give for these services>}]; each path relative to that base.
+- one operation per service, with the documented method; operationId = the service's documented name; a short summary.
+- requestBody (application/json): the whole request body as documented, including any envelope object, every field with
+  its type, enum and required where the documents state them; a one-line description per field quoting the documents.
+- responses: the documented success status with the full response body schema (every documented field and type, nested
+  objects and array items with their fields; description per field), and each documented error status with its schema.
+- Only what the documents state: no invented service, field, value or status. Leave out calls the phone agent itself does
+  not make. Where documents disagree, follow the most authoritative service/integration document and list every
+  disagreement in a top-level "x-conflicts" array (strings naming the sources).
+Answer with the JSON object only."""
+
+
+def derive_contract(case_text, cand, budget, trace):
+    """Write the service contract as OpenAPI from the case documents (one model call, one bounded repair); checked
+    structurally before use. Raises when no usable contract results."""
+    left = budget.left() - RESERVE_S
+    if left < 240:
+        raise RuntimeError("not enough budget to derive the service contract")
+    system = "Answer with JSON only.\n\nPROJECT INSTRUCTIONS (binding):\n" + spec_extract.project_instructions()
+    prompt = "CASE DOCUMENTS:\n<<<\n" + case_text + "\n>>>\n\n" + DERIVE_PROMPT
+    spec = spec_extract.parse_json(asyncio.run(asyncio.wait_for(spec_extract._ask(
+        prompt, system, EXTRACT_MODEL, trace, "write the service contract as OpenAPI from the case documents"), timeout=min(left, 600))))
+    probs = case_input.check_contract(spec)
+    if probs and budget.left() - RESERVE_S > 240:
+        trace.log("INPUT", f"derived contract: {len(probs)} problem(s); one bounded repair call: " + "; ".join(probs)[:400])
+        fix = ("\n\nYOUR OPENAPI HAS THESE PROBLEMS:\n- " + "\n- ".join(probs) + "\nReturn the full corrected JSON object only.\n\nYOUR JSON:\n"
+               + json.dumps(spec, ensure_ascii=False))
+        spec = spec_extract.parse_json(asyncio.run(asyncio.wait_for(spec_extract._ask(
+            prompt + fix, system, EXTRACT_MODEL, trace, "repair the derived service contract"), timeout=min(budget.left() - RESERVE_S, 600))))
+        probs = case_input.check_contract(spec)
+    out = cand / "contract.derived.json"
+    out.write_text(json.dumps(spec, indent=1, ensure_ascii=False), encoding="utf-8")
+    ops = [f"{m.upper()} {p}" for p, item in (spec.get("paths") or {}).items() for m in (item or {}) if m in ("get", "post", "put", "patch", "delete")]
+    trace.log("INPUT", f"derived contract {out.name} (sha256 {case_input.sha16(out)}): server {((spec.get('servers') or [{}])[0]).get('url')}, "
+                       f"{len(ops)} operation(s): {', '.join(ops)[:600]}")
+    for c in spec.get("x-conflicts") or []:
+        trace.log("INPUT", f"derived contract conflict: {str(c)[:300]}")
+    if probs:
+        raise RuntimeError("derived service contract unusable: " + "; ".join(probs)[:600])
+    return out
+
+
 # ------------------------------------------------------------------ fallback path
 async def _fallback_agent(brief, tool_api, out, seconds, trace, workdir, repair=None, case_folder=None):
     from claude_agent_sdk import AssistantMessage, ClaudeAgentOptions, ResultMessage, TextBlock, ToolUseBlock, query
@@ -293,7 +338,15 @@ def main():
         if re.match(r"^https?://", a.tool_api):
             if not pathlib.Path(a.brief).is_dir():
                 raise RuntimeError("a mock URL needs a case folder as the first argument (the service contract is read from it)")
-            contract = pathlib.Path(a.contract) if a.contract else case_input.find_contract(a.brief)
+            try:
+                contract = pathlib.Path(a.contract) if a.contract else case_input.find_contract(a.brief)
+            except RuntimeError as e:
+                if "no machine-readable service contract" not in str(e):
+                    raise
+                # the services are defined only in prose documents: derive the contract inside this traced run
+                trace.log("INPUT", "no machine-readable service contract in the folder; deriving one from the case documents")
+                contract = derive_contract(pathlib.Path(brief_in).read_text(encoding="utf-8"), cand, budget, trace)
+                inputs_meta["contract_derived"] = True
             api_in = str(cand / "tool_api.json")
             note = case_input.bind_contract(contract, a.tool_api, api_in)
             trace.log("INPUT", f"service contract {contract} (sha256 {case_input.sha16(contract)}); {note}")

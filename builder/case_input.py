@@ -300,6 +300,31 @@ def find_contract(folder):
     return found[0]
 
 
+def check_contract(spec):
+    """Structural problems of an OpenAPI object the builder can bind tools to (empty list = usable)."""
+    P = []
+    if not isinstance(spec, dict):
+        return ["not a JSON object"]
+    if not (spec.get("servers") or [{}])[0].get("url"):
+        P.append("servers[0].url is missing")
+    paths = spec.get("paths")
+    if not isinstance(paths, dict) or not paths:
+        return P + ["no paths"]
+    for path, item in paths.items():
+        ops = {m: o for m, o in (item or {}).items() if m in ("get", "post", "put", "patch", "delete")}
+        if not ops:
+            P.append(f"{path}: no operation")
+        for m, o in ops.items():
+            if m != "get":
+                sch = ((((o or {}).get("requestBody") or {}).get("content") or {}).get("application/json") or {}).get("schema")
+                if not isinstance(sch, dict) or not (sch.get("properties") or sch.get("$ref")):
+                    P.append(f"{m.upper()} {path}: no JSON request body schema with properties")
+            rs = (o or {}).get("responses") or {}
+            if not any(str(c).startswith("2") for c in rs):
+                P.append(f"{m.upper()} {path}: no success (2xx) response")
+    return P
+
+
 def bind_contract(contract_path, mock_url, out_path):
     """Write the contract as JSON with servers[0].url = the mock URL. If the contract's server has a path (e.g. '/v1') and
     the mock URL has none, that path is kept (logged)."""
