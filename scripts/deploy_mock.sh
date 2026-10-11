@@ -21,12 +21,14 @@ log="$ROOT/traces/mock-deploy-$stamp.log"; n=1
 while [ -e "$log" ]; do n=$((n+1)); log="$ROOT/traces/mock-deploy-$stamp-$n.log"; done
 mkdir -p "$ROOT/traces"
 say() { echo "$(date -u +%FT%TZ) $*" | tee -a "$log"; }
+# sha256sum on Linux, shasum on macOS
+sha16() { if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1"; else shasum -a 256 "$1"; fi | cut -c1-16; }
 
 say "START mock deploy (dry_run=$DRY) commit $(git -C "$ROOT" rev-parse HEAD)"
 if [ -n "$(git -C "$ROOT" status --porcelain -- workers/bank-mock)" ]; then
   say "NOTE workers/bank-mock has uncommitted changes: commit them so the deployed mock is reproducible"
 fi
-say "contract sha256 $(sha256sum "$W/contract.json" | cut -c1-16), customers sha256 $(sha256sum "$W/customers.json" | cut -c1-16)"
+say "contract sha256 $(sha16 "$W/contract.json"), customers sha256 $(sha16 "$W/customers.json")"
 
 # 1. offline tests of the generic core and of the handlers
 node --test "$W"/test/*.test.mjs 2>&1 | tee -a "$log" | grep -E "^# (pass|fail)" || true
@@ -73,7 +75,7 @@ code="$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$url/__no_such_operatio
 say "smoke: POST $url/__no_such_operation__ -> $code (expected 404)"
 cat > "${log%.log}.json" <<EOF
 {"mock_url": "$url", "commit": "$(git -C "$ROOT" rev-parse HEAD)", "deployed_at": "$(date -u +%FT%TZ)",
- "contract_sha256_16": "$(sha256sum "$W/contract.json" | cut -c1-16)", "customers_sha256_16": "$(sha256sum "$W/customers.json" | cut -c1-16)",
+ "contract_sha256_16": "$(sha16 "$W/contract.json")", "customers_sha256_16": "$(sha16 "$W/customers.json")",
  "smoke_unknown_route_status": "$code"}
 EOF
 say "END mock_url=$url (record: ${log%.log}.json). Keep it deployed until the results are announced."

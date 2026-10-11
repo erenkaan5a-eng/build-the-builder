@@ -31,4 +31,9 @@ then reads the same contract and binds the agent's tools to this mock's URL.
   `CLOUDFLARE_ACCOUNT_ID` in the environment's secret settings. Environment secrets reach a NEW session, not this one.
 - Access, option B (your machine): `git pull`, `cd workers/bank-mock && npx wrangler@3.114.17 login && cd ../.. &&
   scripts/deploy_mock.sh`; then commit the `traces/mock-deploy-*.json` record.
+- Before the first deploy: open Workers & Pages once in the dashboard so the account has a `workers.dev` subdomain
+  (free). Token for option A: dashboard → My Profile → API Tokens → Create Token → template "Edit Cloudflare Workers"
+  (account: Workers Scripts Edit; Account Settings Read; user: Memberships Read, User Details Read), limited to
+  your account. Account ID: Workers & Pages overview, right column. Option B needs no token (browser login).
+- The script runs on Linux and macOS (bash, node >= 18, npx).
 - Never put a token in a file or the chat. Keep the mock deployed until the results are announced. Free plan only.
