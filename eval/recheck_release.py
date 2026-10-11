@@ -11,6 +11,7 @@ import argparse, json, pathlib, sys, time
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "builder"))
 import common, behavior  # noqa: E402
+from build import _retry_5xx  # noqa: E402  (same bounded platform-5xx retry as the build's own check)
 
 
 class _Trace:
@@ -41,9 +42,10 @@ def main():
     if live != exported:
         tr.log("RECHECK", "live workflow differs from the exported candidate: not checked")
     else:
-        res = behavior.structural(man["workflow_id"], pol, tr)
+        budget = common.Budget(10)
+        res = _retry_5xx(lambda: behavior.structural(man["workflow_id"], pol, tr), budget, tr)
         if a.practice:
-            pres, _ = behavior.practice(man["workflow_id"], a.practice, tr)
+            pres, _ = _retry_5xx(lambda: behavior.practice(man["workflow_id"], a.practice, tr), budget, tr)
             res += pres
         out["checks"] = [[n, ok] for n, ok, _ in res]
     out["all_passed"] = bool(out["checks"]) and all(ok for _, ok in out["checks"])
