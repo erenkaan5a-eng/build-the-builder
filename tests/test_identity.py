@@ -172,6 +172,16 @@ for mode in ("hook", "nohook"):
     c.msg(A(digits="1502"))
     check(f"I15 {M} contradictory bank result: no account, technical close", c.end == ("close", "no_promise", "service_error") and c.v.get("security_verified") != "yes", c.end)
 
+    # I17 both answers in one message: the DOB first; the phone answer is kept and sent once the DOB passed
+    b = Bank("1986-05-17", "1502"); c = IdCall(POL, b, mode)
+    c.msg(A(day=17, month=5, year=1986), A(digits="1502", field="phone_last4"))
+    check(f"I17 {M} DOB + phone in one message: two calls in order, account", b.calls == [("date_of_birth", "1986-05-17"), ("phone_last4", "1502")]
+          and c.end == ("account",), (b.calls, c.end))
+    b = Bank("1986-05-17", "1502"); c = IdCall(POL, b, mode)
+    c.msg(A(day=1, month=1, year=1980), A(digits="1502", field="phone_last4"))
+    check(f"I17b {M} a wrong DOB with the phone in the same message: the phone is not sent before the DOB passed", b.calls == [("date_of_birth", "1980-01-01")]
+          and ASK_DOB in c.said[-1], (b.calls, c.said[-1]))
+
     # I16 a new call starts clean
     c2 = IdCall(POL, Bank("1986-05-17", "1502"), mode)
     check(f"I16 {M} a new call has no identity state", c2.st() == {} and c2.v.get("security_verified") is None, c2.st())

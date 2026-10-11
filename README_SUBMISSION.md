@@ -20,6 +20,7 @@ python3 builder/build.py {brief_path} {tool_api_path} --out submission/hidden-N.
 - `--mode auto` (default): main path (policy extraction → fixed components → workflow), fallback agent only if the main path fails.
 - One wall-clock budget of 30 minutes (`--budget-min`) covers extraction, repair, fallback, validation, publish, behaviour tests and export.
 - Do not pass `--practice` in the final: it drives a public practice customer and exists for development only.
+- Do not pass `--reuse-policy` in the final: it skips the extraction and republishes from the policy of an earlier traced run of the same inputs (development only, e.g. after a platform 5xx; the trace says so).
 
 ## What a run leaves behind
 - `candidates/<slot>/<time>/`: `policy.raw.json`, `policy.json`, `workflow.json`, `support_boundary.json`, `export.json`, `manifest.json` (workflow/agent id, published version, tested and exported content hash, behaviour checks, known rule gaps, what is enforced by code vs left to the dialogue model, build seconds, model calls).
@@ -34,6 +35,8 @@ python3 tests/test_negotiation_regress.py
 python3 tests/test_date_tool.py
 python3 tests/test_generator_structure.py
 python3 tests/test_api_binding.py
+python3 tests/test_identity.py      # identity stage run by code (both engine modes of the result keys)
+python3 tests/test_support.py       # support offer answered by code, model answer guard, 'go on'
 python3 builder/lint.py <workflow.json> <tool_api.json>
 ```
 
