@@ -1,0 +1,5 @@
+2026-10-11T14:33:35+0300 [START] slot=loc-a brief=briefs/brief-a.md tool_api=tools/openapi.json mode=auto budget_min=30 candidate=C:\Users\ASUS\OneDrive\Masaüstü\build-the-builder\candidates\loc-a\20261011-143335
+2026-10-11T14:33:35+0300 [START] credentials: FREYA_API_KEY set, FREYA_BANK_TEAM_KEY set, cloud proxy mode off
+2026-10-11T14:33:35+0300 [MAIN] policy reused from candidates\loc-a\20261011-134621\policy.json (sha256 4865c23c92eeb271); that run recorded no input hashes (brief sha256 now d57c049c89aec461, API 9a8410b12e5c82b6); no model call
+2026-10-11T14:34:37+0300 [TEST] platform 5xx (GET /api/v2/workspaces -> 504: error code: 504
+); waiting 30s, retry 1 of 3

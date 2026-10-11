@@ -38,5 +38,9 @@
  "loc-a": {
   "workflow_id": "23150a3a-fead-4c51-9ad2-2c142b0837f1",
   "agent_id": "652ad608-5ecc-44fd-bb7a-b09a271c2ae1"
+ },
+ "loc-ab": {
+  "workflow_id": "cc2873a9-c391-44c3-acc8-e8c35624298c",
+  "agent_id": "41b6d98f-2c8e-4ea6-8139-1901d21f32a1"
  }
 }
