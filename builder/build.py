@@ -68,6 +68,20 @@ def run_main(brief, tool_api, cand, budget, trace, reuse_policy=None):
     if probs:
         raise RuntimeError("policy invalid after repair: " + "; ".join(probs)[:800])
     structural = [r for r in pol.get("extra_rules") or [] if r.get("kind") == "structural"]
+    if structural and budget.left() - RESERVE_S > 120:
+        # a rule the fixed components already carry can be misclassified (11 Oct, A+B: the 'no notes after a transfer' rule);
+        # one bounded re-check with only the rules and the generic capability list, before giving up the main path
+        trace.log("MAIN", f"{len(structural)} rule(s) classified structural; one bounded re-check call")
+        try:
+            verdicts = spec_extract.recheck_structural(structural, EXTRACT_MODEL, trace, timeout_s=min(budget.left() - RESERVE_S, 300))
+            for r, vd in zip(structural, verdicts):
+                trace.log("MAIN", f"  re-check: {vd.get('kind')} - {str(r.get('text'))[:100]} ({str(vd.get('why'))[:120]})")
+                if vd.get("kind") in ("computational", "stateful", "conversational"):
+                    r["kind"], r["recheck"] = vd["kind"], vd.get("why")
+            (cand / "policy.json").write_text(json.dumps(pol, indent=1), encoding="utf-8")
+        except Exception as e:
+            trace.log("MAIN", f"structural re-check failed: {e}"[:300])
+        structural = [r for r in pol.get("extra_rules") or [] if r.get("kind") == "structural"]
     if structural:
         raise RuntimeError("structural rules the generator cannot express: " + "; ".join(r.get("text", "")[:120] for r in structural))
     for a in pol.get("amendments") or []:

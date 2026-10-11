@@ -7,6 +7,25 @@ import asyncio, json, re
 
 from common import KIT
 
+# What the fixed components do in code (generic; no bank values). Used to classify extra rules.
+CAPABILITIES = """- opening: the brief's opening line; who is on the line (confirmation, someone else) is judged by the dialogue model.
+- third party: callback window facts computed in code; schedule_callback and the not-reached closes by the dialogue model.
+- identity (code): questions in order, an answer given in parts is combined, format checked, one verify call per complete answer,
+  hints / unreadable / service errors not counted, next question only after the bank verified the current one, failed only on the
+  bank's result, refusals and 'what is this about' counted to a declined close, 'do not want to talk' counted, a person asked for:
+  help offered N times then a transfer to a queue; robot / scam answers.
+- account (code): get_account only after full verification; one sentence per product (name, past-due amount, days late).
+- negotiation (code, per product): business days and holidays, deadline per band, date validity (past, after deadline, not a business
+  day), vague period asked N times then the deadline, full amount first, floor after 'too much' or a below-floor amount, a persuasion
+  ladder with attempts per band and product, never repeating a refused offer, the first question for all products then product by
+  product, one shared date clamped to each product's deadline (policy flag), hardship (one sympathy + support offer, no persuasion
+  after it, accept -> transfer to a queue, decline -> hardship, the customer's own date/amount kept), dispute and already-paid per
+  product, 'do not want to talk' counted, read-back of the whole package with one confirmation, a change at the read-back re-checked
+  and read back again, create_promise once per product with N retries, notes per product with a reason (when the brief uses notes),
+  no notes and no further promise writes after any transfer, the close outcome from transfers, recorded promises and product results
+  (transfer > promise > every product paid > the first product's non-paid reason), the goodbye before exactly one close_call.
+- transfer_to_agent for restructuring / a person in the negotiation stage is decided by the dialogue model; the close is code."""
+
 SCHEMA = r'''
 Return ONE JSON object, no prose, with exactly these keys:
 {
@@ -99,7 +118,8 @@ Rules for filling it:
 - Copy rule text verbatim; do not summarize away exceptions.
 - A memo or note that changes a rule applies only within its stated scope; record it in amendments. Do not assume the newest document overrides everything. If two sources conflict and the text does not settle it, record it in unresolved_conflicts.
 - Every rule of the brief goes verbatim into rules.<stage>; the dialogue model follows those. extra_rules lists ONLY rules the generator's fixed parts cannot carry, classified as:
-  * "structural": the brief requires a tool call, step or stage the fixed call graph lacks. The fixed graph is: who is on the line (third party: schedule_callback; anyone: transfer_to_agent, close_call) -> identity (verify_identity) -> account (get_account) -> negotiation (code-checked payment dates, create_promise, add_note when uses_notes, transfer_to_agent, close_call). A rule that fits these stages through instructions is NOT structural.
+  * "structural": the brief requires a tool call, step or stage the fixed call graph lacks. The fixed graph is: who is on the line (third party: schedule_callback; anyone: transfer_to_agent, close_call) -> identity (verify_identity) -> account (get_account) -> negotiation (code-checked payment dates, create_promise, add_note when uses_notes, transfer_to_agent, close_call). A rule that fits these stages through instructions is NOT structural, and a behaviour in this list of what the fixed parts already do in code is NOT structural:
+__CAPS__
   * "computational": a ledger-affecting value the keys above cannot compute (e.g. a deadline that is not 'the Nth business day after today', a floor that is not an item field, a date rule other than the supported computed_dates rule).
   * "stateful": a counter or condition over the conversation that the dialogue model must track (attempt counts, refusals, how often to ask).
   * "conversational": wording or behaviour only.
@@ -137,10 +157,23 @@ def parse_json(text):
     return json.loads(m.group(0))
 
 
+def recheck_structural(rules, model, trace, timeout_s):
+    """One bounded call: are the rules classified 'structural' really outside the fixed graph? Sends only the rules and the
+    generic capability list (no brief). Returns one kind per rule."""
+    items = "\n".join(f"{i + 1}. {r.get('text')} (quote: {r.get('quote')})" for i, r in enumerate(rules))
+    prompt = ("A phone-agent generator has fixed components. WHAT THEY ALREADY DO:\n" + CAPABILITIES + "\n\nThese rules of a bank brief were "
+              "classified 'structural' (needing a tool call, step or stage the fixed components lack):\n" + items + "\n\nFor each rule answer "
+              "'structural' only if it needs a tool call, step or stage that is NOT in the list above; otherwise give its real kind: "
+              "computational, stateful or conversational. Return JSON only: {\"kinds\": [{\"n\": 1, \"kind\": \"...\", \"why\": \"one short sentence\"}]}")
+    text = asyncio.run(asyncio.wait_for(_ask(prompt, "Answer with JSON only.", model, trace, "re-check rules classified structural against the fixed components"), timeout=timeout_s))
+    got = {int(k.get("n", 0)): k for k in (parse_json(text).get("kinds") or []) if isinstance(k, dict)}
+    return [got.get(i + 1, {"kind": "structural", "why": "no answer"}) for i in range(len(rules))]
+
+
 def extract(brief_text, api_summary, model, trace, timeout_s):
     system = ("You turn a bank's call brief and its tool API into a structured policy for an automatic phone-agent generator. "
               "Answer with JSON only.\n\nPROJECT INSTRUCTIONS (binding):\n" + project_instructions())
-    prompt = f"TOOL API:\n{api_summary}\n\nBRIEF:\n<<<\n{brief_text}\n>>>\n\n{SCHEMA}"
+    prompt = f"TOOL API:\n{api_summary}\n\nBRIEF:\n<<<\n{brief_text}\n>>>\n\n{SCHEMA.replace('__CAPS__', CAPABILITIES)}"
     text = asyncio.run(asyncio.wait_for(_ask(prompt, system, model, trace, "extract policy.json from the brief and tool API"), timeout=timeout_s))
     return parse_json(text)
 
