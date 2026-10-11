@@ -90,12 +90,31 @@ def published_version(workflow_id):
     return {"version_number": v["versionNumber"], "version_id": v["id"], "is_published": bool(v.get("isPublished"))}
 
 
+class CreateFailed(Exception):
+    """Creating a workflow failed; deliberately not a RuntimeError so platform-5xx retries skip it."""
+
+
 def publish(slot, workflow, trace):
     """Create or update the slot's workflow, make sure the event model is set, publish. Returns ids + published version."""
     state_file = KIT / ".freya-agents.json"
     state = json.loads(state_file.read_text()) if state_file.exists() else {}
+    if slot in state:
+        # the slot file is committed: in another workspace (e.g. an organiser's clean checkout) its id does not exist there.
+        # Only a clear 'not found / not allowed' leads to a new workflow; a platform 5xx is raised (no duplicate workflows).
+        try:
+            freya.api("GET", f"/api/v2/workflow/{state[slot]['workflow_id']}", workspaceId=freya.workspace_id())
+        except RuntimeError as e:
+            if not re.search(r"-> (404|403|400):", str(e)):
+                raise
+            old = state.pop(slot)
+            state[f"{slot}@unreachable-{time.strftime('%Y%m%d-%H%M%S')}"] = old
+            trace.log("FREYA", f"stored workflow {old['workflow_id']} for slot {slot} is not in this workspace ({str(e)[:80]}); a new one is created")
     if slot not in state:
-        made = freya.create_workflow(f"{slot} {time.strftime('%m%d-%H%M%S')}", workflow)
+        try:
+            made = freya.create_workflow(f"{slot} {time.strftime('%m%d-%H%M%S')}", workflow)
+        except RuntimeError as e:
+            # not a RuntimeError, so build.py's 5xx retry does not repeat it: a lost answer could leave a second workflow
+            raise CreateFailed(f"creating the workflow failed (not retried): {e}") from None
         state[slot] = made
         state_file.write_text(json.dumps(state, indent=1))
         trace.log("FREYA", f"created workflow {made['workflow_id']} agent {made['agent_id']}")
