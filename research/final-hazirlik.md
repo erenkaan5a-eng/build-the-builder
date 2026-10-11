@@ -25,14 +25,20 @@ metinde görülmedi (sayfa okunamadı; kitteki README'de böyle bir hüküm yok)
 | Pratik müşteri verisi | ana yol yalnız verilen klasörü/brief'i ve sözleşmeyi okur; `public-test-set.json` yalnız `--practice` (geliştirme) ile okunur |
 | Elle yama yok | düzeltme builder'da yapılır, yeni koşu yeni aday klasörü + trace üretir; `scripts/make_submission.py` export ile trace'in aynı koşuya ait olduğunu, commit'in HEAD olduğunu denetler |
 | `submission.json` | **hazır şablon aracı** (`scripts/make_submission.py`): team/members verilmeden yazmaz; isim/e-posta uydurmaz |
-| Cloudflare mock | **erişim gerekiyor**: `api.cloudflare.com` ağ politikasında engelli; Cloudflare kimliği ortamda yok. İskelet hazır: workers/bank-mock (README) |
+| Cloudflare mock | **erişim gerekiyor** (deploy için): `api.cloudflare.com` bu oturumun ağ politikasında engelli (000), `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID` yok. **Hazır**: `scripts/deploy_mock.sh` (testler → her operasyonun handler'ı var mı → kimlik var/yok → `wrangler@3.114.17 deploy` → 404 duman testi → `traces/mock-deploy-*.json`); dry-run paketleme 6.6 KiB, DO bağlaması var; `wrangler dev` ile yerelde sentetik sözleşmede müşteri başına durum, 400, 404 doğrulandı. Ortam sırları yalnız YENİ oturuma geçer; seçenek B kendi makinenden deploy (workers/bank-mock/README.md) |
 | Temiz checkout | Python 3.10+, `pip install claude-agent-sdk`; belge okuyucular stdlib (XLSX için openpyxl varsa), PDF için `pypdf` ya da `pdftotext`, YAML sözleşme için `pyyaml`. Temiz klonda (a2ec5fa, env.sh yok) denendi: `--help` çalışıyor; sözleşmesiz klasör → görünür PROBLEM, çıkış kodu 2, trace'ler ezilmiyor; kimlik bilgisi yokluğu trace'te yalnız var/yok olarak yazılıyor |
 
 ## Final akışı (paket açılınca)
 1. `BRIEF.md`, `README.md`, sonra tüm dosyaların envanteri (`python3 -c "import sys; sys.path.insert(0,'builder'); import case_input, json; print(json.dumps(case_input.load_case('<klasör>')['inventory'], indent=1, ensure_ascii=False))"`).
-2. Mock: sözleşme + test müşterilerinden `workers/bank-mock` handler'ları; Node testleri; deploy; mock URL'yi örnek istekle doğrula.
-3. `scripts/run_final.sh <klasör> <mock_url>` (gerekirse `--contract FILE`). Gerekirse genel hata düzeltmesi → commit → yeni koşu (yeni aday + trace).
+2. Mock (ayrı, açıkça istenen iş): sözleşme + test müşterilerinden `workers/bank-mock` contract/customers/config + handler'ları; Node testleri; `scripts/deploy_mock.sh` (önce `--dry-run`); mock URL'yi sözleşmedeki örnek istekle doğrula; sonuçlar açıklanana kadar açık tut.
+3. `scripts/run_final.sh <klasör> <mock_url>` (gerekirse `--contract FILE`; bu bulut oturumunda başına `FREYA_AUTH_VIA_PROXY=1`). Gerekirse genel hata düzeltmesi → commit → yeni koşu (yeni aday + trace).
 4. Seçilen koşu: `python3 scripts/make_submission.py candidates/final-<slot>/<zaman> --team ... --member ... --repo ... --mock-url ...`; export + trace + submission.json commit/push.
 
 ## Ölçülmüş adaylar (dokunulmadı)
 loc-a v3 `1b567c6fe1f24904` (canlıda yayınlı değil; v4 yayında, doğrulanamadı), loc-ab v2 `e1d03845876722e3` (canlıda yayınlı). research/baseline-manifest.json. 39 koşuluk public ölçüm final hazırlığı nedeniyle başlatılmadı; kullanılan simülasyon: 10/60.
+
+## Kaynak çelişkileri / doğrulanamayanlar (varsayım yapılmadı)
+- `www.freyavoice.ai` bu ortamdan çözümlenemiyor (DNS/ağ politikası); final kuralları kullanıcının aktarımıyla CLAUDE.md "Final timeline" bölümüne yazıldı (152ec15).
+- Kit README'si (organizatör kaynağı, değiştirilmedi) "briefs" (çoğul), "her final brief'in kendi tool API dosyası", "yedi araç adı aynı kalır" der; aktarılan final biçimi tek kredi kartı ekstre borcu vakası, servis sözleşmesi ve bizim kurduğumuz mock'tur. Builder ikisini de kabul eder (klasör + mock URL ya da brief + tool API; farklı operasyon adları `operations` ile bağlanır).
+- 30 dk/build sınırı: kaldırıldığı doğrulanmadı, korunuyor. Eski pass^3/eşitlik kuralı final kuralı diye sunulmuyor.
+- 20.00 açılış / 23.00 teslim: `references/00-READ-ME-FIRST.md`'deki e-posta özetiyle tutarlı.
