@@ -35,3 +35,4 @@ kullandığını gösterir; `make_submission.py` seçilen aday + trace + mock UR
 
 ## Kontrol kaydı
 - 21.06 İstanbul (18:06Z): Drive bağlayıcısı: "Build the Builder - Final Case" klasörünün modifiedTime'ı 17:21:15Z; r3 ZIP'i 17:56:43Z'de dışa aktarıldı → klasörün kendisi o zamandan beri değişmedi. Bağlayıcı alt dosyaları listeleyemiyor; alt klasördeki bir dosya değişikliği klasör zamanına yansımayabilir, bu yüzden kesin değil. Yeni yükleme yok (son yükleme ZIP 17:57:40Z). E-posta ve site: buradan erişim yok, kontrolü kullanıcıda.
+- 22.22 İstanbul (19:22Z): Drive klasörü modifiedTime hâlâ 17:21:15Z (r3 dışa aktarımı 17:56:43Z'den önce); yeni yükleme yok. Seçilen koşu A, r3 alındısını kullandı; bilinen en güncel alındı r3. E-posta/site kontrolü kullanıcıda (buradan erişim yok).
