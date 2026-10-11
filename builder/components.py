@@ -421,7 +421,7 @@ def build(pol, ts):
                "paid": c["paid_outcome"], "no_promise": c["no_promise_outcome"], "statuses": pol["statuses"],
                "no_reason": c.get("outcomes_without_reason") or [], "uses_notes": bool(pol.get("uses_notes")) and "add_note" in ts["ops"],
                "after_promise_sentence": pol.get("after_promise_sentence") or "", "goodbye": pol.get("goodbye_line") or "",
-               "technical": te}
+               "technical": te, "stop_close": int(pol.get("stop_statements_to_close") or 1)}
     t_event = {"type": "function", "config": {"timeoutMs": 10000, "preSpeech": {"mode": "static", "message": ng["say"]["checking"], "interruptible": False}},
                "function": {"name": "negotiation_event", "handler": "__function__:code_exec",
                             "description": "CALL it for every customer message about paying (see EVENTS in your instructions). The code decides the reply, which is read out after the call.",

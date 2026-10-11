@@ -53,6 +53,7 @@ Return ONE JSON object, no prose, with exactly these keys:
  "statuses": {"refused": "<note/close reason for a refusal>", "hardship": "...", "dispute": "...", "paid": "...", "service_error": "..."},
  "transfer_line": "short sentence said when transferring",
  "vague_asks_before_deadline": <how often to ask for the exact day before proposing the deadline>,
+ "stop_statements_to_close": <after verification: how many times the customer must say they do not want to talk before the call is closed (e.g. 2 for 'says twice'); 1 if the brief does not say>,
  "write_retries": {"create_promise": <extra tries the brief allows after a failed write>},
  "after_promise_sentence": "sentence the brief requires after a recorded promise, or empty",
  "closing": {
@@ -227,6 +228,9 @@ def validate(pol, ts):
             P.append(f"negotiation.ladder step not supported: {st}")
     if not ng.get("ladder"):
         P.append("negotiation.ladder empty")
+    sc = pol.get("stop_statements_to_close", 1)
+    if sc is not None and (not isinstance(sc, int) or isinstance(sc, bool) or sc < 1):
+        P.append(f"stop_statements_to_close {sc!r} is not a whole number >= 1")
     if max([int(b.get("attempts") or 0) for b in pol.get("bands") or []] or [0]) > len(ng.get("ladder") or []):
         P.append("a band allows more attempts than the ladder has steps")
     stt = pol.get("statuses") or {}

@@ -15,7 +15,8 @@ Event/transition table (one product p unless product_id is "all"):
   changes(d,a)    -> like proposes; the earlier confirmation is void
   hardship        -> no persuasion for p; the support offer is read; declines_support -> p hardship
   dispute / paid  -> p dispute / paid
-  stop            -> every open product refused
+  stop            -> every open product refused once the brief's count of such statements is reached (CFG stop_close,
+                     default 1); an earlier one is handled as refuses
 When no product is open: agreed products -> read-back (new version) ; none -> finish.
 Recording: rec_next sends one create_promise per agreed product through an engine-run node, judges each attempt from the
 node's success/failure counters and the response's success field, retries up to CFG['retries'] times (single layer).
@@ -271,6 +272,11 @@ try:
         else:
             raise ValueError('unknown product ' + pid)
         shared = len(scope) > 1
+        if typ == 'stop':
+            # A45 counts the statements ('says twice'); an earlier one is a non-answer to the offer (A30), not a close
+            st['stops'] = int(st.get('stops') or 0) + 1
+            if st['stops'] < int(CFG.get('stop_close') or 1):
+                typ = 'refuses'
         if typ in ('proposes', 'changes', 'accepts', 'refuses', 'too_much', 'pays_today') and st['phase'] == 'readback':
             st['phase'] = 'negotiate'
             st['version'] += 1

@@ -198,6 +198,18 @@ c.v["close_one_success_count"] = "0"; c.v["close_one_failure_count"] = "1"
 exec(NGc, {"vars": c.v})
 check("H9 close_check makes the bank's close result visible (ok / failed)", (r1, c.v["close_result"]) == ("ok", "failed"), (r1, c.v["close_result"]))
 
+# I) A45 'says twice that they do not want to talk' (count from the policy, not from code)
+c = Call([P("p1", "personal loan", 780.0, 260.0, "2026-10-23", 2)], uses_notes=False, stop_close=2)
+c.ev(("p1", "refuses", "", ""))
+st = c.ev(("p1", "stop", "", ""), ("p1", "stop", "", ""))
+check("I1 the first 'I do not want to talk' (said twice in one message counts once) is a non-answer: next attempt, no close",
+      c.p("p1")["status"] == "offered" and c.p("p1")["used"] == 2 and st["phase"] == "negotiate" and st.get("stops") == 1, (c.p("p1"), st.get("stops")))
+st = c.ev(("p1", "stop", "", ""))
+check("I2 the second statement closes: no_promise/refused", st["phase"] == "finish" and c.finish()[:2] == ("no_promise", "refused"), st["phase"])
+c = Call([P("p1", "personal loan", 780.0, 260.0, "2026-10-23", 2)], uses_notes=False)
+st = c.ev(("p1", "stop", "", ""))
+check("I3 a policy without the count keeps the earlier behaviour (one statement closes)", st["phase"] == "finish", st["phase"])
+
 print("== 2. defensive tests (a node entered directly)")
 c = Call([P("p1", "credit card", 300.0, 90.0, "2026-11-02", 1), P("p2", "personal loan", 600.0, 200.0, "2026-10-23", 2)])
 c.ev(("all", "proposes", "2026-10-16", ""))
