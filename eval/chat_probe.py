@@ -41,21 +41,7 @@ def main():
     ev = []
     if call_id:
         try:
-            for mm in common.freya.get_call(call_id).get("messages", []):
-                if mm.get("role") in ("assistant", "user"):
-                    ev.append(("assistant" if mm["role"] == "assistant" else "user", mm.get("message") or ""))
-                elif mm.get("role") == "system":
-                    try:
-                        x = json.loads(mm.get("message") or "")
-                    except Exception:
-                        continue
-                    if x.get("event") == "node_enter":
-                        ev.append(("node", x.get("node")))
-                    elif x.get("event") == "function_call_start":
-                        a = x.get("args") or {}
-                        ev.append(("call", x.get("function"), a.get("body", a)))
-                    elif x.get("event") in ("function_call_complete", "function_call_error"):
-                        ev.append(("result" if x["event"].endswith("complete") else "error", x.get("function"), x.get("result")))
+            ev = behavior.parse_events(common.freya.get_call(call_id).get("messages", []))
         finally:
             try:
                 common.freya.api("POST", "/api/v2/chat/end", {"callId": call_id})

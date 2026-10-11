@@ -4,11 +4,50 @@
   security answer reaches the identity tool, no account/write tool before verification.
 - practice(): development only: a public practice session (real bank data) driven from identity to the account facts.
 """
-import json, re, sys, pathlib
+import json, re, sys, pathlib, urllib.parse
 
 import common
 
 ROOT = common.KIT
+
+
+def op_name(fn, args):
+    """The bank operation behind a call event. Calls the workflow engine runs itself (pre_actions of api_request nodes)
+    are reported under their handler name 'api_call', not the tool name; their args carry the request URL, whose last
+    path segment is the operation (seen in Freya call events, 11 Oct: .../v1/get_account, .../v1/create_promise)."""
+    url = str(args.get("url") or "") if isinstance(args, dict) else ""
+    seg = urllib.parse.urlparse(url).path.rstrip("/").rsplit("/", 1)[-1] if url else ""
+    return seg or fn
+
+
+def parse_events(messages):
+    """Freya call messages -> [(role, text) | ('node', name) | ('call', op, body) | ('result'|'error', op, result)]."""
+    events, pending = [], []
+    for m in messages:
+        if m.get("role") in ("assistant", "user"):
+            events.append((m["role"], m.get("message") or ""))
+        elif m.get("role") == "system":
+            try:
+                ev = json.loads(m.get("message") or "")
+            except Exception:
+                continue
+            if not isinstance(ev, dict):
+                continue
+            if ev.get("event") == "node_enter":
+                events.append(("node", ev.get("node")))
+            elif ev.get("event") == "function_call_start":
+                a = ev.get("args") or {}
+                op = op_name(ev.get("function"), a)
+                pending.append((ev.get("function"), op))
+                events.append(("call", op, a.get("body", a) if isinstance(a, dict) else a))
+            elif ev.get("event") in ("function_call_complete", "function_call_error"):
+                fn, op = ev.get("function"), ev.get("function")
+                for i in range(len(pending) - 1, -1, -1):        # the result belongs to the latest open call of that function
+                    if pending[i][0] == fn:
+                        op = pending.pop(i)[1]
+                        break
+                events.append(("result" if ev["event"].endswith("complete") else "error", op, ev.get("result")))
+    return events
 
 
 def chat(workflow_id, variables, turns):
@@ -22,22 +61,7 @@ def chat(workflow_id, variables, turns):
         replies.append(r.get("response") or "")
     events = []
     try:
-        call = common.freya.get_call(call_id)
-        for m in call.get("messages", []):
-            if m.get("role") in ("assistant", "user"):
-                events.append((m["role"], m.get("message") or ""))
-            elif m.get("role") == "system":
-                try:
-                    ev = json.loads(m.get("message") or "")
-                except Exception:
-                    continue
-                if ev.get("event") == "node_enter":
-                    events.append(("node", ev.get("node")))
-                elif ev.get("event") == "function_call_start":
-                    a = ev.get("args") or {}
-                    events.append(("call", ev.get("function"), a.get("body", a)))
-                elif ev.get("event") in ("function_call_complete", "function_call_error"):
-                    events.append(("result" if ev["event"].endswith("complete") else "error", ev.get("function"), ev.get("result")))
+        events = parse_events(common.freya.get_call(call_id).get("messages", []))
     finally:
         try:
             common.freya.api("POST", "/api/v2/chat/end", {"callId": call_id})

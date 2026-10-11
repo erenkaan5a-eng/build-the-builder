@@ -1,0 +1,329 @@
+{
+ "source": "Freya chat call 4ad9e71e-364c-427c-8fe6-d413254a6be0 (cl-ab v1, practice PUB-13, 11 Oct 2026); headers, code and Cloudflare fields removed; synthetic practice data",
+ "messages": [
+  {
+   "role": "user",
+   "message": "Hello?"
+  },
+  {
+   "role": "assistant",
+   "message": "Hello, I am a digital assistant calling from Freya Bank, and we record this call. Am I speaking with Ms Rossi?"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"node_enter\", \"node\": \"opening\", \"from_node\": \"setup\", \"reason\": \"always always\"}"
+  },
+  {
+   "role": "user",
+   "message": "Yes, that's me."
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"node_enter\", \"node\": \"identity\", \"from_node\": \"opening\", \"reason\": \"the customer confirmed speaker == 'self'\"}"
+  },
+  {
+   "role": "assistant",
+   "message": "For security, could you please tell me your date of birth?"
+  },
+  {
+   "role": "user",
+   "message": "The eighth of January, nineteen ninety-one."
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"node_enter\", \"node\": \"identity\", \"from_node\": \"identity\", \"reason\": \"stay always\"}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"function_call_start\", \"function\": \"verify_identity\", \"args\": {\"url\": \"https://freya-bank-mock.freyavoice.workers.dev/v1/verify_identity\", \"method\": \"POST\", \"body\": {\"field\": \"date_of_birth\", \"answer\": \"1991-01-08\", \"customer_id\": \"c_cf5ea3fa-095\"}}}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"function_call_complete\", \"function\": \"verify_identity\", \"result\": {\"status\": \"success\", \"data\": {\"ok\": true, \"verified\": true, \"wrong_answers_left\": 3, \"all_verified\": false, \"what_to_do_next\": \"This answer is correct. Ask the next security question.\"}}}"
+  },
+  {
+   "role": "assistant",
+   "message": "Thank you. Could you tell me the last four digits of the phone number on file?"
+  },
+  {
+   "role": "user",
+   "message": "Six six zero four."
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"node_enter\", \"node\": \"identity\", \"from_node\": \"identity\", \"reason\": \"stay always\"}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"function_call_start\", \"function\": \"verify_identity\", \"args\": {\"url\": \"https://freya-bank-mock.freyavoice.workers.dev/v1/verify_identity\", \"method\": \"POST\", \"body\": {\"field\": \"phone_last4\", \"answer\": \"6604\", \"customer_id\": \"c_cf5ea3fa-095\"}}}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"function_call_complete\", \"function\": \"verify_identity\", \"result\": {\"status\": \"success\", \"data\": {\"ok\": true, \"verified\": true, \"wrong_answers_left\": 3, \"all_verified\": true, \"what_to_do_next\": \"All security questions are passed. Say one short thank-you sentence and nothing about the account yet. Do not call a tool now.\"}}}"
+  },
+  {
+   "role": "assistant",
+   "message": "Thank you for verifying your identity."
+  },
+  {
+   "role": "user",
+   "message": "No, not today."
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"node_enter\", \"node\": \"fetch_account\", \"from_node\": \"identity\", \"reason\": \"identity verified (verify_identity_response.data.all_verified == 'true' OR verify_identity_response.data.all_verified == 'True')\"}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"function_call_start\", \"function\": \"api_call\", \"args\": {\"url\": \"https://freya-bank-mock.freyavoice.workers.dev/v1/get_account\", \"method\": \"POST\", \"body\": {\"customer_id\": \"c_cf5ea3fa-095\"}}}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"function_call_complete\", \"function\": \"api_call\", \"result\": {\"status\": \"success\", \"data\": {\"ok\": true, \"products\": [{\"product_id\": \"p1\", \"type\": \"credit_card\", \"card_last4\": \"6604\", \"past_due\": 300, \"days_late\": 4, \"minimum_payment\": 90}, {\"product_id\": \"p2\", \"type\": \"personal_loan\", \"past_due\": 900, \"days_late\": 20, \"instalment_amount\": 300}]}}}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"node_enter\", \"node\": \"build_deal\", \"from_node\": \"fetch_account\", \"reason\": \"always always\"}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"function_call_start\", \"function\": \"code_exec\", \"args\": {}}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"function_call_complete\", \"function\": \"code_exec\", \"result\": {\"status\": \"success\", \"data\": null}}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"node_enter\", \"node\": \"negotiate\", \"from_node\": \"build_deal\", \"reason\": \"always always\"}"
+  },
+  {
+   "role": "assistant",
+   "message": "I am calling from the collections team about a late payment. Your credit card ending 6604 has 300.00 past due and is 4 days late. Your personal loan has 900.00 past due and is 20 days late. Can you pay all of them today?"
+  },
+  {
+   "role": "user",
+   "message": "I'd like to pay both on the thirtieth of October."
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"node_enter\", \"node\": \"negotiate\", \"from_node\": \"negotiate\", \"reason\": \"stay always\"}"
+  },
+  {
+   "role": "assistant",
+   "message": "One moment."
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"function_call_start\", \"function\": \"negotiation_event\", \"args\": {\"events\": [{\"date\": \"2026-10-30\", \"product_id\": \"all\", \"type\": \"proposes\"}]}}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"function_call_complete\", \"function\": \"negotiation_event\", \"result\": {\"status\": \"success\", \"data\": null}}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"node_enter\", \"node\": \"neg_consume\", \"from_node\": \"negotiate\", \"reason\": \"a decision to read out neg_flag == 'new'\"}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"function_call_start\", \"function\": \"code_exec\", \"args\": {}}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"function_call_complete\", \"function\": \"code_exec\", \"result\": {\"status\": \"success\", \"data\": null}}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"node_enter\", \"node\": \"neg_relay\", \"from_node\": \"neg_consume\", \"reason\": \"always always\"}"
+  },
+  {
+   "role": "assistant",
+   "message": "Let me read that back. credit card ending 6604: 300.00 on Friday 30 October; personal loan: 900.00 on Friday 23 October Friday 23 October is the latest date I can record for your personal loan, so it is set to that date. Do you confirm?"
+  },
+  {
+   "role": "user",
+   "message": "Yes, for the credit card."
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"node_enter\", \"node\": \"negotiate\", \"from_node\": \"neg_relay\", \"reason\": \"always always\"}"
+  },
+  {
+   "role": "assistant",
+   "message": "One moment."
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"function_call_start\", \"function\": \"negotiation_event\", \"args\": {\"events\": [{\"product_id\": \"p1\", \"type\": \"confirms\"}]}}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"function_call_complete\", \"function\": \"negotiation_event\", \"result\": {\"status\": \"success\", \"data\": null}}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"node_enter\", \"node\": \"neg_consume\", \"from_node\": \"negotiate\", \"reason\": \"a decision to read out neg_flag == 'new'\"}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"function_call_start\", \"function\": \"code_exec\", \"args\": {}}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"function_call_complete\", \"function\": \"code_exec\", \"result\": {\"status\": \"success\", \"data\": null}}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"node_enter\", \"node\": \"neg_relay\", \"from_node\": \"neg_consume\", \"reason\": \"always always\"}"
+  },
+  {
+   "role": "assistant",
+   "message": "Do you confirm?"
+  },
+  {
+   "role": "user",
+   "message": "Yes, I confirm both."
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"node_enter\", \"node\": \"neg_confirm\", \"from_node\": \"neg_relay\", \"reason\": \"the read-back was confirmed (rb_answer == 'yes' AND neg_phase == 'readback')\"}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"function_call_start\", \"function\": \"code_exec\", \"args\": {}}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"function_call_complete\", \"function\": \"code_exec\", \"result\": {\"status\": \"success\", \"data\": null}}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"node_enter\", \"node\": \"rec_next\", \"from_node\": \"neg_confirm\", \"reason\": \"confirmation of the current read-back neg_flag == 'record'\"}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"function_call_start\", \"function\": \"code_exec\", \"args\": {}}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"function_call_complete\", \"function\": \"code_exec\", \"result\": {\"status\": \"success\", \"data\": null}}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"node_enter\", \"node\": \"record_one\", \"from_node\": \"rec_next\", \"reason\": \"a promise to send rec_go == 'yes'\"}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"function_call_start\", \"function\": \"api_call\", \"args\": {\"url\": \"https://freya-bank-mock.freyavoice.workers.dev/v1/create_promise\", \"method\": \"POST\", \"body\": {\"date\": \"2026-10-30\", \"amount\": 300.0, \"product_id\": \"p1\", \"customer_id\": \"c_cf5ea3fa-095\"}}}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"function_call_complete\", \"function\": \"api_call\", \"result\": {\"status\": \"success\", \"data\": {\"ok\": true, \"promise_id\": \"pr1\"}}}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"node_enter\", \"node\": \"rec_next\", \"from_node\": \"record_one\", \"reason\": \"always always\"}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"function_call_start\", \"function\": \"code_exec\", \"args\": {}}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"function_call_complete\", \"function\": \"code_exec\", \"result\": {\"status\": \"success\", \"data\": null}}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"node_enter\", \"node\": \"record_one\", \"from_node\": \"rec_next\", \"reason\": \"a promise to send rec_go == 'yes'\"}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"function_call_start\", \"function\": \"api_call\", \"args\": {\"url\": \"https://freya-bank-mock.freyavoice.workers.dev/v1/create_promise\", \"method\": \"POST\", \"body\": {\"date\": \"2026-10-23\", \"amount\": 900.0, \"product_id\": \"p2\", \"customer_id\": \"c_cf5ea3fa-095\"}}}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"function_call_complete\", \"function\": \"api_call\", \"result\": {\"status\": \"success\", \"data\": {\"ok\": true, \"promise_id\": \"pr2\"}}}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"node_enter\", \"node\": \"rec_next\", \"from_node\": \"record_one\", \"reason\": \"always always\"}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"function_call_start\", \"function\": \"code_exec\", \"args\": {}}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"function_call_complete\", \"function\": \"code_exec\", \"result\": {\"status\": \"success\", \"data\": null}}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"node_enter\", \"node\": \"finish_prep\", \"from_node\": \"rec_next\", \"reason\": \"always always\"}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"function_call_start\", \"function\": \"code_exec\", \"args\": {}}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"function_call_complete\", \"function\": \"code_exec\", \"result\": {\"status\": \"success\", \"data\": null}}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"node_enter\", \"node\": \"finish_say\", \"from_node\": \"finish_prep\", \"reason\": \"always always\"}"
+  },
+  {
+   "role": "assistant",
+   "message": "Your promise is recorded. You will receive a text message confirming this promise. Thank you for your time. Goodbye."
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"node_enter\", \"node\": \"notes_next\", \"from_node\": \"finish_say\", \"reason\": \"always always\"}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"function_call_start\", \"function\": \"code_exec\", \"args\": {}}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"function_call_complete\", \"function\": \"code_exec\", \"result\": {\"status\": \"success\", \"data\": null}}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"node_enter\", \"node\": \"close_one\", \"from_node\": \"notes_next\", \"reason\": \"always always\"}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"function_call_start\", \"function\": \"api_call\", \"args\": {\"url\": \"https://freya-bank-mock.freyavoice.workers.dev/v1/close_call\", \"method\": \"POST\", \"body\": {\"outcome\": \"promise\", \"customer_id\": \"c_cf5ea3fa-095\"}}}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"function_call_complete\", \"function\": \"api_call\", \"result\": {\"status\": \"success\", \"data\": {\"ok\": true}}}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"node_enter\", \"node\": \"close_check\", \"from_node\": \"close_one\", \"reason\": \"always always\"}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"function_call_start\", \"function\": \"code_exec\", \"args\": {}}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"function_call_complete\", \"function\": \"code_exec\", \"result\": {\"status\": \"success\", \"data\": null}}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"node_enter\", \"node\": \"hangup\", \"from_node\": \"close_check\", \"reason\": \"always always\"}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"function_call_start\", \"function\": \"end_call\", \"args\": {}}"
+  },
+  {
+   "role": "system",
+   "message": "{\"event\": \"function_call_complete\", \"function\": \"end_call\", \"result\": {\"status\": \"success\", \"data\": null}}"
+  }
+ ]
+}
