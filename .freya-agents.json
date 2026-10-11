@@ -34,5 +34,9 @@
  "cl-ab": {
   "workflow_id": "06d2cae1-ed27-4d3a-8ac1-dc664cb91cca",
   "agent_id": "f97de421-84ba-4675-b150-6569b61d9eb5"
+ },
+ "loc-a": {
+  "workflow_id": "23150a3a-fead-4c51-9ad2-2c142b0837f1",
+  "agent_id": "652ad608-5ecc-44fd-bb7a-b09a271c2ae1"
  }
 }

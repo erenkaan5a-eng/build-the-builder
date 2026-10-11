@@ -1,0 +1,53 @@
+{
+ "path": "main",
+ "slot": "loc-a",
+ "build_seconds": 145,
+ "model_calls": 1,
+ "trace": "C:\\Users\\ASUS\\OneDrive\\Masa\u00fcst\u00fc\\build-the-builder\\traces\\loc-a-20261011-134621.log",
+ "known_gaps": [
+  "turning the customer's words into negotiation events (and dates into YYYY-MM-DD) is done by the dialogue model; offers, counters, dates, amounts, read-back, recording, notes and the close are code",
+  "callback window validity is decided by the dialogue model from code-computed window facts (not code)",
+  "identity: the dialogue model turns the customer's words into answer parts and events; a misheard part is sent to the bank as heard (the bank decides)",
+  "extra rule (stateful, stage opening): Identity confirmation needs an explicit yes, 'that's me', 'speaking' or the customer's own name. Ask at most twice, answer the customer's questions in between, then close as not_reached/unclear. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): A flat refusal or a non-answer uses one persuasion attempt. Refusing the deadline (rule 23) or the floor (rules 26 and 27) counts as a flat refusal. Proposed dates and amounts never count. When the attempts are used up, close as no_promise/refused and do not repeat a refused offer. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): After 'too much', offer the floor once and say the rest stays overdue. After a below-floor amount, offer the floor once. - left to the dialogue model's prompt",
+  "extra rule (computational, stage negotiate): Interpret 'next <weekday>' as that weekday in the following calendar week and 'this <weekday>' as the one in the current week, relative to now. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Hardship (illness, a death in the family or job loss): one sentence of sympathy, no persuasion attempt, offer support. This takes priority over rules 30 and 41, but a date or amount the customer names is still recorded. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): A change at confirmation invalidates the earlier readback: re-check the new value and read it back again. Call create_promise only after a clear yes to the exact current proposal. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage closing): If a transfer follows a recorded promise, close as transferred with that transfer's reason, not as promise. - left to the dialogue model's prompt",
+  "unresolved conflict: Date attached to the floor offer after 'too much' (rule 26) or after a below-floor amount (rule 27): chose 'the date currently under discussion if valid, otherwise today' (Rules 26 and 27 say to offer the floor but give no date; rule 30 only sets dates for persuasion attempts after a refusal, and rule 26 only gives the deadline for attempt 2.)",
+  "unresolved conflict: Whether the floor offer after 'too much' uses up a persuasion attempt: chose 'no' (Rule 30 says attempt 1 is 'for the floor if the customer already said the full amount is too much', which means the floor offer comes before the attempts and does not use one.)"
+ ],
+ "release_checks_passed": false,
+ "policy_correctness": "not measured by the build",
+ "lint_problems": 1,
+ "support_boundary": {
+  "code": [
+   "deadline per band (Nth business day after now, calendar from the policy)",
+   "promise date validity (past / after deadline / non-business day)",
+   "vague period: ask 1 time(s), then the deadline",
+   "amount: full first, floor offer after 'too much' or a below-floor amount, accept floor..full",
+   "persuasion ladder per product: full_or_floor_if_too_much@this_week_last_business_day_or_next_week_if_today, floor@deadline",
+   "shared date not clamped (policy)",
+   "read-back of the whole package, confirmation bound to that package, writes only from the confirmed package",
+   "create_promise retries: 1 (single layer)",
+   "hardship: one code-owned sympathy+support offer, no persuasion afterwards, customer's own date/amount kept",
+   "stop statements before close: 2",
+   "notes per product (not used by this brief), none after a transfer; close outcome from recorded/transfer/product results",
+   "goodbye -> notes -> exactly one close_call in the negotiation path",
+   "identity: question order, combining an answer given in parts, format check (date, digits), one bank call per complete answer, each bank result processed once, hint / unreadable / service error never counted as wrong, next question only after the bank verified the current one, account only after the bank's full verification, failed only on the bank's result (no tries left), declines counted (2 close), a person asked for: help offered 1 time(s), then an engine-run transfer; every sentence and the close of the stage",
+   "support offer answered (accept -> engine-run transfer, decline -> hardship close or the customer's own offer) routed by extraction, no model speech in that turn",
+   "a message that stops mid-sentence: ask to go on (at most 2 per call)"
+  ],
+  "model": [
+   "turning the customer's words into events (identity: answer parts, corrections, refusals, questions; negotiation: payment events, dates into YYYY-MM-DD from the calendar table)",
+   "opening confirmation and its re-ask count",
+   "third party, callback window validity and re-ask",
+   "transfer decision in the negotiation stage (restructuring, a person; close mapping is code)",
+   "questions outside payment in the negotiation stage (free answer, no digits or questions allowed in it)"
+  ],
+  "unsupported_by_code": [
+   "Interpret 'next <weekday>' as that weekday in the following calendar week and 'this <weekday>' as the one in the current week, relative to now."
+  ]
+ }
+}

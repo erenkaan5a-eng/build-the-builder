@@ -1,0 +1,4 @@
+2026-10-11T13:50:09+0300 [START] slot=loc-a brief=briefs/brief-a.md tool_api=tools/openapi.json mode=auto budget_min=30 candidate=C:\Users\ASUS\OneDrive\Masaüstü\build-the-builder\candidates\loc-a\20261011-135009
+2026-10-11T13:50:09+0300 [START] credentials: FREYA_API_KEY set, FREYA_BANK_TEAM_KEY set, cloud proxy mode off
+2026-10-11T13:50:09+0300 [MAIN] policy reused from candidates\loc-a\20261011-134621\policy.json (sha256 4865c23c92eeb271); that run recorded no input hashes (brief sha256 now d57c049c89aec461, API 9a8410b12e5c82b6); no model call
+2026-10-11T13:50:11+0300 [FREYA] created workflow 23150a3a-fead-4c51-9ad2-2c142b0837f1 agent 652ad608-5ecc-44fd-bb7a-b09a271c2ae1
