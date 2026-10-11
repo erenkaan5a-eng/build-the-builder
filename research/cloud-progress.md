@@ -1,6 +1,6 @@
 # Bulut oturumu ilerleme kaydı
 
-Son güncelleme: 2026-10-11 ~02:00 UTC
+Son güncelleme: 2026-10-11 ~02:25 UTC
 
 ## Kaynak sürümü
 - Depo: erenkaan5a-eng/build-the-builder, dal `claude/lucid-fermat-vxp9u7`. Başlangıç commit `a5de722` (builder ağacı `a4c98a04ab393525`), çalışma ağacı temizdi.
@@ -30,25 +30,40 @@ Son güncelleme: 2026-10-11 ~02:00 UTC
 7. Memo deneyi beklenen tarihi bağımsız hesaplandı: 2026-10-21.
 
 ## Adaylar
-| slot | aday klasörü | workflow / agent | sürüm | içerik hash | kaynak | build | release |
+| slot / sürüm | aday klasörü | workflow / agent | içerik hash | kaynak (builder ağacı) | build | release | durum |
 |---|---|---|---|---|---|---|---|
-| cl-a | candidates/cl-a/20261011-014815 | 0800b57a-585f-4324-9c6d-d66e40260a37 / 91e04e98-0e9e-4bd0-b87d-efdb923d62a8 | 1 | b2601999470a02c7 | 59e0ba2 (builder fc7d2e36…) | 64 s, 1 Opus | FAILED: chat 503 (platform) |
-| cl-ab | candidates/cl-ab/20261011-015018 | 06d2cae1-ed27-4d3a-8ac1-dc664cb91cca / f97de421-84ba-4675-b150-6569b61d9eb5 | 1 | 3390a84c8ad3f3ee | 59e0ba2 | 128 s, 1 Opus | FAILED: chat 502 (platform) |
-- Karar değerleri n6 adaylarıyla aynı (compare_builds); yapısal farklar yalnız 11 Ekim + bu oturumun kasıtlı değişiklikleri.
-- Eski ölçülmüş adaylar dokunulmadı: cmp-a v8, cmp-ab v7 (slotlar ayrı).
+| cl-a v1 | candidates/cl-a/20261011-014815 | 0800b57a-585f-4324-9c6d-d66e40260a37 / 91e04e98-0e9e-4bd0-b87d-efdb923d62a8 | b2601999470a02c7 | 59e0ba2 (fc7d2e36…) | 64 s, 1 Opus | build içinde FAILED (chat 503); recheck 02:10 PASSED | **GEÇERSİZ**: motorun zorluk yolu platformda çöküyor (chat C2) |
+| cl-ab v1 | candidates/cl-ab/20261011-015018 | 06d2cae1-ed27-4d3a-8ac1-dc664cb91cca / f97de421-84ba-4675-b150-6569b61d9eb5 | 3390a84c8ad3f3ee | 59e0ba2 | 128 s, 1 Opus | build içinde FAILED (chat 502); recheck PASSED | **GEÇERSİZ** (aynı hata); C3 kanıtı bu sürümden |
+| cl-a v2 | candidates/cl-a/20261011-021737 | aynı workflow / agent | 233c8dfe1a7d9d91 | c8de7c9 (c2d52b8c…) | 113 s, 1 Opus | PASSED (yapısal 4/4, practice PUB-05 4/4) | ölçülen A adayı |
+| cl-ab v2 | candidates/cl-ab/20261011-021934 | aynı workflow / agent | 8abfb3c856c81f25 | c8de7c9 | 112 s, 1 Opus | PASSED (yapısal 4/4, practice PUB-13 4/4) | ölçülen B adayı |
+- Karar değerleri n6 ve v1/v2 arasında aynı (compare_builds; yalnız ifade ve extra_rules sınıf sayıları). `stop_statements_to_close`=2 dört çıkarımda da.
+- Eski ölçülmüş adaylar dokunulmadı: cmp-a v8, cmp-ab v7.
+- A+B girdisi: `{ cat briefs/brief-a.md; echo; cat briefs/brief-b.md; } > out/brief-ab.md` (sha256 0379260ced21a0a4…).
 
-## Platform durumu
-- 01:49–01:53 UTC: chat API 503 "Internal server error" / 502 "upstream request failed"; daha önce çalışan cmp-a v8 için de aynı → yeni koddan bağımsız, şüpheli platform hatası. Proxy relay hatası yok. Simülasyon aynı ajan modelini kullandığı için başlatılmadı.
+## Platform kontrolleri (chat; betikli müşteri, gerçek practice oturumu + ledger)
+| kontrol | aday | sonuç | kanıt |
+|---|---|---|---|
+| yoklama 02:09 | cl-a v1 | açılış cümlesi 9,6 s | — |
+| C3 kısmi → tam onay (PUB-13) | cl-ab v1 | "Yes, for the credit card" kayıt AÇMADI, yalnız "Do you confirm?"; "Yes, I confirm both" → ürün başına 2 kayıt: kart 300/30 Eki, kredi 900/23 Eki, close promise. 8. turda chat geçidi 504 (uzun kayıt zinciri; sunucu tarafında tamamlandı). Biçim kusuru: kırpılan ürün notu ile tarih arasında nokta yok → düzeltildi (R G12) | research/cloud-runs/chat-c3-partial-confirm.json |
+| C2 zorluk + "Cuma 300" (PUB-05) | cl-a v1 | `offer_named` yönlendirmesi doğru çalıştı (model [hardship, proposes] gönderdi) ama motor her turda hata cümlesine düştü: `global hardship_said` platformda NameError. Ledger: promise yok, close yok | research/cloud-runs/chat-c2-hardship-own-offer.json; research/cloud-evidence/regress-platform-exec-on-cl-a-engine.txt |
+| C2 ilk deneme | cl-a v1 | 502 (oturum ortasında) | — |
+- Kök neden: yerel testler kodu düz `exec()` ile koşuyordu; platform fonksiyon içinde çalıştırıyor. Düzeltme c8de7c9: değiştirilebilir sözlük; test düzeneği platform gibi fonksiyon içinde; lint `global/nonlocal` ve fonksiyon içinde derlenmeyen kodu reddediyor (v1 workflow'larını reddediyor).
+- C2'nin düzeltilmiş sürümde platformda yeniden denenmesi chat bütçesi bittiği için chat ile yapılamadı; yerel platform-benzeri testler (R G1–G2) ve simülasyon varyasyonu (experiments/variations/) ile ölçülecek.
+- Platform durumu: 01:49–01:53 UTC chat 503/502 (eski cmp-a v8 dahil) → şüpheli platform hatası; 02:09'dan itibaren çalışıyor, aralıklı 502/504 devam ediyor.
+
+## Ölçümler
+(çalışıyor: cl-a v2 PUB-05/06/10 × 3)
 
 ## Kullanım sayacı (üst sınırlar: build 4, simüle koşu 30, platform chat 4)
 | tür | kullanılan | not |
 |---|---|---|
-| builder run | 2 | cl-a, cl-ab (her biri 1 Opus çağrısı) |
-| simüle müşteri koşusu | 0 | |
-| platform chat oturumu (kurulan) | 0 | |
-| chat denemesi (5xx, oturum kurulamadı) | 5 | build içi 2, recheck 1, yoklama 2 |
-| ek model çağrısı | 1 | SDK erişim kontrolü |
-| Freya dry-run (doğrulama, kayıt yok) | 2 | yeniden üretilen A ve A+B |
+| builder run (uçtan uca) | 4 / 4 | cl-a v1, cl-ab v1, cl-a v2, cl-ab v2 (her biri 1 Opus çağrısı) |
+| simüle müşteri koşusu | 0 (+9 çalışıyor) | |
+| platform chat oturumu | 4 / 4 | yoklama 02:09, C2 1. deneme (502), C3, C2 |
+| release kontrol chat'leri | build içi 2 başarısız (503/502) + recheck 4 + v2 build içi 4 | release sürecinin parçası |
+| chat yoklaması (5xx, oturum kurulamadı) | 2 | 01:50 cmp-a 503, 01:53 cl-a 502 |
+| ek model çağrısı | 1 | SDK erişim kontrolü (toplam Opus: 5) |
+| Freya dry-run | 2 | |
 
 ## Açıklar
 - Kaynak kimliği 84894192a420329c yeniden üretilemiyor.
