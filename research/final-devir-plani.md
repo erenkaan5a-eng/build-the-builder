@@ -32,3 +32,6 @@ kullandığını gösterir; `make_submission.py` seçilen aday + trace + mock UR
    export/trace/oturum günlükleri HEAD'de commit'li, gizli değer yok, mock_url koşununkiyle aynı.
 3. `submission.json`, `submission/final.workflow.json`, `submission/final.trace-bundle.zip` commit + push.
 4. Kullanıcı bu üç dosyayı 23.00'ten önce yavuz@freyavoice.ai adresine kendisi gönderir.
+
+## Kontrol kaydı
+- 21.06 İstanbul (18:06Z): Drive bağlayıcısı: "Build the Builder - Final Case" klasörünün modifiedTime'ı 17:21:15Z; r3 ZIP'i 17:56:43Z'de dışa aktarıldı → klasörün kendisi o zamandan beri değişmedi. Bağlayıcı alt dosyaları listeleyemiyor; alt klasördeki bir dosya değişikliği klasör zamanına yansımayabilir, bu yüzden kesin değil. Yeni yükleme yok (son yükleme ZIP 17:57:40Z). E-posta ve site: buradan erişim yok, kontrolü kullanıcıda.
