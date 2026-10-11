@@ -1,0 +1,58 @@
+{
+ "path": "fallback",
+ "slot": "final-r3-20261011-2058",
+ "build_seconds": 1415,
+ "model_calls": 48,
+ "trace": "/home/user/build-the-builder/traces/final-r3-20261011-2058-20261011-184634.log",
+ "known_gaps": [
+  "Hesap kesim tarihinin \"y\u0131lda bir kez\" hakk\u0131n\u0131n \u00f6nceden bilinmesi - Bunu g\u00f6steren bir alan yok. Hafta de\u011fi\u015fikli\u011fi her zaman teklif ediliyor. `decide` veya `change` s\u0131f\u0131rdan farkl\u0131 `responseCode` d\u00f6nerse m\u00fc\u015fteri \"Hesap kesim tarihinizi \u015fu anda de\u011fi\u015ftiremiyorum.\" c\u00fcmlesiyle ana men\u00fcye gidiyor; bu c\u00fcmle brief'te yok, ben ekledim.",
+  "`contact.email.get` hatas\u0131 - Brief'e g\u00f6re m\u00fc\u015fteri temsilcisine aktar\u0131lmas\u0131 gerekir. Bende hata \"kay\u0131tl\u0131 e-posta yok\" gibi ele al\u0131n\u0131yor; yaln\u0131zca hafta de\u011fi\u015fikli\u011fi teklif ediliyor.",
+  "Yabanc\u0131 para `transferAmount` c\u00fcmlesi - Brief'te bu c\u00fcmle \"TBD\" oldu\u011fu i\u00e7in eklemedim.",
+  "Otomatik \u00f6deme c\u00fcmlesi, TL d\u0131\u015f\u0131ndaki para birimlerinin \"bulunmamaktad\u0131r\" c\u00fcmlesinde yer al\u0131p almayaca\u011f\u0131 ve `pdf.send`'in `currencyType` se\u00e7imi - Brief'te \"TBD\" veya belirsiz. Otomatik \u00f6deme c\u00fcmlesini ve \"bulunmamaktad\u0131r\" c\u00fcmlesini ben kurdum; `currencyType` olarak borcu olan ilk para birimini (yoksa TL) g\u00f6nderiyorum.",
+  "\"Sadece tek tutar\u0131 s\u00f6yle\", \"bor\u00e7 ve e-postay\u0131 ayn\u0131 c\u00fcmlede ver\", okuma s\u0131ras\u0131nda araya girme k\u0131sayollar\u0131 - Uygulanmad\u0131.",
+  "Kart ayr\u0131m\u0131nda \"son alt\u0131 hane\" - Test verisi maskeli (ilk 6 + son 4) oldu\u011fu i\u00e7in son alt\u0131 hane ay\u0131rt edemiyor. Sistem son d\u00f6rt haneye, ard\u0131ndan tam numaraya d\u00fc\u015f\u00fcyor.",
+  "3 ba\u015far\u0131s\u0131z deneme, sessizlik (3. kez) ve k\u0131zg\u0131n m\u00fc\u015fteri (3 sakinle\u015ftirme) saya\u00e7lar\u0131 - Kod ile say\u0131lm\u0131yor, `matches_intent` ile modele b\u0131rak\u0131ld\u0131. Yaln\u0131zca kart se\u00e7imindeki deneme sayac\u0131 kodla say\u0131l\u0131yor.",
+  "\"Hesap kesim tarihinizi y\u0131lda bir kez de\u011fi\u015ftirebilirsiniz.\" c\u00fcmlesi - Brief'te iste\u011fe ba\u011fl\u0131 oldu\u011fu i\u00e7in atland\u0131.",
+  "Kesim g\u00fcn\u00fc (`nextStatementDate` bug\u00fcn) ve yeni kart durumlar\u0131nda teklif - Brief'te net de\u011fil, bu iki durumda teklif yapm\u0131yorum.",
+  "Ana men\u00fc ve temsilci aktar\u0131m\u0131 - Tool API'de aktarma arac\u0131 yok. Her biri ayr\u0131 `end_call` d\u00fc\u011f\u00fcm\u00fc ve ayr\u0131 `function.name` olarak modellendi.",
+  "\u0130stek g\u00f6vdesinin i\u00e7 i\u00e7e `data`/`call` yap\u0131s\u0131 - Dok\u00fcmanda yaln\u0131zca d\u00fcz alanlar \u00f6rneklenmi\u015f. Hem i\u00e7 i\u00e7e `default` hem de `pre_process_code` ile g\u00f6vdeyi `vars`'tan kuran bir yedek koydum. Motorun hangisini kulland\u0131\u011f\u0131 hen\u00fcz do\u011frulanmad\u0131.",
+  "Yan\u0131t anahtar yollar\u0131 (`<node>_response.data.<alan>` ile `...data.data.<alan>`) - \u0130kisini de deniyorum; hangisinin kullan\u0131ld\u0131\u011f\u0131 canl\u0131 testte do\u011frulanmal\u0131.",
+  "coverage not fully assessed: the fallback path reports only the gaps its agent noticed"
+ ],
+ "inputs": {
+  "brief_arg": "final/package/r3-20261011-2058",
+  "tool_api_arg": "https://bank-mock-final.erenkaan5a.workers.dev",
+  "case_files": 19,
+  "contract_derived": true,
+  "mock_url": "https://bank-mock-final.erenkaan5a.workers.dev",
+  "contract": "/home/user/build-the-builder/candidates/final-r3-20261011-2058/20261011-184634/contract.derived.json",
+  "contract_sha256_16": "2d2c07eddb2826ff"
+ },
+ "input_problems": [],
+ "argv": [
+  "final/package/r3-20261011-2058",
+  "https://bank-mock-final.erenkaan5a.workers.dev",
+  "--slot",
+  "final-r3-20261011-2058"
+ ],
+ "sessions": "/home/user/build-the-builder/traces/final-r3-20261011-2058-20261011-184634.sessions",
+ "release_checks_passed": false,
+ "policy_correctness": "not measured by the build",
+ "lint_problems": 0,
+ "workflow_id": "6d079c07-c690-40f5-9692-3e16c0389aea",
+ "agent_id": "67005014-5987-4a80-9f9b-9858b578819c",
+ "version_number": 1,
+ "version_id": "b1dde287-046c-4395-b437-478e9e540734",
+ "is_published": true,
+ "tested_hash": "16df802a3766a667",
+ "checks": [
+  [
+   "behaviour test ran",
+   false
+  ]
+ ],
+ "exported_hash": "16df802a3766a667",
+ "nodes": 42,
+ "global_nodes": 0,
+ "tool_functions": 20
+}
