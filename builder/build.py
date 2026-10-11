@@ -8,7 +8,7 @@ Main path: one Claude call extracts policy.json from the brief and tool API; fix
 One wall-clock budget covers everything, including the final sequence validate -> publish -> test that version -> export.
 Every run writes a candidate folder candidates/<slot>/<time>/; --out is written only when the release checks pass.
 """
-import argparse, asyncio, json, os, pathlib, re, shutil, sys, time
+import argparse, asyncio, hashlib, json, os, pathlib, re, shutil, sys, time
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import common  # noqa: E402  (loads env.sh, imports freya)
@@ -22,17 +22,38 @@ EXTRACT_MODEL = os.environ.get("EXTRACT_MODEL", "claude-opus-5-5")
 AGENT_GAPS = []               # "GAP:" lines the fallback agent reported
 
 
+def sha(path):
+    return hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest()
+
+
 # ------------------------------------------------------------------ main path
-def run_main(brief, tool_api, cand, budget, trace):
+def run_main(brief, tool_api, cand, budget, trace, reuse_policy=None):
     ts = toolspec.load(tool_api)
     text = pathlib.Path(brief).read_text(encoding="utf-8")
+    inputs = {"brief": str(brief), "brief_sha256": sha(brief), "tool_api": str(tool_api), "tool_api_sha256": sha(tool_api)}
+    (cand / "inputs.json").write_text(json.dumps(inputs, indent=1), encoding="utf-8")
     left = budget.left() - RESERVE_S
     if left < 180:
         raise RuntimeError("not enough budget for the main path")
-    pol = spec_extract.extract(text, toolspec.summary(ts), EXTRACT_MODEL, trace, timeout_s=min(left, 900))
+    if reuse_policy:
+        # development only: the policy of an earlier traced run of the same inputs, no model call (e.g. that run failed
+        # on a platform error after its extraction). The final runs extract.
+        src = pathlib.Path(reuse_policy)
+        rec = src.parent / "inputs.json"
+        if rec.exists():
+            old = json.loads(rec.read_text(encoding="utf-8"))
+            if (old.get("brief_sha256"), old.get("tool_api_sha256")) != (inputs["brief_sha256"], inputs["tool_api_sha256"]):
+                raise RuntimeError(f"reused policy {src} was extracted from other inputs")
+            trace.log("MAIN", f"policy reused from {src} (sha256 {sha(src)[:16]}); inputs match the recorded hashes; no model call")
+        else:
+            trace.log("MAIN", f"policy reused from {src} (sha256 {sha(src)[:16]}); that run recorded no input hashes (brief sha256 now "
+                              f"{inputs['brief_sha256'][:16]}, API {inputs['tool_api_sha256'][:16]}); no model call")
+        pol = json.loads(src.read_text(encoding="utf-8"))
+    else:
+        pol = spec_extract.extract(text, toolspec.summary(ts), EXTRACT_MODEL, trace, timeout_s=min(left, 900))
     (cand / "policy.raw.json").write_text(json.dumps(pol, indent=1), encoding="utf-8")
     probs = spec_extract.validate(pol, ts)
-    if probs and budget.left() - RESERVE_S > 180:
+    if probs and not reuse_policy and budget.left() - RESERVE_S > 180:
         trace.log("MAIN", f"policy validation: {len(probs)} problem(s); one bounded repair call")
         for p in probs:
             trace.log("MAIN", "  " + p)
@@ -111,7 +132,7 @@ def _retry_5xx(fn, budget, trace, waits=(30, 90, 180)):
         if w:
             if budget.left() - w < 120:
                 break
-            trace.log("TEST", f"platform 5xx on the chat API ({str(last)[:90]}); waiting {w}s, retry {i} of {len(waits)}")
+            trace.log("TEST", f"platform 5xx ({str(last)[:90]}); waiting {w}s, retry {i} of {len(waits)}")
             time.sleep(w)
         try:
             return fn()
@@ -132,7 +153,8 @@ def final_sequence(slot, wf_path, tool_api, cand, budget, trace, pol=None, pract
     probs = [p for p in allp if not p.startswith("warn:")]
     if not probs:
         try:
-            common.freya.validate_workflow(f"{slot} dry run", wf)
+            # a dry run writes nothing, so a platform 5xx is retried within the shared budget (11 Oct: one 504)
+            _retry_5xx(lambda: common.freya.validate_workflow(f"{slot} dry run", wf), budget, trace)
         except Exception as e:
             probs.append("Freya dry-run: " + str(e)[:800])
     for p in probs:
@@ -185,6 +207,7 @@ def main():
     ap.add_argument("brief"); ap.add_argument("tool_api")
     ap.add_argument("--slot"); ap.add_argument("--out"); ap.add_argument("--mode", default="auto", choices=["auto", "main", "fallback"])
     ap.add_argument("--budget-min", type=float, default=30); ap.add_argument("--practice")
+    ap.add_argument("--reuse-policy", help="development only: policy.json of an earlier traced run of the same brief and API (no model call)")
     ap.add_argument("--local-only", action="store_true", help="extract and generate, run the local lint, write the candidate; no Freya call at all")
     a = ap.parse_args()
     slot = a.slot or pathlib.Path(a.brief).stem
@@ -197,7 +220,7 @@ def main():
     wf_path, path_used, pol, gaps = None, None, None, []
     if a.mode in ("auto", "main"):
         try:
-            wf_path, pol, gaps = run_main(a.brief, a.tool_api, cand, budget, trace)
+            wf_path, pol, gaps = run_main(a.brief, a.tool_api, cand, budget, trace, reuse_policy=a.reuse_policy)
             path_used = "main"
         except Exception as e:
             trace.log("MAIN", f"main path failed: {e}"[:900])
