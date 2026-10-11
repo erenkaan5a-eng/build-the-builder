@@ -1,0 +1,9 @@
+2026-10-11T13:34:08+0000 [START] slot=loc-a brief=briefs/brief-a.md tool_api=tools/openapi.json mode=main budget_min=30 candidate=/home/user/build-the-builder/candidates/loc-a/20261011-133408
+2026-10-11T13:34:08+0000 [START] credentials: FREYA_API_KEY absent, FREYA_BANK_TEAM_KEY absent, cloud proxy mode on: Freya Authorization left to the proxy; bank x-team-key left to the proxy
+2026-10-11T13:34:08+0000 [MAIN] policy reused from candidates/loc-a/20261011-134621/policy.json (sha256 94052fc390b50e43); that run recorded no input hashes (brief sha256 now d57c049c89aec461, API 9a8410b12e5c82b6); no model call
+2026-10-11T13:34:12+0000 [FREYA] published workflow 23150a3a-fead-4c51-9ad2-2c142b0837f1 version 3 (0061fa29-c449-4dc6-80b5-d9bec1d32a20)
+2026-10-11T13:34:12+0000 [TEST] testing published version 3 hash 1b567c6fe1f24904
+2026-10-11T13:34:26+0000 [TEST] behaviour[PASS] opening line spoken :: Hello, I am a digital assistant calling from Freya Bank, and we record this call. Am I speaking with Mr Reyes? (chat 14f6c19b-bfbd-4bd8-b891-dfcf71b22fe3)
+2026-10-11T13:34:26+0000 [TEST] behaviour[PASS] identity stage entered after confirmation :: opening > identity > identity > id_send > id_verify > id_result > id_send > id_verify > id_result > id_consume > id_relay (chat 14f6c19b-bfbd-4bd8-b891-dfcf71b22fe3)
+2026-10-11T13:34:26+0000 [TEST] behaviour[PASS] first security answer reaches verify_identity with the right field :: {"field": "date_of_birth", "answer": "1988-03-14", "customer_id": "c_behaviour_check"} (chat 14f6c19b-bfbd-4bd8-b891-dfcf71b22fe3)
+2026-10-11T13:34:26+0000 [TEST] behaviour[PASS] no account or write call before verification ::  (chat 14f6c19b-bfbd-4bd8-b891-dfcf71b22fe3)
