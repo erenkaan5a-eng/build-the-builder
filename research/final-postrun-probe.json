@@ -1,0 +1,15 @@
+{
+ "workflow_id": "6d079c07-c690-40f5-9692-3e16c0389aea",
+ "variables": {
+  "customerNumber": "95004361",
+  "now": "2026-10-12T10:30:00+03:00"
+ },
+ "turns": [
+  {
+   "user": "Merhaba",
+   "error": "POST /api/v2/chat/message -> 504: error code: 504\n",
+   "s": 13
+  }
+ ],
+ "note": "post-run probe, outside the build run; example-scenarios Example 1 customer"
+}

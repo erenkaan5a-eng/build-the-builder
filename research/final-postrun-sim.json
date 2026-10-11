@@ -1,0 +1,58 @@
+{
+ "simulation": "1ffe05dc-ca99-4229-a648-546e4d219995",
+ "iteration": "8b267958-8081-493c-b519-3044b481bce9",
+ "status": "completed",
+ "elapsed_s": 23,
+ "runs": [
+  {
+   "run": "dde659e4-06a8-41b5-8f4e-4bc1c8ea2d6b",
+   "callId": "3a68fdcd-68b1-45be-93d2-f3e846b9f1e1",
+   "status": null,
+   "passed": null,
+   "analysis": "",
+   "transcript": [
+    [
+     "assistant",
+     "Bilgilerinizi kontrol ediyorum."
+    ],
+    [
+     "assistant",
+     "Bilgilerinizi kontrol ediyorum."
+    ],
+    [
+     "assistant",
+     "Sonu iki sıfır sıfır sıfır ile biten Yıldız Premium kartınıza ait 5 Ekim 2026 tarihinde kesilen ekstre Türk Lirası borcunuz on iki bin Türk Lirası, ödenmesi gereken minimum tutar dört bin sekiz yüz Türk Lirası, kalan toplam borcunuz dokuz bin beş yüz Türk Lirası, kalan minimum ödeme tutarınız iki bi"
+    ],
+    [
+     "user",
+     "Tamamdır, bilgiler için teşekkür ederim. Hayır teşekkürler, başka bir işlem yapmama gerek yok. İyi günler."
+    ],
+    [
+     "assistant",
+     "Sizi ana menüye yönlendiriyorum."
+    ]
+   ],
+   "tool_events": [
+    "{\"event\":\"function_call_start\",\"function\":\"code_exec\",\"args\":{\"timeout_ms\":10000,\"code\":\"\\nimport json, re, datetime\\ndef V(k, d=''):\\n    x = vars.get(k)\\n    return d if x is None else x\\ndef G(pfx,",
+    "{\"event\":\"function_call_complete\",\"function\":\"code_exec\",\"result\":{\"status\":\"success\",\"data\":null,\"message\":\"Code executed successfully\",\"status_code\":200,\"validation_errors\":[\"variable 'next_action' ",
+    "{\"event\":\"function_call_start\",\"function\":\"api_call\",\"args\":{\"url\":\"https://bank-mock-final.erenkaan5a.workers.dev/voice/v1/cards.list\",\"method\":\"POST\",\"headers\":{\"Content-Type\":\"application/json\"},\"b",
+    "{\"event\":\"function_call_complete\",\"function\":\"api_call\",\"result\":{\"status\":\"success\",\"data\":{\"data\":{\"cards\":[{\"cardNumber\":\"540000******2000\",\"cardNumberLast4\":\"2000\",\"productName\":\"Yıldız Premium\",\"",
+    "{\"event\":\"function_call_start\",\"function\":\"code_exec\",\"args\":{\"timeout_ms\":10000,\"code\":\"\\nimport json, re, datetime\\ndef V(k, d=''):\\n    x = vars.get(k)\\n    return d if x is None else x\\ndef G(pfx,",
+    "{\"event\":\"function_call_complete\",\"function\":\"code_exec\",\"result\":{\"status\":\"success\",\"data\":null,\"message\":\"Code executed successfully\",\"status_code\":200}}",
+    "{\"event\":\"function_call_start\",\"function\":\"code_exec\",\"args\":{\"timeout_ms\":10000,\"code\":\"\\nimport json, re, datetime\\ndef V(k, d=''):\\n    x = vars.get(k)\\n    return d if x is None else x\\ndef G(pfx,",
+    "{\"event\":\"function_call_complete\",\"function\":\"code_exec\",\"result\":{\"status\":\"success\",\"data\":null,\"message\":\"Code executed successfully\",\"status_code\":200,\"validation_errors\":[\"variable 'next_action' ",
+    "{\"event\":\"function_call_start\",\"function\":\"api_call\",\"args\":{\"url\":\"https://bank-mock-final.erenkaan5a.workers.dev/voice/v1/cards.balance\",\"method\":\"POST\",\"headers\":{\"Content-Type\":\"application/json\"}",
+    "{\"event\":\"function_call_complete\",\"function\":\"api_call\",\"result\":{\"status\":\"success\",\"data\":{\"data\":{\"cardNumber\":\"5400********2000\",\"cardNumberLast4\":\"2000\",\"productName\":\"Yıldız Premium\",\"statementD",
+    "{\"event\":\"function_call_start\",\"function\":\"code_exec\",\"args\":{\"timeout_ms\":10000,\"code\":\"\\nimport json, re, datetime\\ndef V(k, d=''):\\n    x = vars.get(k)\\n    return d if x is None else x\\ndef G(pfx,",
+    "{\"event\":\"function_call_complete\",\"function\":\"code_exec\",\"result\":{\"status\":\"success\",\"data\":null,\"message\":\"Code executed successfully\",\"status_code\":200}}",
+    "{\"event\":\"function_call_start\",\"function\":\"api_call\",\"args\":{\"url\":\"https://bank-mock-final.erenkaan5a.workers.dev/voice/v1/contact.email.get\",\"method\":\"POST\",\"headers\":{\"Content-Type\":\"application/js",
+    "{\"event\":\"function_call_complete\",\"function\":\"api_call\",\"result\":{\"status\":\"success\",\"data\":{\"data\":{\"communicationType\":\"Both\",\"ibanCountryCode\":\"90\",\"ibanAreaCode\":\"500\",\"ibanPhoneNum\":\"0000000\",\"ib",
+    "{\"event\":\"function_call_start\",\"function\":\"code_exec\",\"args\":{\"timeout_ms\":10000,\"code\":\"\\nimport json, re, datetime\\ndef V(k, d=''):\\n    x = vars.get(k)\\n    return d if x is None else x\\ndef G(pfx,",
+    "{\"event\":\"function_call_complete\",\"function\":\"code_exec\",\"result\":{\"status\":\"success\",\"data\":null,\"message\":\"Code executed successfully\",\"status_code\":200,\"validation_errors\":[\"variable 'next_action' ",
+    "{\"event\":\"function_call_start\",\"function\":\"end_call\",\"args\":{\"message_mode\":\"custom\",\"spoken_message\":\"Sizi ana menüye yönlendiriyorum.\"}}",
+    "{\"event\":\"function_call_complete_deferred\",\"function\":\"end_call\",\"result\":null,\"deferred\":true}",
+    "{\"event\":\"function_call_complete\",\"function\":\"end_call\",\"result\":{\"status\":\"success\",\"message\":\"Call ended\"}}"
+   ]
+  }
+ ]
+}
