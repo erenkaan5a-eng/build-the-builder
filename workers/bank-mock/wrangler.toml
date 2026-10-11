@@ -1,4 +1,4 @@
-# Final bank mock. Deploy: npx wrangler@3 deploy (needs a Cloudflare login or CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID
+# Final bank mock. Deploy: scripts/deploy_mock.sh (npx wrangler@3.114.17 deploy) (needs a Cloudflare login or CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID
 # in the environment; never in this file). Free plan: SQLite-backed Durable Objects.
 name = "bank-mock-final"
 main = "src/index.js"

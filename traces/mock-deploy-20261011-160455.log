@@ -1,0 +1,51 @@
+2026-10-11T16:04:55Z START mock deploy (dry_run=1) commit 152ec15144d1b700ad976222a7ff701a2518c588
+2026-10-11T16:04:55Z contract sha256 5f336856bb848ae5, customers sha256 37517e5f3dc66819
+TAP version 13
+# Subtest: operations are read from the contract
+ok 1 - operations are read from the contract
+  ---
+  duration_ms: 3.202335
+  type: 'test'
+  ...
+# Subtest: validation: required, enum, type, minimum, date format
+ok 2 - validation: required, enum, type, minimum, date format
+  ---
+  duration_ms: 0.750396
+  type: 'test'
+  ...
+# Subtest: unknown route 404, invalid body 400 (recorded), no handler 501: never a blanket success
+ok 3 - unknown route 404, invalid body 400 (recorded), no handler 501: never a blanket success
+  ---
+  duration_ms: 2.132765
+  type: 'test'
+  ...
+# Subtest: a handler sees the customer's stored state and test customer; every call is recorded
+ok 4 - a handler sees the customer's stored state and test customer; every call is recorded
+  ---
+  duration_ms: 0.504964
+  type: 'test'
+  ...
+# Subtest: contract schemas behind $ref are validated like inline ones; a cycle does not loop
+ok 5 - contract schemas behind $ref are validated like inline ones; a cycle does not loop
+  ---
+  duration_ms: 0.525742
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 100.874772
+2026-10-11T16:04:55Z tests: pass
+2026-10-11T16:04:55Z operations without a handler (answer 501): (the contract has no operations)
+2026-10-11T16:04:55Z CLOUDFLARE_API_TOKEN: absent
+2026-10-11T16:04:55Z CLOUDFLARE_ACCOUNT_ID: absent
+  Please update to the latest version to prevent critical errors.
+Total Upload: 6.62 KiB / gzip: 2.38 KiB
+Your worker has access to the following bindings:
+  - CUSTOMER_STATE: CustomerState
+2026-10-11T16:04:57Z END dry run: bundled into /tmp/tmp.AvGC9vnJDb, nothing deployed

@@ -20,8 +20,15 @@ then reads the same contract and binds the agent's tools to this mock's URL.
 4. Node tests per handler from the contract's examples before deploying.
 
 ## Deploy (needs your Cloudflare access; nothing secret goes into this repository)
-- The cloud session's network policy must allow `api.cloudflare.com` (and the package registry for `npx wrangler`).
-- Login: `npx wrangler@3 login` (browser) or the environment variables `CLOUDFLARE_API_TOKEN` and
-  `CLOUDFLARE_ACCOUNT_ID` set in the environment's secret settings — never in a file or the chat.
-- `cd workers/bank-mock && npx wrangler@3 deploy` → prints the `https://<name>.<subdomain>.workers.dev` URL = `mock_url`.
-- Keep it deployed until the results are announced. Free plan only; no paid service.
+- One command: `scripts/deploy_mock.sh` (offline tests -> every contract operation has a handler -> credentials present?
+  -> `wrangler@3.114.17 deploy` -> smoke request (unknown route must be 404) -> `traces/mock-deploy-<time>.{log,json}`
+  with mock_url, commit and contract/customers hashes). `--dry-run` bundles only (checked 11 Oct: 6.6 KiB, Durable
+  Object binding present). The placeholder contract (no operations) is refused.
+- Checked locally with `wrangler dev` and a synthetic contract (scratch copy, not committed): per-customer state kept
+  across requests, schema violation -> 400, unknown route -> 404.
+- Access, option A (this cloud session): the environment's network policy must allow `api.cloudflare.com`; a Workers
+  API token (Cloudflare template "Edit Cloudflare Workers") and the account id set as `CLOUDFLARE_API_TOKEN` and
+  `CLOUDFLARE_ACCOUNT_ID` in the environment's secret settings. Environment secrets reach a NEW session, not this one.
+- Access, option B (your machine): `git pull`, `cd workers/bank-mock && npx wrangler@3.114.17 login && cd ../.. &&
+  scripts/deploy_mock.sh`; then commit the `traces/mock-deploy-*.json` record.
+- Never put a token in a file or the chat. Keep the mock deployed until the results are announced. Free plan only.
