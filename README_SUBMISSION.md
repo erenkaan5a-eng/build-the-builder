@@ -12,6 +12,14 @@
 - `cp env.example env.sh` and fill `FREYA_API_KEY` and `FREYA_BANK_TEAM_KEY` (ASCII only). `env.sh` is read by the builder itself and is git-ignored.
 - Cloud session whose proxy injects the credentials (Network secrets: `Authorization: Bearer` for staging-app.freyavoice.ai, `x-team-key` for freya-bank-mock.freyavoice.workers.dev): set `FREYA_AUTH_VIA_PROXY=1` and leave the two keys unset. The builder and `tools/run_cases_cloud.py` then send those requests without the header and the proxy adds it (`tools/cloud_proxy.py`; the kit's `freya.py` and `tools/score.py` are not modified). Without the variable nothing changes. The trace logs only whether each key is set.
 
+## Final form (case folder + mock URL)
+```
+scripts/run_final.sh <case_folder> <mock_url> [--contract FILE]
+# = python3 builder/build.py <case_folder> <mock_url> --slot final-<folder> with set -o pipefail and a timestamped terminal log
+python3 scripts/make_submission.py candidates/final-<folder>/<time> --team "<team>" --member "<name>" --repo <url> --mock-url <mock_url>
+```
+See research/final-hazirlik.md (what is ready, missing, and needs access) and workers/bank-mock/README.md.
+
 ## Single entry point
 ```
 python3 builder/build.py {brief_path} {tool_api_path} --out submission/hidden-N.workflow.json 2>&1 | tee traces/hidden-N.log

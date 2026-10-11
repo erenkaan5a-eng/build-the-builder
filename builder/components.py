@@ -16,6 +16,8 @@ import negotiation as NG  # noqa: E402
 import identity as ID  # noqa: E402
 
 MAX_TURNS = 40
+# operations the fixed components call by name (add_note only when the brief uses notes); build.py checks the contract first
+REQUIRED_OPS = ["verify_identity", "get_account", "create_promise", "schedule_callback", "transfer_to_agent", "close_call"]
 
 
 def embed(code, cfg):

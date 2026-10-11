@@ -86,6 +86,11 @@ def run_main(brief, tool_api, cand, budget, trace, reuse_policy=None):
         raise RuntimeError("structural rules the generator cannot express: " + "; ".join(r.get("text", "")[:120] for r in structural))
     for a in pol.get("amendments") or []:
         trace.log("POLICY", f"amendment: {a.get('change')} | scope {a.get('scope')} | replaces {a.get('replaces')}")
+    need = sorted(set(components.REQUIRED_OPS) - set(ts["ops"]))
+    if need:
+        # the fixed components are written for these operations; a contract without them goes to the fallback path visibly
+        raise RuntimeError("the service contract lacks operations the fixed components use: " + ", ".join(need)
+                           + " (contract has: " + ", ".join(sorted(ts["ops"])) + ")")
     wf = components.build(pol, ts)
     path = cand / "workflow.json"
     path.write_text(json.dumps(wf, indent=1), encoding="utf-8")
