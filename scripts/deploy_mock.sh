@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Deploy the final bank mock (workers/bank-mock) to Cloudflare Workers and record its URL (= mock_url).
-#   scripts/deploy_mock.sh [--dry-run] [--allow-missing-handlers]
+#   scripts/deploy_mock.sh [--dry-run]
 # Needs (deploy only): network access to api.cloudflare.com and either CLOUDFLARE_API_TOKEN (+ CLOUDFLARE_ACCOUNT_ID)
 # in the environment or an earlier `npx wrangler login`. Nothing secret is printed or written: presence only.
 # Free plan only (Workers + SQLite Durable Objects). Every run writes its own traces/mock-deploy-<time>.{log,json}.
@@ -33,24 +33,19 @@ say "shell $(uname -s), node $(node --version)"
 if [ -n "$(git -C "$ROOT" status --porcelain -- workers/bank-mock)" ]; then
   say "NOTE workers/bank-mock has uncommitted changes: commit them so the deployed mock is reproducible"
 fi
-say "contract sha256 $(sha16 "$W/contract.json"), customers sha256 $(sha16 "$W/customers.json")"
+say "test data sha256 $(sha16 "$W/data/test-customers.json") (the final package's test-environment/test-customers.json, bundled in the Worker)"
 
 # 1. offline tests of the generic core and of the handlers
 node --test "$W"/test/*.test.mjs 2>&1 | tee -a "$log" | grep -E "^# (pass|fail)" || true
 if node --test "$W"/test/*.test.mjs > /dev/null 2>&1; then say "tests: pass"; else say "tests: FAIL (see above)"; exit 1; fi
 
-# 2. every contract operation has a handler (else it answers 501), and the contract has operations at all
-missing="$(cd "$W" && node --input-type=module -e '
-import { readFileSync } from "node:fs";
-import { opsOf } from "./src/core.js";
-import { handlers } from "./src/handlers.js";
-const ops = Object.values(opsOf(JSON.parse(readFileSync("contract.json", "utf8"))));
-if (!ops.length) { console.log("(the contract has no operations)"); process.exit(0); }
-console.log(ops.filter((o) => !handlers[o.name]).map((o) => o.name).join(" "));
-')"
-if [ -n "$missing" ]; then
-  say "operations without a handler (answer 501): $missing"
-  [ "$ALLOW" = 1 ] || { say "STOP: write their handlers first (or --allow-missing-handlers)"; exit 1; }
+# 2. the bundled test data is byte-identical to the current package receipt's test-environment/test-customers.json
+cur="$(sed -n 's/.*`\(r[0-9]*-[0-9-]*\)\/`.*/\1/p' "$ROOT/final/package/CURRENT.md" | head -1)"
+pkgdata="$ROOT/final/package/$cur/test-environment/test-customers.json"
+if [ -n "$cur" ] && [ -f "$pkgdata" ]; then
+  if cmp -s "$pkgdata" "$W/data/test-customers.json"; then say "test data = package $cur (byte-identical)"; else say "STOP: bundled test data differs from package $cur"; exit 1; fi
+else
+  say "NOTE no current package receipt with test data found; bundled data not compared"
 fi
 
 # 3. credentials: presence only
@@ -61,7 +56,7 @@ done
 export WRANGLER_SEND_METRICS=false
 if [ "$DRY" = 1 ]; then
   out="$(mktemp -d)"
-  (cd "$W" && npx --yes "$WRANGLER" deploy --dry-run --outdir "$out") 2>&1 | grep -E "Total Upload|bindings|CUSTOMER_STATE|error|ERROR" | tee -a "$log" || true
+  (cd "$W" && npx --yes "$WRANGLER" deploy --dry-run --outdir "$out") 2>&1 | grep -E "Total Upload|bindings|error|ERROR" | tee -a "$log" || true
   say "END dry run: bundled into $out, nothing deployed"
   exit 0
 fi
@@ -75,12 +70,16 @@ set -e
 url="$(grep -oE 'https://[A-Za-z0-9.-]+\.workers\.dev' "$log" | tail -1 || true)"
 [ -n "$url" ] || { say "END deployed, but no workers.dev URL in the output: read it from the Cloudflare dashboard"; exit 1; }
 
-# 5. smoke: an unknown route must be a 404 JSON answer from this mock (not a blanket success)
-code="$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$url/__no_such_operation__" -H 'content-type: application/json' -d '{}' || true)"
-say "smoke: POST $url/__no_such_operation__ -> $code (expected 404)"
+# 5. every stored answer over the deployed URL (same status, same body), not-found/invalid cases, health, unknown path
+set +e
+node "$W/scripts/verify.mjs" "$url" 2>&1 | tee -a "$log"
+vrc=${PIPESTATUS[0]}
+set -e
+verdict="$([ "$vrc" = 0 ] && echo pass || echo FAIL)"
+say "verify against $url: $verdict"
 cat > "${log%.log}.json" <<EOF
 {"mock_url": "$url", "commit": "$(git -C "$ROOT" rev-parse HEAD)", "deployed_at": "$(date -u +%FT%TZ)",
- "contract_sha256_16": "$(sha16 "$W/contract.json")", "customers_sha256_16": "$(sha16 "$W/customers.json")",
- "smoke_unknown_route_status": "$code"}
+ "test_data_sha256_16": "$(sha16 "$W/data/test-customers.json")", "package_receipt": "$cur", "verify": "$verdict"}
 EOF
-say "END mock_url=$url (record: ${log%.log}.json). Keep it deployed until the results are announced."
+say "END mock_url=$url verify=$verdict (record: ${log%.log}.json). Keep it deployed until the results are announced."
+[ "$vrc" = 0 ] || exit 1

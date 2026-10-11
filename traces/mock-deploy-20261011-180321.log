@@ -1,0 +1,100 @@
+2026-10-11T18:03:21Z START mock deploy (dry_run=1) commit cd46561d0eeab7903cadbaf5cdc20224d80b5a6b
+2026-10-11T18:03:21Z shell Linux, node v22.22.0
+2026-10-11T18:03:21Z NOTE workers/bank-mock has uncommitted changes: commit them so the deployed mock is reproducible
+2026-10-11T18:03:21Z test data sha256 d6ce155638f61ab1 (the final package's test-environment/test-customers.json, bundled in the Worker)
+TAP version 13
+# Subtest: operations are read from the contract
+ok 1 - operations are read from the contract
+  ---
+  duration_ms: 2.094611
+  type: 'test'
+  ...
+# Subtest: validation: required, enum, type, minimum, date format
+ok 2 - validation: required, enum, type, minimum, date format
+  ---
+  duration_ms: 0.638825
+  type: 'test'
+  ...
+# Subtest: unknown route 404, invalid body 400 (recorded), no handler 501: never a blanket success
+ok 3 - unknown route 404, invalid body 400 (recorded), no handler 501: never a blanket success
+  ---
+  duration_ms: 1.757068
+  type: 'test'
+  ...
+# Subtest: a handler sees the customer's stored state and test customer; every call is recorded
+ok 4 - a handler sees the customer's stored state and test customer; every call is recorded
+  ---
+  duration_ms: 0.49421
+  type: 'test'
+  ...
+# Subtest: contract schemas behind $ref are validated like inline ones; a cycle does not loop
+ok 5 - contract schemas behind $ref are validated like inline ones; a cycle does not loop
+  ---
+  duration_ms: 0.47574
+  type: 'test'
+  ...
+# Subtest: every stored answer comes back exactly: same status, same body, delay kept out of the body
+ok 6 - every stored answer comes back exactly: same status, same body, delay kept out of the body
+  ---
+  duration_ms: 4.197803
+  type: 'test'
+  ...
+# Subtest: customerNo and newStatementWeek: string and number give the same answer
+ok 7 - customerNo and newStatementWeek: string and number give the same answer
+  ---
+  duration_ms: 0.253208
+  type: 'test'
+  ...
+# Subtest: not in the data: the service's 404 from contract section 4, else 400 INVALID_ARGUMENTS_ERROR; never data
+ok 8 - not in the data: the service's 404 from contract section 4, else 400 INVALID_ARGUMENTS_ERROR; never data
+  ---
+  duration_ms: 5.59999
+  type: 'test'
+  ...
+# Subtest: the card's current week has no preview or change entry: 400, nothing made up
+ok 9 - the card's current week has no preview or change entry: 400, nothing made up
+  ---
+  duration_ms: 2.779943
+  type: 'test'
+  ...
+# Subtest: a card is only found by the masked number exactly as cards.list gave it
+ok 10 - a card is only found by the masked number exactly as cards.list gave it
+  ---
+  duration_ms: 0.276017
+  type: 'test'
+  ...
+# Subtest: required data fields: missing or empty is 400 INVALID_ARGUMENTS_ERROR naming the field; no data object is 400
+ok 11 - required data fields: missing or empty is 400 INVALID_ARGUMENTS_ERROR naming the field; no data object is 400
+  ---
+  duration_ms: 0.434505
+  type: 'test'
+  ...
+# Subtest: the contract's own examples: customer 90000001 card list and section 5.3 customer 92220795 joint statement
+ok 12 - the contract's own examples: customer 90000001 card list and section 5.3 customer 92220795 joint statement
+  ---
+  duration_ms: 0.23195
+  type: 'test'
+  ...
+# Subtest: the one delayed answer keeps its delay (waited by the Worker, not sent)
+ok 13 - the one delayed answer keeps its delay (waited by the Worker, not sent)
+  ---
+  duration_ms: 0.72576
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 112.864857
+2026-10-11T18:03:21Z tests: pass
+2026-10-11T18:03:21Z test data = package r3-20261011-2058 (byte-identical)
+2026-10-11T18:03:21Z CLOUDFLARE_API_TOKEN: absent
+2026-10-11T18:03:21Z CLOUDFLARE_ACCOUNT_ID: absent
+  Please update to the latest version to prevent critical errors.
+Total Upload: 664.09 KiB / gzip: 22.95 KiB
+No bindings found.
+2026-10-11T18:03:23Z END dry run: bundled into /tmp/tmp.Eb0kGYBkGE, nothing deployed

@@ -1,23 +1,23 @@
-# Final bank mock (Cloudflare Workers) — skeleton
+# Final bank mock: Freya Bank statement-debt services (Cloudflare Workers)
 
-Prepared before the final package opens. It holds no final rule, value or name. The final mock is written FROM the
-package's service contract and test customers (a task the organiser asks for separately from the builder); the builder
-then reads the same contract and binds the agent's tools to this mock's URL.
+Our mock of the bank's test environment, written from the final package (receipt `final/package/r3-20261011-2058/`):
+`sources/documents/2026-10-01-service-contract.md` (sections 1-6) and `test-environment/test-customers.md`. It is the
+mock the final asks for; it is not part of the builder.
 
-## What is generic (ready)
-- `src/core.js`: operations read from the contract (`contract.json`); request validation from its schemas (required,
-  type, enum, pattern, date format, min/max); routing; every call recorded in the customer's ledger, including refused
-  (400) and not implemented (501) calls; an unknown route is 404. No blanket success.
-- `src/index.js`: Worker entry; one Durable Object per customer key (consistent read-after-write).
-- `test/core.test.mjs`: `node --test workers/bank-mock/test/core.test.mjs` (4 tests, no network).
-
-## What is written after the package opens (from its documents, not guessed now)
-1. `contract.json` = the package's service contract (OpenAPI JSON). If it is not machine readable, write it from the
-   contract document and keep the source mapping.
-2. `customers.json` = the package's test customers; `config.json` `customer_key_field` = the contract's customer field.
-3. `src/handlers.js`: one handler per operation: checks, state changes, recorded results, the contract's error answers
-   and error injection the test customers describe; the ledger read route the contract or the README defines (and its auth).
-4. Node tests per handler from the contract's examples before deploying.
+- `src/service.js`: the seven services, `POST /voice/v1/<service>` (`cards.list`, `cards.balance`, `statement.week.get`,
+  `statement.week.decide`, `statement.week.change`, `contact.email.get`, `statement.pdf.send`), request envelope
+  `{data, call}`; lookup by `customerNo` / masked `cardNumber` / `cardNumber` + `newStatementWeek` as in test-customers.md;
+  the stored status and body are returned exactly (`delaySeconds` = wait, not sent). Not in the data: the service's 404 from
+  contract section 4, else 400 `INVALID_ARGUMENTS_ERROR`; missing/empty required field: 400 naming it. Nothing made up.
+- `src/index.js`: Worker entry; also `POST /oauth2/token` (section 2; the token is not checked in test) and `GET /health`.
+- `data/test-customers.json`: byte copy of the package's file (checked by the deploy script). Stateless, no storage
+  (the organiser's README pattern: the data table inside the Worker).
+- Tests: `node --test workers/bank-mock/test/statement.test.mjs` (every stored answer replayed, 404/400 cases, string/number
+  equivalence, current week has no preview, masked-number lookup, required fields, contract examples, delay).
+  `node workers/bank-mock/scripts/verify.mjs <url>` replays everything over HTTP (local `wrangler dev`: 617 answers +
+  8 not-found/invalid + health + unknown path, 0 mismatches).
+- `src/core.js`, `src/handlers.js`, `contract.json`, `customers.json`, `config.json`: the pre-final generic skeleton, not
+  used by this Worker.
 
 ## Deploy (needs your Cloudflare access; nothing secret goes into this repository)
 - One command: `scripts/deploy_mock.sh` (offline tests -> every contract operation has a handler -> credentials present?

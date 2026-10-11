@@ -1,13 +1,5 @@
-# Final bank mock. Deploy: scripts/deploy_mock.sh (npx wrangler@3.114.17 deploy) (needs a Cloudflare login or CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID
-# in the environment; never in this file). Free plan: SQLite-backed Durable Objects.
+# Our mock of the Freya Bank statement-debt services (final). Deploy: scripts/deploy_mock.sh (npx wrangler@3.114.17 deploy).
+# Stateless: the test answers are bundled in the Worker (data/test-customers.json); no storage, no secrets. Free plan.
 name = "bank-mock-final"
 main = "src/index.js"
 compatibility_date = "2025-09-01"
-
-[[durable_objects.bindings]]
-name = "CUSTOMER_STATE"
-class_name = "CustomerState"
-
-[[migrations]]
-tag = "v1"
-new_sqlite_classes = ["CustomerState"]
