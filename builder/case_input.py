@@ -14,8 +14,10 @@ listed in errors (visible in the trace); a missing BRIEF.md is an error.
 import csv, hashlib, io, json, pathlib, re, shutil, subprocess, urllib.parse, zipfile
 import xml.etree.ElementTree as ET
 
-TEXT_EXT = {".md", ".markdown", ".txt", ".json", ".yaml", ".yml"}
+TEXT_EXT = {".md", ".markdown", ".txt", ".json", ".yaml", ".yml",
+            ".js", ".mjs", ".cjs", ".ts", ".toml", ".ini", ".cfg", ".sql", ".sh", ".py", ".css", ".log", ".text"}  # code/config as text
 VISUAL_ONLY = "[image: no text can be extracted from this file; open the original to see it]"
+MAX_FILE_CHARS, HEAD_CHARS = 60000, 15000   # one very large file (e.g. a data dump) must not crowd out every other document
 SKIP_NAMES = {".ds_store", "thumbs.db"}
 W = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
 S = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
@@ -249,6 +251,11 @@ def load_case(folder):
             if txt == VISUAL_ONLY:
                 item["visual_only"] = True
                 warnings.append(f"{rel}: image, no text extracted (the original is in the case folder)")
+            if len(txt) > MAX_FILE_CHARS:
+                item["truncated_to"] = HEAD_CHARS
+                warnings.append(f"{rel}: {len(txt)} chars; only the first {HEAD_CHARS} are in the case text (the full file is in the case folder)")
+                txt = (txt[:HEAD_CHARS] + f"\n[... TRUNCATED in this text: the file has {len(txt)} characters; "
+                       f"the full file is {rel} in the case folder ...]")
             parts.append(f"\n===== FILE: {rel} ({item['type']}, sha256 {item['sha256_16']}) =====\n{txt.strip()}\n")
         except Exception as e:
             item["error"] = str(e)[:200]

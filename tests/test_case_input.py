@@ -128,4 +128,11 @@ check("C22 PowerPoint: slide text in slide order", r2["text"].find("[slide 1]") 
 check("C23 an image is a visible warning (visual only), not an error", inv2["diagram.png"].get("visual_only") is True
       and any("diagram.png" in w for w in r2["warnings"]) and not any("diagram.png" in e for e in r2["errors"]), (r2["warnings"], r2["errors"]))
 check("C24 a type without a reader is still a visible error", any(e.startswith("note.msg: unsupported document type") for e in r2["errors"]), r2["errors"])
+
+d3 = pathlib.Path(tempfile.mkdtemp())
+(d3 / "BRIEF.md").write_text("# Görev", encoding="utf-8")
+(d3 / "big.json").write_text("[" + ",".join('{"id": %d}' % i for i in range(20000)) + "]", encoding="utf-8")
+r3 = CI.load_case(d3)
+check("C25 a very large file: only its head is in the case text, with a visible truncation note and warning; no error",
+      "TRUNCATED in this text" in r3["text"] and len(r3["text"]) < CI.MAX_FILE_CHARS and any("big.json" in w for w in r3["warnings"]) and not r3["errors"], r3["warnings"])
 print("FAILURES:", len(FAILS)); sys.exit(1 if FAILS else 0)

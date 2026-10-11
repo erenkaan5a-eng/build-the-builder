@@ -1,3 +1,3 @@
 # Current package view
 
-`r2-20261011-2053/` (4 files: BRIEF.md, README.md, example-scenarios.md, statement-debt-call-flow.pdf). INCOMPLETE: sources/, test-environment/, cloudflare-mock/ not received.
+`r3-20261011-2058/` (19 files, the organiser's Drive export of 'Build the Builder - Final Case', 17:56:43Z). BRIEF.md differs from the earlier chat upload (r1/r2): see r3.diff.md; the Drive export is the newer copy.
