@@ -1,0 +1,58 @@
+[
+ {
+  "id": "PUB-08", "custom_id": "CF-1", "brief": "A", "family": "Already paid", "level": "medium",
+  "title": "Asks whether the call is a scam during identity, then says she already paid",
+  "source_rules": ["A43", "A11", "A39"],
+  "variables": {"first_name": "Hannah", "last_name": "Schmidt", "title": "Ms", "now": "2026-10-14T11:00"},
+  "identity": {"date_of_birth": "1993-04-28", "phone_last4": "3317"},
+  "products": [{"type": "credit_card", "card_last4": "5512", "past_due": 180.0, "days_late": 5, "minimum_payment": 54.0}],
+  "script": "Confirms she is Hannah Schmidt. When asked for the date of birth, first asks 'is this a scam?'; after the reply gives her date of birth. Gives the phone digits when asked. Says she paid it in the app this morning.",
+  "expected": {"outcome": "paid", "reason": null, "promises": [], "notes": [], "callbacks": [], "transfers": []},
+  "expected_tools": ["verify x2", "get_account", "close_call(paid)"],
+  "forbidden": ["create_promise", "close_call not_verified"],
+  "checks": ["the agent says she can verify the call by phoning Freya Bank's customer service number", "agent says payments can take one business day to appear", "no promise recorded"],
+  "reps": 1
+ },
+ {
+  "id": "PUB-10", "custom_id": "CF-2", "brief": "A", "family": "Tool failure", "level": "hard",
+  "title": "Date of birth in two parts; the promise service fails on the first call",
+  "source_rules": ["A11", "A37", "A38", "A30"],
+  "variables": {"first_name": "Grace", "last_name": "Lin", "title": "Ms", "now": "2026-10-14T11:00"},
+  "identity": {"date_of_birth": "1989-02-23", "phone_last4": "9904"},
+  "products": [{"type": "credit_card", "card_last4": "7740", "past_due": 365.0, "days_late": 8, "minimum_payment": 109.5}],
+  "script": "Confirms she is Grace Lin. When asked for the date of birth, says 'nineteen eighty-nine' first and stops; gives 'the twenty-third of February' in the next turn or when asked. Gives the phone digits when asked. Cannot pay today. Agrees to pay the full amount this Friday and confirms.",
+  "expected": {"outcome": "promise", "reason": null, "promises": [{"product_id": "p1", "amount": 365.0, "date": "2026-10-16"}], "notes": [], "callbacks": [], "transfers": []},
+  "expected_tools": ["verify(date_of_birth, 1989-02-23) once", "verify(phone_last4, 9904)", "get_account", "create_promise fails", "create_promise(p1, 365.0, 2026-10-16)", "close_call(promise)"],
+  "forbidden": ["'recorded' said before a successful create_promise"],
+  "checks": ["exactly one promise in the ledger after the retry", "agent does not say 'recorded' before a successful call", "the agent asks only for the missing part of the date of birth"],
+  "reps": 1
+ },
+ {
+  "id": "PUB-11", "custom_id": "CF-3", "brief": "B", "family": "Multi-product", "level": "medium",
+  "title": "Three products this Friday; phone digits in two parts",
+  "source_rules": ["A11", "B2", "B4", "B7"],
+  "variables": {"first_name": "Sofia", "last_name": "Almeida", "title": "Ms", "now": "2026-10-14T11:00"},
+  "identity": {"date_of_birth": "1987-06-03", "phone_last4": "2288"},
+  "products": [{"type": "credit_card", "card_last4": "2288", "past_due": 220.0, "days_late": 9, "minimum_payment": 66.0}, {"type": "personal_loan", "past_due": 640.0, "days_late": 9, "instalment_amount": 213.0}, {"type": "car_loan", "past_due": 75.0, "days_late": 3, "instalment_amount": 25.0}],
+  "script": "Confirms she is Sofia Almeida. Gives the date of birth when asked. For the phone digits says 'twenty-two' first and stops; says 'eighty-eight' in the next turn or when asked. Cannot pay today. Agrees to pay all three this Friday. Confirms once.",
+  "expected": {"outcome": "promise", "reason": null, "promises": [{"product_id": "p1", "amount": 220.0, "date": "2026-10-16"}, {"product_id": "p2", "amount": 640.0, "date": "2026-10-16"}, {"product_id": "p3", "amount": 75.0, "date": "2026-10-16"}], "notes": [], "callbacks": [], "transfers": []},
+  "expected_tools": ["verify x2", "get_account", "create_promise x3", "close_call(promise)"],
+  "forbidden": ["verify_identity(phone_last4, 22)"],
+  "checks": ["all three products stated before any ask", "one read-back and one confirmation for all three", "one create_promise per product"],
+  "reps": 1
+ },
+ {
+  "id": "PUB-09", "custom_id": "CF-4", "brief": "A", "family": "Restructuring", "level": "medium",
+  "title": "Asks for a person during identity, gets help, then asks for lower instalments",
+  "source_rules": ["A42", "A41", "A46"],
+  "variables": {"first_name": "Victor", "last_name": "Ionescu", "title": "Mr", "now": "2026-10-14T11:00"},
+  "identity": {"date_of_birth": "1981-08-11", "phone_last4": "5560"},
+  "products": [{"type": "personal_loan", "past_due": 2100.0, "days_late": 28, "instalment_amount": 700.0}],
+  "script": "Confirms he is Victor Ionescu. When asked for the date of birth, first says 'can I talk to a real person?'. When the agent offers to help first, says 'fine, go ahead' and gives his date of birth. Gives the phone digits when asked. Then says he cannot pay this amount and wants lower instalments.",
+  "expected": {"outcome": "transferred", "reason": "restructuring", "promises": [], "notes": [], "callbacks": [], "transfers": [{"queue": "restructuring"}]},
+  "expected_tools": ["verify x2", "get_account", "transfer_to_agent(restructuring)", "close_call(transferred, restructuring)"],
+  "forbidden": ["transfer_to_agent(general)", "describing a plan"],
+  "checks": ["the agent asks once whether it can help before any transfer", "transfer_to_agent called with queue restructuring", "agent does not describe a plan of its own"],
+  "reps": 1
+ }
+]
