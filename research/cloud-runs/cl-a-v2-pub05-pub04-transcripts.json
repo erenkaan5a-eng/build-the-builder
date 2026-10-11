@@ -1,0 +1,338 @@
+{
+ "PUB-05-rep1": {
+  "call_id": "73c2cd12-ec26-4c9c-b4aa-b2de7d71b467",
+  "msgs": [
+   [
+    "assi",
+    "Hello, I am a digital assistant calling from Freya Bank, and we record this call. Am I speaking with Mr Novak?"
+   ],
+   [
+    "user",
+    "Yes, this is Tomas Novak."
+   ],
+   [
+    "assi",
+    "For security, could you please tell me your date of birth?"
+   ],
+   [
+    "user",
+    "Ninth of September nineteen ninety."
+   ],
+   [
+    "assi",
+    "Thank you. Could you please tell me the last four digits of the phone number on file?"
+   ],
+   [
+    "user",
+    "Eight eight four six."
+   ],
+   [
+    "assi",
+    "Thank you for verifying your identity."
+   ],
+   [
+    "user",
+    "I'm calling because I lost my job last month and"
+   ],
+   [
+    "node",
+    "negotiate"
+   ],
+   [
+    "assi",
+    "I am calling from the collections team about a late payment. Your personal loan has a past-due amount of 780.00, and it is 21 days late. Can you make this payment today?"
+   ],
+   [
+    "user",
+    "I cannot pay anything because I lost my job"
+   ],
+   [
+    "node",
+    "hardship_go"
+   ],
+   [
+    "node",
+    "neg_relay"
+   ],
+   [
+    "assi",
+    "I am very sorry to hear that. Would you like me to connect you with our customer support team?"
+   ],
+   [
+    "user",
+    "No, I don't want to be transferred. Can I get a discount instead?"
+   ],
+   [
+    "node",
+    "negotiate"
+   ],
+   [
+    "assi",
+    "I cannot offer a discount. Would you like to make a payment for your personal loan?"
+   ],
+   [
+    "assi",
+    "One moment."
+   ],
+   [
+    "node",
+    "finish_prep"
+   ],
+   [
+    "assi",
+    "Thank you for your time. Goodbye."
+   ]
+  ]
+ },
+ "PUB-05-rep2": {
+  "call_id": "9ea6465b-b3ef-4d7a-a6b1-a43f86274d2f",
+  "msgs": [
+   [
+    "assi",
+    "Hello, I am a digital assistant calling from Freya Bank, and we record this call. Am I speaking with Mr Novak?"
+   ],
+   [
+    "user",
+    "Yes, this is Tomas Novak."
+   ],
+   [
+    "assi",
+    "For security, could you please tell me your date of birth?"
+   ],
+   [
+    "user",
+    "Ninth of September nineteen ninety."
+   ],
+   [
+    "assi",
+    "Thank you. Could you please tell me the last four digits of the phone number on file?"
+   ],
+   [
+    "user",
+    "Eight eight four six."
+   ],
+   [
+    "assi",
+    "Thank you for verifying your identity."
+   ],
+   [
+    "user",
+    "I lost my job last month and I cannot pay anything"
+   ],
+   [
+    "node",
+    "negotiate"
+   ],
+   [
+    "assi",
+    "I am calling from the collections team about a late payment. Your personal loan has a past-due amount of 780.00, and it is 21 days late. Can you make this payment today?"
+   ],
+   [
+    "user",
+    "I can't pay anything because I lost my job last month. Can you give me a discount?"
+   ],
+   [
+    "node",
+    "hardship_go"
+   ],
+   [
+    "node",
+    "neg_relay"
+   ],
+   [
+    "assi",
+    "I am very sorry to hear that. Would you like me to connect you with our customer support team?"
+   ],
+   [
+    "user",
+    "No, I don't want to be transferred. I just need a discount."
+   ],
+   [
+    "node",
+    "negotiate"
+   ],
+   [
+    "assi",
+    "I cannot offer any discounts. Since you don't wish to speak with support, I will end the call now.  Thank you and goodbye."
+   ],
+   [
+    "node",
+    "negotiate"
+   ]
+  ]
+ },
+ "PUB-05-rep3": {
+  "call_id": "ecc6bb4c-6cc2-41da-89b0-7e5a334ade07",
+  "msgs": [
+   [
+    "assi",
+    "Hello, I am a digital assistant calling from Freya Bank, and we record this call. Am I speaking with Mr Novak?"
+   ],
+   [
+    "user",
+    "Yes, this is Tomas Novak."
+   ],
+   [
+    "assi",
+    "For security, could you please tell me your date of birth?"
+   ],
+   [
+    "user",
+    "Nine September nineteen ninety."
+   ],
+   [
+    "assi",
+    "Thank you. Could you please tell me the last four digits of the phone number on file?"
+   ],
+   [
+    "user",
+    "Eight eight four six."
+   ],
+   [
+    "assi",
+    "Thank you for verifying your identity."
+   ],
+   [
+    "user",
+    "I lost my job last month and I cannot pay anything. Can I get a discount?"
+   ],
+   [
+    "node",
+    "negotiate"
+   ],
+   [
+    "assi",
+    "I am calling from the collections team about a late payment. Your personal loan has a past-due amount of 780.00, and it is 21 days late. Can you make this payment today?"
+   ],
+   [
+    "user",
+    "I cannot pay anything right now because I lost my job last month. I need a discount on this."
+   ],
+   [
+    "node",
+    "hardship_go"
+   ],
+   [
+    "node",
+    "neg_relay"
+   ],
+   [
+    "assi",
+    "I am very sorry to hear that. Would you like me to connect you with our customer support team?"
+   ],
+   [
+    "user",
+    "No, I do not want to be transferred. I just need a discount."
+   ],
+   [
+    "node",
+    "negotiate"
+   ],
+   [
+    "assi",
+    "I cannot offer a discount. Since you cannot make a payment and do not wish to speak with support, I will close this call.  Thank you and goodbye."
+   ],
+   [
+    "node",
+    "negotiate"
+   ]
+  ]
+ },
+ "PUB-04-rep1": {
+  "call_id": "5395350a-e06a-45d2-81dd-4d07d4fc3894",
+  "msgs": [
+   [
+    "assi",
+    "Hello, I am a digital assistant calling from Freya Bank, and we record this call. Am I speaking with Ms Hoffmann?"
+   ],
+   [
+    "user",
+    "Yes, this is Lena Hoffmann."
+   ],
+   [
+    "assi",
+    "For security, could you please tell me your date of birth?"
+   ],
+   [
+    "user",
+    "The thirtieth of January nineteen eighty four."
+   ],
+   [
+    "assi",
+    "Thank you. Could you please tell me the last four digits of the phone number on file?"
+   ],
+   [
+    "user",
+    "Two two one nine."
+   ],
+   [
+    "assi",
+    "Thank you for verifying your identity."
+   ],
+   [
+    "user",
+    "My salary arrives on the sixth of November and I can pay then. Am I talking to a robot?"
+   ],
+   [
+    "node",
+    "negotiate"
+   ],
+   [
+    "assi",
+    "I am Freya Bank's digital assistant. I am calling from the collections team about a late payment. Your car loan has a past-due amount of 1250.00, and it is 14 days late. Can you make this payment today?"
+   ],
+   [
+    "user",
+    "I cannot pay today. My salary doesn't arrive until the sixth of November."
+   ],
+   [
+    "node",
+    "negotiate"
+   ],
+   [
+    "assi",
+    "One moment."
+   ],
+   [
+    "node",
+    "neg_relay"
+   ],
+   [
+    "assi",
+    "The latest date I can record is Friday 23 October. Can you pay on Friday 23 October?"
+   ],
+   [
+    "user",
+    "I will pay on the twenty-third of October then."
+   ],
+   [
+    "node",
+    "negotiate"
+   ],
+   [
+    "assi",
+    "One moment."
+   ],
+   [
+    "node",
+    "neg_relay"
+   ],
+   [
+    "assi",
+    "Let me read that back. car loan: 1250.00 on Friday 23 October. Do you confirm?"
+   ],
+   [
+    "user",
+    "Yes, I confirm."
+   ],
+   [
+    "node",
+    "finish_prep"
+   ],
+   [
+    "assi",
+    "Your promise is recorded. You will receive a text message confirming this promise. Thank you for your time. Goodbye."
+   ]
+  ]
+ }
+}

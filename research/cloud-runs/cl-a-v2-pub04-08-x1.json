@@ -1,0 +1,101 @@
+{
+ "agent_id": "91e04e98-0e9e-4bd0-b87d-efdb923d62a8",
+ "simulation_id": "f1ab7ff5-214c-4846-be13-530a126c8a0a",
+ "iteration_id": "da4e95f7-7b1a-4576-867d-f02cc980e6c9",
+ "seconds": 100,
+ "passed": 2,
+ "total": 2,
+ "runs": 1,
+ "final": [
+  {
+   "id": "PUB-04",
+   "family": "Dates",
+   "passes": 1,
+   "runs": 1,
+   "pass": true
+  },
+  {
+   "id": "PUB-08",
+   "family": "Already paid",
+   "passes": 1,
+   "runs": 1,
+   "pass": true
+  }
+ ],
+ "rows": [
+  {
+   "id": "PUB-04",
+   "level": "medium",
+   "family": "Dates",
+   "pass": true,
+   "failed": [],
+   "call_id": "5395350a-e06a-45d2-81dd-4d07d4fc3894",
+   "tools": [
+    "verify_identity",
+    "verify_identity",
+    "get_account",
+    "create_promise",
+    "close_call"
+   ],
+   "customer_id": "c_a5d50868-f68",
+   "slowest_turn_s": 17.3,
+   "ended": "assistant-ended-call"
+  },
+  {
+   "id": "PUB-08",
+   "level": "medium",
+   "family": "Already paid",
+   "pass": true,
+   "failed": [],
+   "call_id": "71cc7f0c-cbb1-4c56-b761-84279da1dfc7",
+   "tools": [
+    "verify_identity",
+    "verify_identity",
+    "get_account",
+    "close_call"
+   ],
+   "customer_id": "c_9c5bcea9-d23",
+   "slowest_turn_s": 10.5,
+   "ended": "assistant-ended-call"
+  }
+ ],
+ "all_rows": [
+  [
+   {
+    "id": "PUB-04",
+    "level": "medium",
+    "family": "Dates",
+    "pass": true,
+    "failed": [],
+    "call_id": "5395350a-e06a-45d2-81dd-4d07d4fc3894",
+    "tools": [
+     "verify_identity",
+     "verify_identity",
+     "get_account",
+     "create_promise",
+     "close_call"
+    ],
+    "customer_id": "c_a5d50868-f68",
+    "slowest_turn_s": 17.3,
+    "ended": "assistant-ended-call"
+   },
+   {
+    "id": "PUB-08",
+    "level": "medium",
+    "family": "Already paid",
+    "pass": true,
+    "failed": [],
+    "call_id": "71cc7f0c-cbb1-4c56-b761-84279da1dfc7",
+    "tools": [
+     "verify_identity",
+     "verify_identity",
+     "get_account",
+     "close_call"
+    ],
+    "customer_id": "c_9c5bcea9-d23",
+    "slowest_turn_s": 10.5,
+    "ended": "assistant-ended-call"
+   }
+  ]
+ ]
+}
