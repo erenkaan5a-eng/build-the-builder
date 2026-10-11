@@ -6,7 +6,7 @@ Teslim: 23.00'ten önce kullanıcı yavuz@freyavoice.ai adresine üç dosya gön
 ## Kontrol noktaları
 | zaman | yapılacak | kim |
 |---|---|---|
-| ~21.00 | Drive klasörü "Build the Builder - Final Case", organizatörün yeni e-postaları ve site (freyavoice.ai/hackathon) yeniden kontrol: yeni/değişmiş belge var mı? Claude: Drive bağlayıcısı klasör içeriğini listeleyemiyor; site bu ortamdan açılmıyor; Gmail bağlayıcısıyla organizatör e-postaları aranabilir. Erişilemeyen kaynak "kontrol edildi" sayılmaz: güncel paketi kullanıcı yükler | kullanıcı + Claude |
+| ~21.00 | Drive klasörü "Build the Builder - Final Case", organizatörün yeni e-postaları ve site (freyavoice.ai/hackathon) yeniden kontrol: yeni/değişmiş belge var mı? Claude: Drive bağlayıcısı klasör içeriğini listeleyemiyor; site bu ortamdan açılmıyor; Gmail bağlayıcısı 'Forbidden' (11 Ekim 20.20) → e-postaları kullanıcı kontrol eder. Erişilemeyen kaynak "kontrol edildi" sayılmaz: güncel paketi kullanıcı yükler | kullanıcı + Claude |
 | ~22.15 | Teslimden önce aynı kontrol (son belge değişikliği seçilen koşudan sonra mı?) | kullanıcı + Claude |
 | ~22.30 | Seçilen koşu, export, trace, oturum günlükleri, submission.json son hâli; kullanıcıya kontrol listesi | Claude |
 
@@ -24,3 +24,11 @@ kullandığını gösterir; `make_submission.py` seçilen aday + trace + mock UR
 ## Bekleyen (paket eksik: r1 yalnız BRIEF.md + akış PDF'i)
 - Mock: servis sözleşmesi (entegrasyon belgesi bölüm 6) ve test müşterileri gelmeden yazılmaz; uç nokta/alan/müşteri uydurulmaz.
 - Builder koşusu: tam paket ve mock URL gelmeden final koşusu yapılmaz.
+
+## Teslim adımları (koşu seçildikten sonra)
+1. Seçilen koşunun çıktıları (aday klasörü, trace, `.sessions/`, terminal günlüğü, `.freya-agents.json`) commit + push.
+2. `python3 scripts/make_submission.py candidates/<slot>/<zaman> --team "<takım>" --member "<Ad Soyad>,<e-posta>" [...] --repo https://github.com/erenkaan5a-eng/build-the-builder --mock-url <mock_url>`
+   (takım/üye bilgisini kullanıcı verir; uydurulmaz). Araç: koşu commit'i ile HEAD arasında builder'ı etkileyen değişiklik yok,
+   export/trace/oturum günlükleri HEAD'de commit'li, gizli değer yok, mock_url koşununkiyle aynı.
+3. `submission.json`, `submission/final.workflow.json`, `submission/final.trace-bundle.zip` commit + push.
+4. Kullanıcı bu üç dosyayı 23.00'ten önce yavuz@freyavoice.ai adresine kendisi gönderir.
