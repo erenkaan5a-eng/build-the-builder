@@ -50,3 +50,9 @@ Modelde kalan kısım: müşterinin cümlesini bu olaylara ayırmak (dialogue mo
 
 ## 4. Ölçümler
 (çalışıyor)
+
+## 3. Yayın durumu (18:37 İstanbul kaydı)
+- loc-a v4 (`1cd0e71546683c18`, kaynak 9ed404b, A15 niyet ayrımı) 15:28 UTC'de yayınlandı (bu talimattan önce başlatılmıştı). Release kontrolü: chat API 502 ×4 → **doğrulanamadı** (davranış başarısızlığı değil). Dosyalar: candidates/loc-a/20261011-152836.
+- Ölçülmüş baseline loc-a v3 (`1b567c6fe1f24904`, version id 0061fa29…) artık canlı yayın değil; yeniden yayına alma denemesi izin sınıflandırıcısınca reddedildi (değişiklik olmadı). v3 export'u ve kanıtı korunuyor. v3/v4 arasında yeni geçiş yapılmayacak.
+- loc-ab v2 (`e1d03845876722e3`) canlıda yayınlı sürüm 2, canlı içerik = export.
+- Başlangıç manifesti: research/baseline-manifest.json (kod commit'i, builder ağacı, policy sha256, export hash16 + tam sha256, yayın sürümü/kimliği, canlı durum).

@@ -1,0 +1,113 @@
+{
+ "created_utc": "2026-10-11T15:36:46Z",
+ "branch": "claude/lucid-fermat-vxp9u7",
+ "head": "d6121a604543e4aba06b2ed712775442c05aa795",
+ "note": "measured candidates are identified by content hash; code commit = the commit the candidate was generated from",
+ "candidates": [
+  {
+   "name": "loc-a v3",
+   "slot": "loc-a",
+   "workflow_id": "23150a3a-fead-4c51-9ad2-2c142b0837f1",
+   "agent_id": "652ad608-5ecc-44fd-bb7a-b09a271c2ae1",
+   "published_version": 3,
+   "version_id": "0061fa29-c449-4dc6-80b5-d9bec1d32a20",
+   "code_commit": "6bb6719e8034cb8c06a2cc9f54e96640b0a98e13",
+   "builder_tree": "665645296de9bfa6940f4f1c18abba83fe24e875",
+   "policy": "candidates/loc-a/20261011-134621/policy.json",
+   "policy_sha256_lf": "94052fc390b50e43c4bb0dfe2a5c28f59d9696f27cbb3b88880080513b5d2482",
+   "candidate": "candidates/loc-a/20261011-133408",
+   "export_sha256_file": "28eff76721997573febb7757e6e781efefee3fff4ad41ae6b1e6a806806751d6",
+   "export_content_hash16": "1b567c6fe1f24904",
+   "export_content_sha256": "1b567c6fe1f249049b6325a6cb5d2d367bad01efedf9708b9ce1a3557dd576cc",
+   "generated_workflow_hash16": "f203cf3d1f288fa7",
+   "manifest_tested_hash": "1b567c6fe1f24904",
+   "manifest_exported_hash": "1b567c6fe1f24904",
+   "release_checks_in_build": true,
+   "build_trace": "traces/loc-a-20261011-133408.log",
+   "recheck": null,
+   "recheck_passed": null,
+   "files_present": true,
+   "live_now": {
+    "published_versions": [
+     [
+      4,
+      "16df7f58-8a00-4be3-9052-20de00fe4250"
+     ]
+    ],
+    "is_this_published": false,
+    "get_content_hash16": "1cd0e71546683c18",
+    "get_equals_export": false
+   }
+  },
+  {
+   "name": "loc-ab v2",
+   "slot": "loc-ab",
+   "workflow_id": "cc2873a9-c391-44c3-acc8-e8c35624298c",
+   "agent_id": "41b6d98f-2c8e-4ea6-8139-1901d21f32a1",
+   "published_version": 2,
+   "version_id": "668b2b27-a1bc-46e2-9364-ee7fb5ae11be",
+   "code_commit": "6bb6719e8034cb8c06a2cc9f54e96640b0a98e13",
+   "builder_tree": "665645296de9bfa6940f4f1c18abba83fe24e875",
+   "policy": "candidates/loc-ab/20261011-150232/policy.json",
+   "policy_sha256_lf": "c2d8659c4083992ecfe5ceef3c9bb3d1a0325b91b65baef933f0dbf6b21bb276",
+   "candidate": "candidates/loc-ab/20261011-133832",
+   "export_sha256_file": "668fcb8c337285aaeb1f06728db68f149e1c0274b8278a8a3f994a0e36db3f48",
+   "export_content_hash16": "e1d03845876722e3",
+   "export_content_sha256": "e1d03845876722e341f7468998ad1d3382d24e484fd985421172e9d59914d6e9",
+   "generated_workflow_hash16": "2e4814812bba2b26",
+   "manifest_tested_hash": "e1d03845876722e3",
+   "manifest_exported_hash": "e1d03845876722e3",
+   "release_checks_in_build": false,
+   "build_trace": "traces/loc-ab-20261011-133832.log",
+   "recheck": "candidates/loc-ab/20261011-133832/recheck-20261011-134408.json",
+   "recheck_passed": true,
+   "files_present": true,
+   "live_now": {
+    "published_versions": [
+     [
+      2,
+      "668b2b27-a1bc-46e2-9364-ee7fb5ae11be"
+     ]
+    ],
+    "is_this_published": true,
+    "get_content_hash16": "e1d03845876722e3",
+    "get_equals_export": true
+   }
+  },
+  {
+   "name": "loc-a v4 (pending, unmeasured)",
+   "slot": "loc-a",
+   "workflow_id": "23150a3a-fead-4c51-9ad2-2c142b0837f1",
+   "agent_id": "652ad608-5ecc-44fd-bb7a-b09a271c2ae1",
+   "published_version": 4,
+   "version_id": "16df7f58-8a00-4be3-9052-20de00fe4250",
+   "code_commit": "9ed404bf519f9fb4d3675b36e67a11ebb6bf5e88",
+   "builder_tree": "a26bff1ad6bab11cbb1da42ba4a0001cd93b0b23",
+   "policy": "candidates/loc-a/20261011-134621/policy.json",
+   "policy_sha256_lf": "94052fc390b50e43c4bb0dfe2a5c28f59d9696f27cbb3b88880080513b5d2482",
+   "candidate": "candidates/loc-a/20261011-152836",
+   "export_sha256_file": "dfea8c26fa90f63fe6d659d4504fa1e30bd079287f88d1619c0914404003bc3a",
+   "export_content_hash16": "1cd0e71546683c18",
+   "export_content_sha256": "1cd0e71546683c185eb5a1d65bf958ad340999ce6637612230257897878e3de7",
+   "generated_workflow_hash16": "b9301df5173b9e30",
+   "manifest_tested_hash": "1cd0e71546683c18",
+   "manifest_exported_hash": "1cd0e71546683c18",
+   "release_checks_in_build": false,
+   "build_trace": "traces/loc-a-20261011-152836.log",
+   "recheck": null,
+   "recheck_passed": null,
+   "files_present": true,
+   "live_now": {
+    "published_versions": [
+     [
+      4,
+      "16df7f58-8a00-4be3-9052-20de00fe4250"
+     ]
+    ],
+    "is_this_published": true,
+    "get_content_hash16": "1cd0e71546683c18",
+    "get_equals_export": true
+   }
+  }
+ ]
+}
