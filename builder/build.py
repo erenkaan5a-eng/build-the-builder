@@ -173,6 +173,8 @@ def main():
     cand = KIT / "candidates" / slot / time.strftime("%Y%m%d-%H%M%S")
     cand.mkdir(parents=True)
     trace.log("START", f"slot={slot} brief={a.brief} tool_api={a.tool_api} mode={a.mode} budget_min={a.budget_min} candidate={cand}")
+    trace.log("START", f"credentials: FREYA_API_KEY {'set' if os.environ.get('FREYA_API_KEY') else 'absent'}, "
+                       f"FREYA_BANK_TEAM_KEY {'set' if os.environ.get('FREYA_BANK_TEAM_KEY') else 'absent'}, cloud proxy mode {common.PROXY_MODE}")
     wf_path, path_used, pol, gaps = None, None, None, []
     if a.mode in ("auto", "main"):
         try:

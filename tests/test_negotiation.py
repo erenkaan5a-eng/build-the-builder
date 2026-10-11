@@ -295,6 +295,12 @@ check("T21 'no' to the support offer -> hardship -> finish no_promise/hardship, 
 c = Call([P("p1", "personal loan", 780.0, 260.0, "2026-10-23", 2)], uses_notes=False)
 c.v["hardship_seen"] = "yes"
 c.ev(("p1", "proposes", "2026-10-16", "260"))
-check("T21b a customer with a hardship who names a date and amount is recorded (rule 32)", c.p("p1")["agreed"] == {"amount": 260.0, "date": "2026-10-16"}, c.p("p1"))
+# 11 Oct cloud change: the sympathy + support offer comes first (A32 'one short sentence of sympathy'; earlier the
+# proposal was taken at once and the sympathy was never said); the customer's own date/amount is kept, not lost
+check("T21b hardship + own date/amount: sympathy and support offer first, the proposal is kept",
+      c.v["neg_say"] == "Sorry to hear. Support team?" and c.p("p1")["status"] == "hardship_offer" and c.st().get("held"), (c.v["neg_say"], c.st().get("held")))
+c.ev(("p1", "declines_support", "", ""))
+check("T21b ... after the support offer is declined the kept proposal is read back and can be recorded (rule 32)",
+      c.p("p1")["agreed"] == {"amount": 260.0, "date": "2026-10-16"} and c.st()["phase"] == "readback" and "Sorry" not in c.v["neg_say"], (c.p("p1"), c.v["neg_say"]))
 
 print("FAILURES:", len(FAILS)); sys.exit(1 if FAILS else 0)

@@ -110,6 +110,11 @@ def offer(p, amt, d, kind, out, named):
         txt = say('offer_named', amount=money(amt), date=sp(d), name=p['name'])
     out.append(txt)
 def next_attempt(p, t, out, named):
+    if p.get('hs'):
+        # A32: after a hardship no persuasion attempt is made; a refusal closes the product as hardship
+        p['status'] = 'hardship'
+        p['offer'] = None
+        return
     while p['used'] < min(p['allowed'], len(CFG['ladder'])):
         p['used'] += 1
         amt, d = ladder_offer(p, p['used'], t)
@@ -225,27 +230,40 @@ try:
             continue
         keep.append(e)
     evs = keep
-    # a hardship the customer mentioned anywhere in the call comes before persuasion (extracted flag, handled once)
-    if str(vars.get('hardship_seen') or '').strip().lower() == 'yes' and not st.get('hardship_handled'):
-        kinds = [str(e.get('type') or '').strip().lower() for e in evs if isinstance(e, dict)]
-        if 'hardship' not in kinds and 'declines_support' not in kinds and not [k for k in kinds if k in ('proposes', 'pays_today', 'accepts', 'confirms', 'changes')]:
-            evs = [dict(product_id='all' if len(st['products']) > 1 else st['products'][0]['id'], type='hardship')]
+    # A32: a hardship (named in this message, or mentioned anywhere earlier in the call = extracted flag) is answered once,
+    # before any persuasion: the brief's sympathy + support offer is the only reply of that turn (code owns the sentence).
+    # The customer's own date/amount said together with it is kept and handled under the date/amount rules after the
+    # support offer is answered (one question per turn); 'no' in that turn answered the payment question, not the offer.
+    hs_flag = 'yes' in (str(vars.get('hardship_seen') or '').strip().lower(), str(vars.get('hardship_early') or '').strip().lower())
+    kinds = [e['type'] for e in evs]
+    if not st.get('hardship_handled') and 'declines_support' not in kinds and ('hardship' in kinds or (hs_flag and not set(kinds) & set(['accepts', 'confirms']))):
+        props = [e for e in evs if e['type'] in ('proposes', 'pays_today', 'changes')]
+        if props:
+            st['held'] = props
+        evs = ([e for e in evs if e['type'] == 'hardship'] or [dict(product_id='all' if len(st['products']) > 1 else st['products'][0]['id'], type='hardship')]) \
+            + [e for e in evs if e['type'] in ('dispute', 'paid')]
     hardship_said = bool(st.get('hardship_handled')) or str(vars.get('hardship_done') or '') == 'yes'
-    if [e for e in evs if isinstance(e, dict) and str(e.get('type') or '').strip().lower() in ('hardship', 'declines_support')]:
+    hardship_turn = bool([e for e in evs if e['type'] in ('hardship', 'declines_support')]) or bool([p for p in st['products'] if p['status'] == 'hardship_offer'])
+    if hardship_turn:
         st['hardship_handled'] = True
         vars['hardship_done'] = 'yes'
     ids = [p['id'] for p in st['products']]
-    for e in evs:
-        if not isinstance(e, dict):
-            continue
-        typ = str(e.get('type') or '').strip().lower()
-        pid = str(e.get('product_id') or '').strip()
+
+    def handle(e, dedupe=True):
+        global hardship_said
+        typ = e['type']
+        pid = e['product_id']
         key = '|'.join([turn, pid, typ, str(e.get('date') or ''), str(e.get('amount') or '')])
-        if key in st['seen']:
-            continue
-        st['seen'].append(key)
+        if dedupe:
+            if key in st['seen']:
+                return
+            st['seen'].append(key)
         if pid in ('all', '*', ''):
-            scope = [p for p in st['products'] if p['status'] in ('open', 'offered', 'agreed')]
+            # a date/amount the customer names after a hardship is still handled (A32 last sentence)
+            # and an answer to the open support offer reaches the products it was made for
+            ok_st = ('open', 'offered', 'agreed') + (('hardship', 'hardship_offer') if typ in ('proposes', 'changes', 'pays_today') else
+                                                     ('hardship_offer',) if typ in ('declines_support', 'refuses', 'stop', 'too_much') else ())
+            scope = [p for p in st['products'] if p['status'] in ok_st]
             if pid == '' and len(st['products']) > 1:
                 raise ValueError('product not named')
         elif pid in ids:
@@ -264,9 +282,12 @@ try:
                     st['confirmed_pkg'] = package(st)
                 else:
                     out.append(say('confirm_question'))
-                continue
+                return
             typ = 'accepts'
         for p in scope:
+            if typ in ('pays_today', 'proposes', 'changes') and p['status'] in ('hardship', 'hardship_offer'):
+                p['status'] = 'open'
+                p['hs'] = True
             if typ == 'pays_today':
                 propose(p, t.isoformat(), None, t, out, named, shared)
             elif typ in ('proposes', 'changes'):
@@ -296,7 +317,9 @@ try:
                     refuse(p, t, out, named)
             elif typ == 'too_much':
                 p['too_much'] = True
-                if not p['floor_offered'] and p['floor'] is not None:
+                if p.get('hs'):
+                    next_attempt(p, t, out, named)
+                elif not p['floor_offered'] and p['floor'] is not None:
                     p['floor_offered'] = True
                     if p['used'] == 0 and len(CFG['ladder']) > 0 and p['allowed'] > 0:
                         p['used'] = 1
@@ -309,10 +332,12 @@ try:
             elif typ == 'hardship':
                 p['status'] = 'hardship_offer'
                 p['offer'] = None
+                p['hs'] = True
             elif typ == 'declines_support':
                 if p['status'] in ('hardship_offer', 'open', 'offered'):
                     p['status'] = 'hardship'
                     p['offer'] = None
+                    p['hs'] = True
             elif typ in ('dispute', 'paid'):
                 p['status'] = typ
                 p['offer'] = None
@@ -328,6 +353,16 @@ try:
             out.append(say('paid'))
         elif typ == 'dispute':
             out.append(say('dispute'))
+
+    for e in evs:
+        handle(e)
+    # the support offer is answered (declined or passed over): the customer's own date/amount from the hardship turn
+    # is now handled under the date and amount rules (A32 last sentence); a held proposal never records by itself
+    if st.get('held') and not [p for p in st['products'] if p['status'] == 'hardship_offer']:
+        held, st['held'] = st['held'], None
+        if not [e for e in evs if e['type'] in ('proposes', 'pays_today', 'changes')]:
+            for e in held:
+                handle(e, dedupe=False)
     if st['phase'] == 'first_ask':
         st['phase'] = 'negotiate'
     if st['phase'] == 'negotiate':
@@ -369,6 +404,8 @@ try:
             out.append(say('error'))
     ans = str(params.get('answer') or '').strip() if isinstance(params, dict) else ''
     ans = re.sub(r'[{}]', '', ans)[:240]
+    if hardship_turn:
+        ans = ''          # the hardship reply has one owner (code): no second sympathy or extra offer from the model
     save(st)
     vars['neg_say'] = ' '.join(x for x in ([ans] if ans else []) + out if x)
     vars['neg_final_say'] = vars['neg_say'] if st['phase'] == 'finish' else ''
@@ -412,6 +449,8 @@ try:
             break
     if go == 'done':
         st['phase'] = 'finish'
+    if go == 'blocked':
+        vars['neg_flag'] = 'used'   # back in the negotiation, a stale 'record' flag must not route here again
     save(st)
     vars['rec_go'] = go
 except Exception as e:
@@ -507,6 +546,7 @@ try:
             if p['status'] in ('open', 'offered'):
                 p['status'] = 'hardship_offer'
                 p['offer'] = None
+                p['hs'] = True
         st['hardship_handled'] = True
         if st['phase'] == 'first_ask':
             st['phase'] = 'negotiate'

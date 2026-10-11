@@ -1,0 +1,11 @@
+== 1. normal workflow sequences
+FAIL G1 'lost my job but I can pay 150 on Friday': one sympathy + support offer, the model's answer text is dropped, 150/Friday kept -> ('I am so sorry about your job. Sorry to hear. Support team? I c
+FAIL G2 support declined: the kept 150 is handled under the amount rule (below the floor -> floor offered once, Friday kept), no second sympathy -> (None, 'I understand.')
+FAIL G4 a hardship from the identity stage is not forgotten: 'no' to paying today -> support offer, no attempt used -> ('Could you pay 780.00 on Friday 16 October?', {'id': 'p1', 'name': 'personal loa
+FAIL G5 'no' to the support offer is not a payment refusal: hardship, no ladder offer -> {'id': 'p1', 'name': 'personal loan', 'full': 780.0, 'floor': 260.0, 'deadline': '2026-10-23', 'allowed': 2, 'u
+FAIL G6 'lost my job, I can't pay' in one message: the 'no' answers the payment question, the support offer stays open (not closed unanswered) -> ('hardship', 'finish')
+FAIL G7 after a hardship the customer names a date+amount for 'all': still handled (scope includes the hardship product) -> {'id': 'p1', 'name': 'personal loan', 'full': 780.0, 'floor': 260.0, 'deadli
+FAIL G9 B: kept proposal for p1 after the support offer, p2 closes as hardship (no persuasion on p2) -> ('agreed', {'id': 'p2', 'name': 'personal loan', 'full': 600.0, 'floor': 200.0, 'deadline': '202
+FAIL H4 transfer before the confirmed package is written: nothing is written (B10), the stale 'record' flag is cleared -> ([], 'blocked', 'record')
+== 2. defensive tests (a node entered directly)
+FAILURES: 8

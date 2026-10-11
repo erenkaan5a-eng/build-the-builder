@@ -106,6 +106,98 @@ check("F1 the hardship node says the brief's sympathy + support offer once and m
 st = c.ev(("p1", "declines_support", "", ""))
 check("F2 declining support -> finish no_promise/hardship", st["phase"] == "finish" and c.finish()[:2] == ("no_promise", "hardship"), st["phase"])
 
+# G) cloud session 11 Oct: hardship together with the customer's own offer (A32 last sentence), one sympathy owner
+LOAN05 = P("p1", "personal loan", 780.0, 260.0, "2026-10-23", 2)
+c = Call([LOAN05], uses_notes=False)
+c.ev(("p1", "hardship", "", ""), ("p1", "proposes", "2026-10-16", "150"), answer="I am so sorry about your job.")
+check("G1 'lost my job but I can pay 150 on Friday': one sympathy + support offer, the model's answer text is dropped, 150/Friday kept",
+      c.v["neg_say"] == "Sorry to hear. Support team?" and [e.get("amount") for e in c.st().get("held") or []] == ["150"], (c.v["neg_say"], c.st().get("held")))
+c.ev(("p1", "declines_support", "", ""), answer="I understand.")
+check("G2 support declined: the kept 150 is handled under the amount rule (below the floor -> floor offered once, Friday kept), no second sympathy",
+      c.p("p1")["offer"] == {"amount": 260.0, "date": "2026-10-16", "kind": "below_floor"} and c.v["neg_say"].startswith("I cannot record less than 260.00") and "Sorry" not in c.v["neg_say"],
+      (c.p("p1")["offer"], c.v["neg_say"]))
+st = c.ev(("p1", "refuses", "", ""))
+check("G3 refusing the floor after a hardship: no persuasion attempt (A32), product closes as hardship",
+      c.p("p1")["status"] == "hardship" and c.p("p1")["used"] == 0 and st["phase"] == "finish" and c.finish()[:2] == ("no_promise", "hardship"), (c.p("p1"), st["phase"]))
+
+c = Call([LOAN05], uses_notes=False)
+c.v["hardship_early"] = "yes"          # said at the identity stage, kept by the account step
+c.ev(("p1", "refuses", "", ""))
+check("G4 a hardship from the identity stage is not forgotten: 'no' to paying today -> support offer, no attempt used",
+      c.v["neg_say"] == "Sorry to hear. Support team?" and c.p("p1")["used"] == 0 and c.p("p1")["status"] == "hardship_offer", (c.v["neg_say"], c.p("p1")))
+st = c.ev(("p1", "refuses", "", ""))
+check("G5 'no' to the support offer is not a payment refusal: hardship, no ladder offer", c.p("p1")["status"] == "hardship" and c.p("p1")["used"] == 0 and st["phase"] == "finish", c.p("p1"))
+
+c = Call([LOAN05], uses_notes=False)
+c.ev(("p1", "hardship", "", ""), ("p1", "refuses", "", ""))
+check("G6 'lost my job, I can't pay' in one message: the 'no' answers the payment question, the support offer stays open (not closed unanswered)",
+      c.p("p1")["status"] == "hardship_offer" and c.st()["phase"] == "negotiate" and c.v["neg_say"] == "Sorry to hear. Support team?", (c.p("p1")["status"], c.st()["phase"]))
+c.ev(("all", "proposes", "2026-10-21", "300"))
+check("G7 after a hardship the customer names a date+amount for 'all': still handled (scope includes the hardship product)",
+      (c.p("p1").get("agreed") or {}) == {"amount": 300.0, "date": "2026-10-21"}, c.p("p1"))
+
+c = Call([LOAN05], uses_notes=False)
+c.ev(("p1", "hardship", "", ""), ("p1", "pays_today", "", ""))
+c.ev(("p1", "proposes", "2026-10-20", "400"))
+check("G8 a new proposal while the support offer is open replaces the kept one (no double handling)",
+      (c.p("p1").get("agreed") or {}) == {"amount": 400.0, "date": "2026-10-20"} and not c.st().get("held"), (c.p("p1"), c.st().get("held")))
+
+c = Call([P("p1", "credit card", 300.0, 90.0, "2026-11-02", 1), P("p2", "personal loan", 600.0, 200.0, "2026-10-23", 2)])
+c.v["hardship_seen"] = "yes"
+c.ev(("p1", "proposes", "2026-10-16", "300"))
+c.ev(("all", "declines_support", "", ""))
+check("G9 B: kept proposal for p1 after the support offer, p2 closes as hardship (no persuasion on p2)",
+      c.p("p1")["status"] == "agreed" and c.p("p2")["status"] == "hardship" and c.p("p2")["used"] == 0 and c.st()["phase"] == "readback", (c.p("p1")["status"], c.p("p2")))
+
+# H) section 5 properties of the cloud review not covered above
+c = Call([P("p1", "credit card", 300.0, 90.0, "2026-11-02", 1), P("p2", "personal loan", 600.0, 200.0, "2026-10-23", 2)])
+c.ev(("all", "proposes", "2026-10-16", "")); c.ev(("all", "confirms", "", ""))
+sent = c.rec(["ok", "http_error", "http_error"])
+check("H1 p1 ok then p2 fails twice: p1's earlier ok is not carried to p2; one retry only (single layer); p2 service_error",
+      sent == [("p1", "300.00", "2026-10-16"), ("p2", "600.00", "2026-10-16"), ("p2", "600.00", "2026-10-16")] and c.p("p1")["status"] == "recorded" and c.p("p2")["status"] == "service_error",
+      (sent, c.p("p2")["status"]))
+o = c.finish()
+check("H2 ... close promise; p2 gets a service_error note (B11); spoken result names the failed product",
+      o == ("promise", "", [("p2", "service_error")]) and "Not recorded for personal loan" in c.v["fin_say"] and "You will receive a text message." in c.v["fin_say"], (o, c.v["fin_say"]))
+
+c = Call([P("p1", "credit card", 365.0, 109.5, "2026-10-23", 2)], retries=0, uses_notes=False)
+c.ev(("p1", "proposes", "2026-10-16", "")); c.ev(("p1", "confirms", "", ""))
+sent = c.rec(["http_error", "ok"])
+check("H3 a brief with no retry: exactly one attempt, then service_error, no SMS sentence",
+      len(sent) == 1 and c.p("p1")["status"] == "service_error" and c.finish()[:2] == ("no_promise", "service_error") and "text message" not in c.v["fin_say"], (sent, c.v.get("fin_say")))
+
+c = Call([P("p1", "credit card", 300.0, 90.0, "2026-11-02", 1), P("p2", "personal loan", 600.0, 200.0, "2026-10-23", 2)])
+c.ev(("all", "proposes", "2026-10-16", "")); c.ev(("all", "confirms", "", ""))
+c.v["transfer_to_agent_args.queue"] = "restructuring"; c.v["transfer_to_agent_response.data.ok"] = "true"
+sent = c.rec(["ok", "ok"])
+check("H4 transfer before the confirmed package is written: nothing is written (B10), the stale 'record' flag is cleared",
+      sent == [] and c.v.get("rec_go") == "blocked" and c.v.get("neg_flag") == "used", (sent, c.v.get("rec_go"), c.v.get("neg_flag")))
+o = c.finish()
+check("H5 ... transferred/restructuring, no notes", o == ("transferred", "restructuring", []), o)
+
+c = Call([P("p1", "credit card", 300.0, 90.0, "2026-11-02", 1)], uses_notes=False)
+c.ev(("p1", "proposes", "2026-10-16", ""))
+o1 = c.finish(); o2 = c.finish(); o3 = c.finish()
+check("H6 FINISH 'not ready' is bounded: twice back to the negotiation, then a close without invented notes",
+      [o1[0], o2[0]] == [None, None] and c.v.get("fin_ready") == "yes" and o3[2] == [], (o1, o2, o3, c.v.get("fin_ready")))
+
+c = Call([P("p1", "credit card", 300.0, 90.0, "2026-11-02", 1), P("p2", "personal loan", 600.0, 200.0, "2026-10-23", 2)])
+c.ev(("all", "proposes", "2026-10-16", ""))
+for i in range(3):
+    st = c.ev(("p1", "confirms", "", ""))
+check("H7 repeated single-product confirmations of a 2-product package: confirmation question repeated, package kept, nothing recorded, no refusal",
+      st["phase"] == "readback" and c.v["neg_say"] == "Do you confirm?" and c.p("p2")["status"] == "agreed" and c.v["neg_flag"] != "record", (st["phase"], c.v["neg_say"]))
+st = c.ev(("all", "confirms", "", ""))
+check("H8 ... then a whole confirmation records both", c.v["neg_flag"] == "record" and c.rec(["ok", "ok"]) == [("p1", "300.00", "2026-10-16"), ("p2", "600.00", "2026-10-16")], c.v["neg_flag"])
+
+c = Call([P("p1", "credit card", 300.0, 90.0, "2026-11-02", 1)], uses_notes=False)
+c.v["close_one_success_count"] = "1"; c.v["close_one_response.data.ok"] = "true"
+exec(NGc := __import__("negotiation").embed(__import__("negotiation").CLOSE_CHECK, {"ok": "ok"}), {"vars": c.v})
+r1 = c.v["close_result"]
+c.v["close_one_success_count"] = "0"; c.v["close_one_failure_count"] = "1"
+exec(NGc, {"vars": c.v})
+check("H9 close_check makes the bank's close result visible (ok / failed)", (r1, c.v["close_result"]) == ("ok", "failed"), (r1, c.v["close_result"]))
+
 print("== 2. defensive tests (a node entered directly)")
 c = Call([P("p1", "credit card", 300.0, 90.0, "2026-11-02", 1), P("p2", "personal loan", 600.0, 200.0, "2026-10-23", 2)])
 c.ev(("all", "proposes", "2026-10-16", ""))

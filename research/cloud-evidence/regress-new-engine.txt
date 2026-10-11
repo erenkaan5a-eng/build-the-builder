@@ -1,0 +1,45 @@
+== 1. normal workflow sequences
+ok   A1 amount + vague period, then the exact day alone: 150 is kept (A27, A21) 
+ok   A2 at the read-back only the amount changes: the date 16 Oct is kept, new read-back (A35) 
+ok   A3 at the read-back only the date changes: the amount 200 is kept (A35) 
+ok   A4 multi-product: changing p2's amount keeps p2's date and leaves p1 untouched (B7, A35) 
+ok   A5 the writes equal the re-read package exactly (A34, B7) 
+ok   B1 a confirmation for p1 alone does not open recording of the two-product package (B7) 
+ok   B2 the partial confirmation does not mark the other product refused 
+ok   B2b the read-back path (rb_answer) confirms the whole current package 
+ok   B3 'yes, but change the loan date' does not record; a new read-back names 20 Oct for the loan (A35, B7) 
+ok   B3b no write is planned before the new read-back is confirmed 
+ok   B4 a recorded promise is not sent again 
+ok   C1 each note's own result is kept: p1 recorded, p2 failed (the earlier ok is not carried over) 
+ok   C2 a failed note does not turn the close into service_error (close stays paid) 
+ok   C3 transfer after a recorded promise: transferred/restructuring, no notes at all (A46 table note, B10) 
+ok   D1 B4: after a mixed first answer the next product starts at attempt 1, today is not asked again 
+ok   E1 'too much' alone: one floor offer with the overdue sentence (current reading: attempt 1, Fri 16 Oct) 
+ok   E2 'not today' + 'too much' in one message: one floor offer, one attempt used 
+ok   E3 the same two signals in the other order: still one floor offer, one attempt used 
+ok   E4 'too much, but 1000 on Friday': the proposal is handled, no floor offer, no attempt used (A27, A29) 
+ok   F1 the hardship node says the brief's sympathy + support offer once and marks it done 
+ok   F2 declining support -> finish no_promise/hardship 
+ok   G1 'lost my job but I can pay 150 on Friday': one sympathy + support offer, the model's answer text is dropped, 150/Friday kept 
+ok   G2 support declined: the kept 150 is handled under the amount rule (below the floor -> floor offered once, Friday kept), no second sympathy 
+ok   G3 refusing the floor after a hardship: no persuasion attempt (A32), product closes as hardship 
+ok   G4 a hardship from the identity stage is not forgotten: 'no' to paying today -> support offer, no attempt used 
+ok   G5 'no' to the support offer is not a payment refusal: hardship, no ladder offer 
+ok   G6 'lost my job, I can't pay' in one message: the 'no' answers the payment question, the support offer stays open (not closed unanswered) 
+ok   G7 after a hardship the customer names a date+amount for 'all': still handled (scope includes the hardship product) 
+ok   G8 a new proposal while the support offer is open replaces the kept one (no double handling) 
+ok   G9 B: kept proposal for p1 after the support offer, p2 closes as hardship (no persuasion on p2) 
+ok   H1 p1 ok then p2 fails twice: p1's earlier ok is not carried to p2; one retry only (single layer); p2 service_error 
+ok   H2 ... close promise; p2 gets a service_error note (B11); spoken result names the failed product 
+ok   H3 a brief with no retry: exactly one attempt, then service_error, no SMS sentence 
+ok   H4 transfer before the confirmed package is written: nothing is written (B10), the stale 'record' flag is cleared 
+ok   H5 ... transferred/restructuring, no notes 
+ok   H6 FINISH 'not ready' is bounded: twice back to the negotiation, then a close without invented notes 
+ok   H7 repeated single-product confirmations of a 2-product package: confirmation question repeated, package kept, nothing recorded, no refusal 
+ok   H8 ... then a whole confirmation records both 
+ok   H9 close_check makes the bank's close result visible (ok / failed) 
+== 2. defensive tests (a node entered directly)
+ok   X1 REC_NEXT entered at the read-back (no confirmation): no write is planned 
+ok   X2 a package that differs from the one read back cannot be confirmed 
+ok   X3 FINISH entered with an agreed-unrecorded and an open product: not ready, no invented refused/service_error notes 
+FAILURES: 0

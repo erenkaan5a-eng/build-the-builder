@@ -29,5 +29,13 @@ for label, cand in (("A", "candidates/cmp-a/20261011-024419"), ("A+B", "candidat
     check(f"{label}: the dialogue model cannot write promises, notes or the close in the negotiation", "create_promise" not in neg_tools and "add_note" not in neg_tools and "close_call" not in neg_tools, neg_tools)
     deal = N["build_deal"]["pre_actions"][0]["function"]["parameters"]["properties"]["code"]["default"]
     check(f"{label}: the account step initialises hardship_done='no' (the routing condition needs a value)", "vars['hardship_done'] = 'no'" in deal)
+    hr = N["negotiate"]["transitions"][0]["condition"]["conditions"]
+    check(f"{label}: the hardship route is skipped when the same message names a date or an amount (A32: the proposal reaches the code)",
+          all({"variable": "offer_named", "operator": "not_equals", "operand": "yes"} in g["conditions"] for g in hr) and {c["variable"] for g in hr for c in g["conditions"]} >= {"hardship_seen", "hardship_early"}
+          and N["neg_relay"]["transitions"][0] == N["negotiate"]["transitions"][0], hr)
+    xs = lambda k: [x["name"] for x in N[k].get("extraction_schema") or []]
+    check(f"{label}: a hardship said at the identity stage is extracted and kept by the account step",
+          "hardship_seen" in xs("identity") and "vars['hardship_early']" in deal and "vars['offer_named'] = 'no'" in deal and "offer_named" in xs("negotiate") and "offer_named" in xs("neg_relay"),
+          (xs("identity"), xs("negotiate"), xs("neg_relay")))
     check(f"{label}: notes only in a brief that uses them", ("note_one" in N) == bool(pol.get("uses_notes")), ("note_one" in N, pol.get("uses_notes")))
 print("FAILURES:", len(FAILS)); sys.exit(1 if FAILS else 0)

@@ -204,6 +204,8 @@ try:
     vars['deal_text'] = '\n'.join(lines)
     vars['debt_say'] = ' '.join(x.strip() for x in sent if x and x.strip())
     vars['hardship_done'] = 'no'
+    vars['hardship_early'] = 'yes' if str(vars.get('hardship_seen') or '').strip().lower() == 'yes' else 'no'
+    vars['offer_named'] = 'no'
     vars['acct_state'] = 'ok'
 except Exception as e:
     vars['deal_text'] = 'The account data is not available.'
@@ -352,6 +354,19 @@ def build(pol, ts):
             "RULES THAT ALWAYS APPLY (from the bank's brief, verbatim):\n" + rules_block(pol, "global"))
 
     first_q = qs[0]["ask"] if qs else "the first security question"
+    ng = pol["negotiation"]
+    hd = ng.get("hardship_definition") or "a hardship the bank's rules name"
+    hardship_x = {"name": "hardship_seen", "type": "string", "enum_values": ["yes", "no"], "min_confidence": 0.7,
+                  "description": "'yes' if the customer has said anywhere in this call that they face " + hd + "; otherwise 'no'."}
+    # a date or an amount the customer names in the same message as a hardship must reach the negotiation code (A32 last
+    # sentence): then the dialogue model sends the events and the code answers the hardship; otherwise code answers at once
+    offer_x = {"name": "offer_named", "type": "string", "enum_values": ["yes", "no"], "min_confidence": 0.7,
+               "description": "'yes' if the customer's LAST message names a day or an amount they could pay, or says they will pay today; otherwise 'no'."}
+    hardship_route = {"target_node": "hardship_go", "description": "a hardship was mentioned and not yet answered, and no date or amount was named with it",
+                      "condition": {"logic": "or", "conditions": [{"logic": "and", "conditions": [
+                          {"variable": flag, "operator": "equals", "operand": "yes"},
+                          {"variable": "hardship_done", "operator": "equals", "operand": "no"},
+                          {"variable": "offer_named", "operator": "not_equals", "operand": "yes"}]} for flag in ("hardship_seen", "hardship_early")]}}
     nodes = {}
     nodes["setup"] = code_node("setup", embed(SETUP_CODE, {**cal_cfg, "callback": pol.get("callback")}),
                                [{"target_node": "setup_error", "description": "dates missing", "condition": cond("dates_state", "equals", "missing")}], "opening")
@@ -382,7 +397,7 @@ def build(pol, ts):
                              on_enter={"type": "tts", "text": first_q},
                              extraction=[{"name": "pending_question", "type": "string", "enum_values": ["robot", "scam", "none"], "min_confidence": 0.6,
                                           "description": "What the customer's LAST message asks, if anything: 'robot' if it asks whether they are talking to a robot, a machine or an AI; "
-                                                         "'scam' if it asks whether this call is a scam or genuine; otherwise 'none'."}])
+                                                         "'scam' if it asks whether this call is a scam or genuine; otherwise 'none'."}, hardship_x])
     lst = B["account"]["list"]
     nodes[acct_node] = {"name": acct_node, "node_type": "api_request", "passthrough": True, "passthrough_default_transition": "build_deal", "on_enter": {"type": "silent"},
                         "pre_actions": [{"type": "function", "config": {"timeoutMs": 12000, "maxRetries": 2}, "function": {"name": "get_account", "handler": "__function__:api_call", "description": "Get the account.",
@@ -390,7 +405,6 @@ def build(pol, ts):
                                                                                          "headers": {"type": "object", "properties": {"Content-Type": {"type": "string", "default": "application/json"}}},
                                                                                          "body": {"type": "object", "properties": {B["customer_id_param"]: {"type": "string", "default": cid}}, "required": []}}}}}],
                         "transitions": [{"target_node": "build_deal", "description": "always", "condition": {"operator": "always"}}]}
-    ng = pol["negotiation"]
     deal_cfg = {**cal_cfg, "prefix": f"{acct_node}_response.data.{lst}", "ok_var": f"{acct_node}_response.data.{ok}", "type": B["account"]["type"],
                 "id": B["account"]["id"], "days_late": B["account"]["days_late"], "past_due": B["account"]["past_due"],
                 "floor_field": pol["products"]["floor_field"], "naming": pol["products"]["naming"], "bands": pol["bands"],
@@ -442,31 +456,21 @@ def build(pol, ts):
                               "TRANSFER: when the rules say to transfer (for example a request for a new plan, a customer who insists on a person, or a customer who accepts the support offer), CALL transfer_to_agent with the rules' queue.\n"
                               "Questions that are not about paying: answer only the question, in one sentence, from FACTS and the rules, without a tool; never add an offer, a date, an amount to pay or a question about paying.\nRules for this stage (verbatim):\n" + rules_block(pol, "negotiate", "closing"),
                               [t_event, t_transfer_neg],
-                              [{"target_node": "hardship_go", "description": "a hardship was mentioned and not yet answered",
-                                "condition": {"logic": "or", "conditions": [{"logic": "and", "conditions": [
-                                    {"variable": "hardship_seen", "operator": "equals", "operand": "yes"},
-                                    {"variable": "hardship_done", "operator": "equals", "operand": "no"}]}]}},
+                              [hardship_route,
                                {"target_node": "rec_next", "description": "confirmed read-back", "condition": cond("neg_flag", "equals", "record")},
                                {"target_node": "finish_prep", "description": "nothing left to negotiate", "condition": cond("neg_flag", "equals", "finish")},
                                {"target_node": "neg_consume", "description": "a decision to read out", "condition": cond("neg_flag", "equals", "new")},
                                {"target_node": "finish_prep", "description": "the call was transferred", "condition": cond_true(f"transfer_to_agent_response.data.{ok}")}],
                               on_enter={"type": "tts", "text": "{{debt_say}}"},
-                              extraction=[{"name": "hardship_seen", "type": "string", "enum_values": ["yes", "no"], "min_confidence": 0.7,
-                                           "description": "'yes' if the customer has said anywhere in this call that they face " + (ng.get("hardship_definition") or "a hardship the bank's rules name") + "; otherwise 'no'."}])
+                              extraction=[hardship_x, offer_x])
     nodes["neg_consume"] = code_node("neg_consume", "vars['neg_flag'] = 'used'\n", [], "neg_relay")
     relay = "Do not call any tool. Do not add anything to what was just said."
-    hd = ng.get("hardship_definition") or "a hardship the bank's rules name"
-    hardship_x = {"name": "hardship_seen", "type": "string", "enum_values": ["yes", "no"], "min_confidence": 0.7,
-                  "description": "'yes' if the customer has said anywhere in this call that they face " + hd + "; otherwise 'no'."}
-    rb_extract = [hardship_x, {"name": "rb_answer", "type": "string", "enum_values": ["yes", "no"], "min_confidence": 0.7,
+    rb_extract = [hardship_x, offer_x, {"name": "rb_answer", "type": "string", "enum_values": ["yes", "no"], "min_confidence": 0.7,
                    "description": "Only if the agent's last message was a read-back ending with the confirmation question: 'yes' when the customer clearly confirms it with no change, "
                                   "'no' when they reject or change it. Empty in every other case."}]
     nodes["neg_relay"] = {"name": "neg_relay", "node_type": "conversation", "on_enter": {"type": "tts", "text": "{{neg_say}}"}, "task_message": relay,
                           "extraction_schema": rb_extract, "max_node_turns": 5, "max_turn_transition": "negotiate",
-                          "transitions": [{"target_node": "hardship_go", "description": "a hardship was mentioned and not yet answered",
-                                "condition": {"logic": "or", "conditions": [{"logic": "and", "conditions": [
-                                    {"variable": "hardship_seen", "operator": "equals", "operand": "yes"},
-                                    {"variable": "hardship_done", "operator": "equals", "operand": "no"}]}]}},
+                          "transitions": [hardship_route,
                                           {"target_node": "neg_confirm", "description": "the read-back was confirmed",
                                            "condition": {"logic": "or", "conditions": [{"logic": "and", "conditions": [
                                                {"variable": "rb_answer", "operator": "equals", "operand": "yes"},

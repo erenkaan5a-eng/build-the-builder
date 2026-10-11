@@ -20,6 +20,9 @@ def load_env(path=KIT / "env.sh"):
 load_env()
 sys.path.insert(0, str(KIT))
 import freya  # noqa: E402  (reads FREYA_API_KEY at import time, so env must be loaded first)
+sys.path.insert(0, str(KIT / "tools"))
+import cloud_proxy  # noqa: E402  (opt-in FREYA_AUTH_VIA_PROXY=1: headers left to a credential-injecting proxy)
+PROXY_MODE = cloud_proxy.apply()
 
 
 class Budget:
