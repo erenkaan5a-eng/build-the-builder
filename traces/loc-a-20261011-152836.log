@@ -1,0 +1,5 @@
+2026-10-11T15:28:36+0000 [START] slot=loc-a brief=briefs/brief-a.md tool_api=tools/openapi.json mode=main budget_min=30 candidate=/home/user/build-the-builder/candidates/loc-a/20261011-152836
+2026-10-11T15:28:36+0000 [START] credentials: FREYA_API_KEY absent, FREYA_BANK_TEAM_KEY absent, cloud proxy mode on: Freya Authorization left to the proxy; bank x-team-key left to the proxy
+2026-10-11T15:28:36+0000 [MAIN] policy reused from candidates/loc-a/20261011-134621/policy.json (sha256 94052fc390b50e43); that run recorded no input hashes (brief sha256 now d57c049c89aec461, API 9a8410b12e5c82b6); no model call
+2026-10-11T15:28:39+0000 [FREYA] published workflow 23150a3a-fead-4c51-9ad2-2c142b0837f1 version 4 (16df7f58-8a00-4be3-9052-20de00fe4250)
+2026-10-11T15:28:40+0000 [TEST] testing published version 4 hash 1cd0e71546683c18
