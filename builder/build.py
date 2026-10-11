@@ -8,7 +8,7 @@ Main path: one Claude call extracts policy.json from the brief and tool API; fix
 One wall-clock budget covers everything, including the final sequence validate -> publish -> test that version -> export.
 Every run writes a candidate folder candidates/<slot>/<time>/; --out is written only when the release checks pass.
 """
-import argparse, asyncio, json, os, pathlib, shutil, sys, time
+import argparse, asyncio, json, os, pathlib, re, shutil, sys, time
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import common  # noqa: E402  (loads env.sh, imports freya)
@@ -104,6 +104,24 @@ def run_fallback(brief, tool_api, out, budget, trace, workdir, repair=None):
 
 
 # ------------------------------------------------------------------ release
+def _retry_5xx(fn, budget, trace, waits=(30, 90, 180)):
+    """Run fn; on a platform 5xx (chat API) wait and try again while the shared budget keeps 2 minutes for export."""
+    last = None
+    for i, w in enumerate((0,) + tuple(waits)):
+        if w:
+            if budget.left() - w < 120:
+                break
+            trace.log("TEST", f"platform 5xx on the chat API ({str(last)[:90]}); waiting {w}s, retry {i} of {len(waits)}")
+            time.sleep(w)
+        try:
+            return fn()
+        except RuntimeError as e:
+            if not re.search(r"-> 5\d\d", str(e)):
+                raise
+            last = e
+    raise last
+
+
 def final_sequence(slot, wf_path, tool_api, cand, budget, trace, pol=None, practice=None):
     """validate -> publish -> test that published version -> export. Every step checks the shared budget."""
     st = {"release_checks_passed": False, "policy_correctness": "not measured by the build"}
@@ -135,14 +153,14 @@ def final_sequence(slot, wf_path, tool_api, cand, budget, trace, pol=None, pract
     if budget.left() > 45:
         try:
             if pol:
-                checks = behavior.structural(pub["workflow_id"], pol, trace)
+                checks = _retry_5xx(lambda: behavior.structural(pub["workflow_id"], pol, trace), budget, trace)
             else:
                 tv = dict(wf.get("test_variables") or {})
                 tv["customer_id"] = "c_smoke_test"
-                r = common.chat_smoke(pub["workflow_id"], tv, trace)
+                r = _retry_5xx(lambda: common.chat_smoke(pub["workflow_id"], tv, trace), budget, trace)
                 checks = [("opening line spoken (fallback: structural checks need a policy)", bool((r.get("response") or "").strip()), "")]
             if practice and budget.left() > 60:
-                pres, _ = behavior.practice(pub["workflow_id"], practice, trace)
+                pres, _ = _retry_5xx(lambda: behavior.practice(pub["workflow_id"], practice, trace), budget, trace)
                 checks += pres
         except Exception as e:
             trace.log("TEST", f"behaviour test error: {e}"[:400])

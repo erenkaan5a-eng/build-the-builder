@@ -10,6 +10,7 @@
 - `pip install claude-agent-sdk` (developed with 0.2.165).
 - Claude access for the builder's model calls: a logged-in Claude Code (`claude login`), or `CLAUDE_CODE_OAUTH_TOKEN`, or `ANTHROPIC_API_KEY` in the environment. The builder makes 1 call (policy extraction, model `claude-opus-5-5`, override with `EXTRACT_MODEL`) and up to 1 repair call; the fallback path (only if the main path fails) runs an agent with `claude-sonnet-5-5` (`FALLBACK_MODEL`).
 - `cp env.example env.sh` and fill `FREYA_API_KEY` and `FREYA_BANK_TEAM_KEY` (ASCII only). `env.sh` is read by the builder itself and is git-ignored.
+- Cloud session whose proxy injects the credentials (Network secrets: `Authorization: Bearer` for staging-app.freyavoice.ai, `x-team-key` for freya-bank-mock.freyavoice.workers.dev): set `FREYA_AUTH_VIA_PROXY=1` and leave the two keys unset. The builder and `tools/run_cases_cloud.py` then send those requests without the header and the proxy adds it (`tools/cloud_proxy.py`; the kit's `freya.py` and `tools/score.py` are not modified). Without the variable nothing changes. The trace logs only whether each key is set.
 
 ## Single entry point
 ```
@@ -21,7 +22,7 @@ python3 builder/build.py {brief_path} {tool_api_path} --out submission/hidden-N.
 - Do not pass `--practice` in the final: it drives a public practice customer and exists for development only.
 
 ## What a run leaves behind
-- `candidates/<slot>/<time>/`: `policy.raw.json`, `policy.json`, `workflow.json`, `export.json`, `manifest.json` (workflow/agent id, published version, tested and exported content hash, behaviour checks, known rule gaps, build seconds, model calls).
+- `candidates/<slot>/<time>/`: `policy.raw.json`, `policy.json`, `workflow.json`, `support_boundary.json`, `export.json`, `manifest.json` (workflow/agent id, published version, tested and exported content hash, behaviour checks, known rule gaps, what is enforced by code vs left to the dialogue model, build seconds, model calls).
 - `traces/<slot>-<time>.log`: start/end, every model call (model + purpose + token usage), created/updated Freya objects, tests, fallback decisions, known gaps.
 - The final line says `release checks PASSED` or `FAILED`. PASSED means: lint + Freya dry-run, behaviour checks on the published version, tested content hash == exported content hash. It does not mean policy correctness.
 - If the checks fail, `--out` is left unchanged; inspect the candidate folder and its manifest before deciding anything.
@@ -32,8 +33,22 @@ python3 tests/test_negotiation.py
 python3 tests/test_negotiation_regress.py
 python3 tests/test_date_tool.py
 python3 tests/test_generator_structure.py
+python3 tests/test_api_binding.py
 python3 builder/lint.py <workflow.json> <tool_api.json>
 ```
+
+## When the release behaviour check could not run
+A platform 5xx on the chat API during the build makes the release checks FAIL (the export is kept in the candidate
+folder). Re-run only the behaviour checks on the same published version, without rebuilding or changing it:
+```
+python3 eval/recheck_release.py candidates/<slot>/<time>
+```
+It refuses to check when the live workflow's hash differs from the exported one and writes `recheck-<time>.json`
+next to the manifest (the manifest itself is not edited).
+
+## A brief that builds on another (development: Brief B)
+Brief B says it builds on Brief A; the development A+B candidate was built from the plain concatenation
+`{ cat briefs/brief-a.md; echo; cat briefs/brief-b.md; } > out/brief-ab.md` (no manual edit).
 
 ## Contest rules kept by the builder
 - The phone agent model is the one in `freya.py`; the builder never changes it.
