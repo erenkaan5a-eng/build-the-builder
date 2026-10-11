@@ -16,8 +16,10 @@ Sınıf: **şüpheli platform hatası** (sonuç değil, gözlem). Ham kayıtlar:
 | 14:28 | eski `cl-a` workflow'u (0800b57a…) için `GET` ve yeni için `GET` | ikisi de 60 s / 504 |
 | 14:33:24 | sağlık | ok |
 | 14:33:35 | 1e: dry-run ok, `PUT` ~2 s'de geçti, ardından `GET /workspaces` | 504 → süreç durduruldu |
+| 14:56:51 | sağlık (son isteğimizden 22 dk sonra) | 504 |
+| 15:03:03 | sağlık | **503: "API key validation is temporarily unavailable. Retry shortly."** |
 
-**Hipotezler (ayrıştırılmadı):**
+**Hipotezler:** 15:03'teki 503 mesajı platformun anahtar doğrulama servisinin geçici olarak çalışmadığını söylüyor; bu, 1. hipotezi (genel platform kesintisi) güçlendiriyor. 2. hipotez dışlanmadı ama artık zayıf.
 1. Genel platform yükü/kesintisi: eski, ölçülmüş `cl-a` workflow'unun okunması da 504 verdi; kesinti ilk dry-run'da (hiçbir yazma yapılmadan önce) başladı; bulut oturumunda da (01:49–01:53 UTC) eski workflow'larla 502/503 görülmüştü; bugün final brief'lerinin yayın günü (yoğun kullanım beklenir).
 2. Bizim yeni (180–215 KB, 33 düğüm) workflow'umuzun kaydı sonrası sunucu tarafında uzun süren bir iş: her `PUT` sonrasında platform 10–15 dk yanıtsız kaldı. Kanıt korelasyon düzeyinde; karşılaştırmalı deney paylaşılan platformu yeniden kilitleyebileceği için yapılmadı.
 
