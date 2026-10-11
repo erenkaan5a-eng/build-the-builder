@@ -1,0 +1,6 @@
+{
+ "brief": "out/brief-ab.md",
+ "brief_sha256": "0379260ced21a0a4008b65ce4afd4036d7f1c34e3aba08e6eba8f63dcca6736e",
+ "tool_api": "tools/openapi.json",
+ "tool_api_sha256": "9a8410b12e5c82b6c6a30e9ed7030574d6f919cafdb1e035cef7bd876b0badb8"
+}

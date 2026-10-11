@@ -1,0 +1,16 @@
+{
+ "path": "fallback",
+ "slot": "loc-ab",
+ "local_only": true,
+ "lint_problems": 0,
+ "build_seconds": 248,
+ "model_calls": 19,
+ "trace": "C:\\Users\\ASUS\\OneDrive\\Masa\u00fcst\u00fc\\build-the-builder\\traces\\loc-ab-20261011-145712.log",
+ "known_gaps": [
+  "Brief A vs Brief B \u2013 `brief-ab.md` contains both. Brief A says it never uses `add_note`, and Brief B requires it for products without a promise. I built the Brief B superset, so a one-product Brief A call will still call `add_note`. If the call is scored under Brief A, that is a mismatch.",
+  "failed `transfer_to_agent` \u2013 the brief gives no path for this. The agent tells the customer plainly that the transfer failed, then closes with the outcome the request would have had (e.g. `transferred` / `restructuring`). Under the brief's table this records a transfer that did not happen.",
+  "persuasion-attempt and per-product tallies are kept by the model from the prompt; no code enforces them.",
+  "`maxRetries` is 1 on the write tools (`create_promise`, `schedule_callback`, `transfer_to_agent`, `add_note`, `close_call`). It is untested whether the platform retries an `ok:false` reply that comes back as HTTP 200.",
+  "coverage not fully assessed: the fallback path reports only the gaps its agent noticed"
+ ]
+}
