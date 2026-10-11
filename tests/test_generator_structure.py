@@ -37,5 +37,8 @@ for label, cand in (("A", "candidates/cmp-a/20261011-024419"), ("A+B", "candidat
     check(f"{label}: a hardship said at the identity stage is extracted and kept by the account step",
           "hardship_seen" in xs("identity") and "vars['hardship_early']" in deal and "vars['offer_named'] = 'no'" in deal and "offer_named" in xs("negotiate") and "offer_named" in xs("neg_relay"),
           (xs("identity"), xs("negotiate"), xs("neg_relay")))
+    idt = N["identity"]["task_message"]
+    check(f"{label}: identity stage: parts of one answer are combined; a failed check only on the bank's result (style 'pieces', 11 Oct)",
+          "in parts" in idt and "combined answer" in idt and "unless what_to_do_next says the identity check has failed" in idt, idt[:200])
     check(f"{label}: notes only in a brief that uses them", ("note_one" in N) == bool(pol.get("uses_notes")), ("note_one" in N, pol.get("uses_notes")))
 print("FAILURES:", len(FAILS)); sys.exit(1 if FAILS else 0)

@@ -390,7 +390,11 @@ def build(pol, ts):
                                 extraction=speaker)
     nodes["identity"] = conv("identity", "Stage: identity. Ask the security questions one at a time, in this order: "
                              + " ".join(f"({i + 1}) {q['ask']} [field {q['field']}, answer as {q.get('answer_format', '')}]" for i, q in enumerate(qs))
-                             + ". After each answer CALL verify_identity and follow what_to_do_next. You cannot see the account yet.\nFollow these rules:\n" + rules_block(pol, "identity"),
+                             + ". After each answer CALL verify_identity and follow what_to_do_next. You cannot see the account yet.\n"
+                             "A customer may give one answer in parts over several messages (for example the day and month, then the year; or two digits, then the "
+                             "other two). Keep the parts you already heard, ask only for the missing part, and CALL verify_identity once with the combined answer. "
+                             "Never ask for an answer 'in one go'. Only the bank's result can make an answer wrong: never end the call for a failed identity check "
+                             "unless what_to_do_next says the identity check has failed.\nFollow these rules:\n" + rules_block(pol, "identity"),
                              [t_verify, t_transfer, t_close],
                              [done, {"target_node": acct_node, "description": "identity verified",
                                      "condition": cond_true(f"verify_identity_response.data.{v['all_verified']}")}],
