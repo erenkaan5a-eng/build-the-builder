@@ -10,13 +10,14 @@ ENGINE_HANDLERS = {"__function__:end_call", "__function__:code_exec"}
 
 
 def load_api(path):
-    spec = json.load(open(path, encoding="utf-8"))
+    from toolspec import deref, ok_response
+    spec = deref(json.load(open(path, encoding="utf-8")))
     base = (spec.get("servers") or [{}])[0].get("url", "").rstrip("/")
     ops = {}
     for p, item in spec.get("paths", {}).items():
         op = item.get("post") or item.get("get") or {}
         schema = (((op.get("requestBody") or {}).get("content") or {}).get("application/json") or {}).get("schema") or {}
-        resp = ((((op.get("responses") or {}).get("200") or {}).get("content") or {}).get("application/json") or {}).get("schema") or {}
+        resp = ok_response(op)
         ops[p.strip("/")] = {"url": base + p, "props": schema.get("properties", {}), "required": schema.get("required", []),
                              "resp": resp.get("properties", {})}
     return base, ops

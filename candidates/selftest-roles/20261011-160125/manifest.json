@@ -1,0 +1,23 @@
+{
+ "path": "main",
+ "slot": "selftest-roles",
+ "local_only": true,
+ "lint_problems": 0,
+ "build_seconds": 0,
+ "model_calls": 0,
+ "trace": "/home/user/build-the-builder/traces/selftest-roles-20261011-160125.log",
+ "known_gaps": [
+  "turning the customer's words into negotiation events (and dates into YYYY-MM-DD) is done by the dialogue model; offers, counters, dates, amounts, read-back, recording, notes and the close are code",
+  "callback window validity is decided by the dialogue model from code-computed window facts (not code)",
+  "identity: the dialogue model turns the customer's words into answer parts and events; a misheard part is sent to the bank as heard (the bank decides)",
+  "extra rule (stateful, stage opening): Identity confirmation needs an explicit yes, 'that's me', 'speaking' or the customer's own name. Ask at most twice, answer the customer's questions in between, then close as not_reached/unclear. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): A flat refusal or a non-answer uses one persuasion attempt. Refusing the deadline (rule 23) or the floor (rules 26 and 27) counts as a flat refusal. Proposed dates and amounts never count. When the attempts are used up, close as no_promise/refused and do not repeat a refused offer. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): After 'too much', offer the floor once and say the rest stays overdue. After a below-floor amount, offer the floor once. - left to the dialogue model's prompt",
+  "extra rule (computational, stage negotiate): Interpret 'next <weekday>' as that weekday in the following calendar week and 'this <weekday>' as the one in the current week, relative to now. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Hardship (illness, a death in the family or job loss): one sentence of sympathy, no persuasion attempt, offer support. This takes priority over rules 30 and 41, but a date or amount the customer names is still recorded. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): A change at confirmation invalidates the earlier readback: re-check the new value and read it back again. Call create_promise only after a clear yes to the exact current proposal. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage closing): If a transfer follows a recorded promise, close as transferred with that transfer's reason, not as promise. - left to the dialogue model's prompt",
+  "unresolved conflict: Date attached to the floor offer after 'too much' (rule 26) or after a below-floor amount (rule 27): chose 'the date currently under discussion if valid, otherwise today' (Rules 26 and 27 say to offer the floor but give no date; rule 30 only sets dates for persuasion attempts after a refusal, and rule 26 only gives the deadline for attempt 2.)",
+  "unresolved conflict: Whether the floor offer after 'too much' uses up a persuasion attempt: chose 'no' (Rule 30 says attempt 1 is 'for the floor if the customer already said the full amount is too much', which means the floor offer comes before the attempts and does not use one.)"
+ ]
+}

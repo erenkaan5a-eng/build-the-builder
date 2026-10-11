@@ -1,0 +1,12 @@
+2026-10-11T16:00:21+0000 [START] slot=selftest-roles brief=briefs/brief-a.md tool_api=tools/openapi.json mode=auto budget_min=30 candidate=/home/user/build-the-builder/candidates/selftest-roles/20261011-160021
+2026-10-11T16:00:21+0000 [START] source commit a2ec5fab37a9234fd42bcfc701b5927e8962f7e1 builder tree b5b3ac2df3eb142c7177b46d7d2b56bd8afd7289 uncommitted builder changes: yes
+2026-10-11T16:00:21+0000 [START] credentials: FREYA_API_KEY absent, FREYA_BANK_TEAM_KEY absent, cloud proxy mode off
+2026-10-11T16:00:21+0000 [MAIN] policy reused from candidates/loc-a/20261011-133408/policy.json (sha256 94052fc390b50e43); inputs match the recorded hashes; no model call
+2026-10-11T16:00:21+0000 [MAIN] operation for verify_identity: verify_identity (https://freya-bank-mock.freyavoice.workers.dev/v1/verify_identity)
+2026-10-11T16:00:21+0000 [MAIN] operation for get_account: get_account (https://freya-bank-mock.freyavoice.workers.dev/v1/get_account)
+2026-10-11T16:00:21+0000 [MAIN] operation for create_promise: create_promise (https://freya-bank-mock.freyavoice.workers.dev/v1/create_promise)
+2026-10-11T16:00:21+0000 [MAIN] operation for schedule_callback: schedule_callback (https://freya-bank-mock.freyavoice.workers.dev/v1/schedule_callback)
+2026-10-11T16:00:21+0000 [MAIN] operation for transfer_to_agent: transfer_to_agent (https://freya-bank-mock.freyavoice.workers.dev/v1/transfer_to_agent)
+2026-10-11T16:00:21+0000 [MAIN] operation for close_call: close_call (https://freya-bank-mock.freyavoice.workers.dev/v1/close_call)
+2026-10-11T16:00:21+0000 [MAIN] operation for add_note: add_note (https://freya-bank-mock.freyavoice.workers.dev/v1/add_note)
+2026-10-11T16:00:21+0000 [END] local only: lint OK; nothing published, nothing tested on Freya

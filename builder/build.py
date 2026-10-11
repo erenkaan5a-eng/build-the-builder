@@ -52,7 +52,12 @@ def run_main(brief, tool_api, cand, budget, trace, reuse_policy=None):
     else:
         pol = spec_extract.extract(text, toolspec.summary(ts), EXTRACT_MODEL, trace, timeout_s=min(left, 900))
     (cand / "policy.raw.json").write_text(json.dumps(pol, indent=1), encoding="utf-8")
-    probs = spec_extract.validate(pol, ts)
+
+    def check(pol):
+        # the policy binds the fixed components' roles to the contract's operations; validation runs on those roles
+        ts_roles, bound, probs = toolspec.bind_roles(ts, pol.get("operations"), components.ROLES)
+        return ts_roles, bound, probs + spec_extract.validate(pol, ts_roles)
+    ts_roles, bound, probs = check(pol)
     if probs and not reuse_policy and budget.left() - RESERVE_S > 180:
         trace.log("MAIN", f"policy validation: {len(probs)} problem(s); one bounded repair call")
         for p in probs:
@@ -63,10 +68,14 @@ def run_main(brief, tool_api, cand, budget, trace, reuse_policy=None):
             "TOOL API:\n" + toolspec.summary(ts) + "\n\nBRIEF:\n<<<\n" + text + "\n>>>\n\n" + fix,
             "Answer with JSON only.\n\nPROJECT INSTRUCTIONS (binding):\n" + spec_extract.project_instructions(),
             EXTRACT_MODEL, trace, "repair policy.json against the tool API validation problems"), timeout=min(budget.left() - RESERVE_S, 600))))
-        probs = spec_extract.validate(pol, ts)
+        ts_roles, bound, probs = check(pol)
+    for role, name in bound.items():
+        trace.log("MAIN", f"operation for {role}: {name} ({ts['ops'][name]['url']})")
+    pol["operation_urls"] = {role: ts["ops"][name]["url"] for role, name in bound.items()}  # read by behavior.py
     (cand / "policy.json").write_text(json.dumps(pol, indent=1), encoding="utf-8")
     if probs:
         raise RuntimeError("policy invalid after repair: " + "; ".join(probs)[:800])
+    ts = ts_roles
     structural = [r for r in pol.get("extra_rules") or [] if r.get("kind") == "structural"]
     if structural and budget.left() - RESERVE_S > 120:
         # a rule the fixed components already carry can be misclassified (11 Oct, A+B: the 'no notes after a transfer' rule);

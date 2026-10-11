@@ -48,3 +48,13 @@ test("a handler sees the customer's stored state and test customer; every call i
   assert.deepEqual([r1.json.n, r2.json.n, r3.status], [1, 2, 404]);
   assert.equal((await store.get("c1")).calls.length, 2);
 });
+
+test("contract schemas behind $ref are validated like inline ones; a cycle does not loop", async () => {
+  const contract = {
+    paths: { "/x": { post: { operationId: "x", requestBody: { content: { "application/json": { schema: { $ref: "#/components/schemas/X" } } } } } } },
+    components: { schemas: { X: { type: "object", required: ["n"], properties: { n: { type: "integer" }, me: { $ref: "#/components/schemas/X" } } } } },
+  };
+  const r = await handle({ method: "POST", path: "/x", body: {}, contract, handlers: {}, store: new MemoryStore(), customers: [], now: "t" });
+  assert.equal(r.status, 400);
+  assert.match(r.json.error, /n is required/);
+});

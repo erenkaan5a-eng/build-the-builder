@@ -3,7 +3,27 @@
 // the operation handlers are written FROM that contract after the package opens (handlers.js). Until an operation has a
 // handler the mock answers 501: it is never a service that says yes to everything.
 
+// inline local references ({"$ref": "#/components/schemas/X"}); a cycle or an unresolved reference is left as it is
+export function deref(spec) {
+  const get = (ptr) => ptr.replace(/^#\//, "").split("/").reduce((n, k) => (n && typeof n === "object" ? n[k.replace(/~1/g, "/").replace(/~0/g, "~")] : undefined), spec);
+  const walk = (x, seen) => {
+    if (Array.isArray(x)) return x.map((v) => walk(v, seen));
+    if (!x || typeof x !== "object") return x;
+    const ref = x.$ref;
+    if (typeof ref === "string" && ref.startsWith("#/") && !seen.has(ref)) {
+      const t = get(ref);
+      if (t && typeof t === "object") {
+        const rest = Object.fromEntries(Object.entries(x).filter(([k]) => k !== "$ref").map(([k, v]) => [k, walk(v, seen)]));
+        return { ...walk(t, new Set([...seen, ref])), ...rest };
+      }
+    }
+    return Object.fromEntries(Object.entries(x).map(([k, v]) => [k, walk(v, seen)]));
+  };
+  return walk(spec, new Set());
+}
+
 export function opsOf(contract) {
+  contract = deref(contract);
   const ops = {};
   for (const [path, item] of Object.entries(contract.paths || {})) {
     for (const [method, op] of Object.entries(item || {})) {

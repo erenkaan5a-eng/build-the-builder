@@ -9,6 +9,7 @@ import json, re, sys, pathlib, urllib.parse
 import common
 
 ROOT = common.KIT
+ROLE_BY_URL = {}  # url -> role, set from the policy's operation_urls by structural()
 
 
 def op_name(fn, args):
@@ -16,6 +17,8 @@ def op_name(fn, args):
     are reported under their handler name 'api_call', not the tool name; their args carry the request URL, whose last
     path segment is the operation (seen in Freya call events, 11 Oct: .../v1/get_account, .../v1/create_promise)."""
     url = str(args.get("url") or "") if isinstance(args, dict) else ""
+    if url.rstrip("/") in ROLE_BY_URL:      # a contract operation bound to a fixed-component role (policy operation_urls)
+        return ROLE_BY_URL[url.rstrip("/")]
     seg = urllib.parse.urlparse(url).path.rstrip("/").rsplit("/", 1)[-1] if url else ""
     return seg or fn
 
@@ -102,6 +105,8 @@ def calls_of(events, fn):
 
 def structural(workflow_id, pol, trace):
     """Checks that need no bank data. Returns list of (name, ok, detail)."""
+    ROLE_BY_URL.clear()
+    ROLE_BY_URL.update({str(u).rstrip("/"): r for r, u in (pol.get("operation_urls") or {}).items()})
     tv = dict(pol.get("test_variables") or {})
     tv[pol["call_variables"]["customer_id"]] = "c_behaviour_check"
     q = pol["identity"]["questions"][0]

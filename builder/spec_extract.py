@@ -99,6 +99,7 @@ Return ONE JSON object, no prose, with exactly these keys:
    "technical_error": {"outcome": "...", "reason": "..."},               // closest outcome for 'account or date data unavailable'
    "paid_outcome": "<close outcome for an already-paid account>", "no_promise_outcome": "<close outcome when no promise was recorded>"
  },
+ "operations": {"verify_identity": "<op that checks an identity answer>", "get_account": "<op that returns the customer's products/debts>", "create_promise": "<op that records a payment promise>", "add_note": "<op that adds a note, or null>", "schedule_callback": "<op that books a callback, or null>", "transfer_to_agent": "<op that hands the call to a person, or null>", "close_call": "<op that records the call outcome and ends it>"},
  "api_binding": {
    "customer_id_param": "...", "success_field": "<response field meaning the action was carried out>",
    "verify": {"field_param": "...", "answer_param": "...", "verified": "...", "all_verified": "...", "remaining": "<field or null>", "hint": "<field or null>"},
@@ -116,6 +117,7 @@ Return ONE JSON object, no prose, with exactly these keys:
 }
 Rules for filling it:
 - Every value comes from THIS brief and THIS tool API. Field names in api_binding must exist in the tool API summary.
+- operations: the fixed parts and the keys below use these role names. For each role give the tool API operation that does that job, spelled exactly as the summary lists it (the same name when it already matches; null when the API has none). api_binding fields of a role are fields of the operation you bound to it.
 - Copy rule text verbatim; do not summarize away exceptions.
 - A memo or note that changes a rule applies only within its stated scope; record it in amendments. Do not assume the newest document overrides everything. If two sources conflict and the text does not settle it, record it in unresolved_conflicts.
 - Every rule of the brief goes verbatim into rules.<stage>; the dialogue model follows those. extra_rules lists ONLY rules the generator's fixed parts cannot carry, classified as:
