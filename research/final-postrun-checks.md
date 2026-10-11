@@ -26,3 +26,10 @@ Choice: submit run A (workflow export 16df802a3766a667, trace traces/final-r3-20
 which holds run A's outputs with the builder of run A's source commit 0f05b94). Run A's own release check stays FAILED in its trace
 (chat API 504); its simulation of Example 1 completed and read the debt from the mock. Note: the live Freya workflow 6d079c07 now has
 version 2 (run B) published; the submitted workflow is run A's export file.
+
+## Third run (C) and final choice
+Run C: traces/final-r3-20261011-2058-20261011-192442.log (source commit 2d1a82f, `--mode fallback --budget-min 24`), 42 agent turns,
+published as version 3, export 871f29e3441807bb; release check PASSED via the simulation smoke (its caller had the workflow's own
+test variables). Simulation of Example 1 on version 3 (22:36): "Ekstre borcunu sorgulayabileceğiniz uygun bir kredi kartınız bulunmuyor"
+for a customer who has a card → wrong → `final-postrun-sim-v3.json`. Final choice stays run A. Live Freya workflow now has version 3
+published; the submitted workflow is run A's export file.

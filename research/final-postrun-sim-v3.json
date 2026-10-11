@@ -1,0 +1,23 @@
+{
+ "label": "v3-runC",
+ "simulation": "ecfbbcfc-5278-4b9d-8d25-4bb9ae99e369",
+ "status": "completed",
+ "elapsed_s": 23,
+ "runs": [
+  {
+   "callId": "4ed1f22f-e0ea-47e0-a509-c4bc1e28c118",
+   "transcript": [
+    [
+     "assistant",
+     "Ekstre borcunu sorgulayabileceğiniz uygun bir kredi kartınız bulunmuyor. Sizi ana menüye yönlendiriyorum."
+    ]
+   ],
+   "calls": [
+    "code_exec",
+    "https://bank-mock-final.erenkaan5a.workers.dev/voice/v1/cards.list",
+    "code_exec",
+    "end_call"
+   ]
+  }
+ ]
+}

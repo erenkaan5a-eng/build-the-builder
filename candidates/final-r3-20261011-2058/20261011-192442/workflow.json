@@ -1,0 +1,2000 @@
+{
+ "initial_node": "init",
+ "system_prompt": "Sen Freya Bank'in sesli asistanısın ve kredi kartı ekstre borcu konusunda yardım ediyorsun. Yalnızca Türkçe konuş, her seferinde bir ya da iki kısa cümle kur. Önce müşterinin son mesajındaki soruyu (ör. robot musun) tek kısa cümleyle cevapla, sonra akışa devam et. Her mesajda en fazla bir araç çağır. Araç sonucundan sonra konuş ya da bir sonraki aracı çağır; sonuçtaki what_to_do_next cümlesini izle. Bir işlemin yapıldığını yalnızca ilgili araç başarı döndürdüyse söyle. Kart numarasının hanelerini asla geri okuma. Hiçbir tarih, tutar ya da bilgi uydurma. Kapsam dışı konularda ana menüye yönlendir.",
+ "test_variables": {
+  "customerNumber": "95004361",
+  "now": "2026-10-12T10:30:00+03:00"
+ },
+ "nodes": {
+  "init": {
+   "name": "init",
+   "node_type": "code",
+   "assertions": [],
+   "truncation_strategy": "keep_all",
+   "passthrough": true,
+   "passthrough_default_transition": "fetch_cards",
+   "on_enter": {
+    "type": "silent"
+   },
+   "disable_inactivity_monitor": true,
+   "pre_actions": [
+    {
+     "type": "function",
+     "function": {
+      "name": "code_exec",
+      "handler": "__function__:code_exec",
+      "parameters": {
+       "type": "object",
+       "properties": {
+        "code": {
+         "type": "string",
+         "default": "try:\n    now = str(vars.get('now') or '').strip()\n    cust = str(vars.get('customerNumber') or '').strip()\n    ok = len(now) >= 10 and len(cust) > 0\n    vars['init_state'] = 'ok' if ok else 'missing'\n    vars['today_iso'] = now[:10]\n    vars['card_tries'] = '0'\nexcept Exception:\n    vars['init_state'] = 'missing'\n"
+        },
+        "timeout_ms": {
+         "type": "number",
+         "default": 10000
+        }
+       }
+      }
+     }
+    }
+   ],
+   "transitions": [
+    {
+     "target_node": "end_error",
+     "description": "now or customer missing",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "init_state",
+        "operator": "equals",
+        "operand": "missing",
+        "mode": "exact"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "fetch_cards",
+     "description": "ok",
+     "condition": {
+      "operator": "always"
+     }
+    }
+   ]
+  },
+  "fetch_cards": {
+   "name": "fetch_cards",
+   "node_type": "api_request",
+   "assertions": [],
+   "truncation_strategy": "keep_all",
+   "passthrough": true,
+   "passthrough_default_transition": "cards_prepare",
+   "on_enter": {
+    "type": "silent"
+   },
+   "disable_inactivity_monitor": true,
+   "pre_actions": [
+    {
+     "type": "function",
+     "config": {
+      "timeoutMs": 20000,
+      "maxRetries": 1
+     },
+     "function": {
+      "name": "fetch_cards",
+      "handler": "__function__:api_call",
+      "description": "fetch_cards",
+      "parameters": {
+       "type": "object",
+       "properties": {
+        "url": {
+         "type": "string",
+         "default": "https://bank-mock-final.erenkaan5a.workers.dev/voice/v1/cards.list"
+        },
+        "method": {
+         "type": "string",
+         "default": "POST"
+        },
+        "headers": {
+         "type": "object",
+         "properties": {
+          "Content-Type": {
+           "type": "string",
+           "default": "application/json"
+          }
+         }
+        },
+        "body": {
+         "type": "object",
+         "required": [
+          "data"
+         ],
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "customerNo": {
+             "type": "string",
+             "default": "{{customerNumber}}"
+            },
+            "aiFlow": {
+             "type": "string",
+             "default": "CardOps"
+            }
+           }
+          },
+          "call": {
+           "type": "object",
+           "properties": {
+            "lang": {
+             "type": "string",
+             "default": "tr"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   ],
+   "response_mapping": [],
+   "transitions": [
+    {
+     "target_node": "end_error",
+     "description": "service error",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "fetch_cards_failure_count",
+        "operator": "greater_than",
+        "operand": 0,
+        "mode": "exact"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "cards_prepare",
+     "description": "always",
+     "condition": {
+      "operator": "always"
+     }
+    }
+   ]
+  },
+  "cards_prepare": {
+   "name": "cards_prepare",
+   "node_type": "code",
+   "assertions": [],
+   "truncation_strategy": "keep_all",
+   "passthrough": true,
+   "passthrough_default_transition": "card_select",
+   "on_enter": {
+    "type": "silent"
+   },
+   "disable_inactivity_monitor": true,
+   "pre_actions": [
+    {
+     "type": "function",
+     "function": {
+      "name": "code_exec",
+      "handler": "__function__:code_exec",
+      "parameters": {
+       "type": "object",
+       "properties": {
+        "code": {
+         "type": "string",
+         "default": "try:\n    nums = []; l4 = []; names = []\n    for i in range(30):\n        n = vars.get('fetch_cards_response.data.cards.%d.cardNumber' % i)\n        if n is None or str(n) == '':\n            break\n        st = str(vars.get('fetch_cards_response.data.cards.%d.status' % i) or 'A')\n        mainc = str(vars.get('fetch_cards_response.data.cards.%d.isMainCard' % i)).strip().lower()\n        if st != 'A' or mainc == 'false':\n            continue\n        nums.append(str(n))\n        l4.append(str(vars.get('fetch_cards_response.data.cards.%d.cardNumberLast4' % i) or str(n)[-4:]))\n        names.append(str(vars.get('fetch_cards_response.data.cards.%d.productName' % i) or '').strip())\n    vars['card_nums'] = '|'.join(nums)\n    vars['card_l4s'] = '|'.join(l4)\n    vars['card_names'] = '|'.join(names)\n    vars['card_count'] = str(len(nums))\n    ex = []\n    for nm in names:\n        if nm and nm not in ex:\n            ex.append(nm)\n    vars['card_examples'] = ' veya '.join(ex[:2]) if ex else ''\n    vars['card_all_names'] = ', '.join(ex)\n    if len(nums) == 0:\n        vars['cards_state'] = 'none'\n    elif len(nums) == 1:\n        vars['cards_state'] = 'one'\n        vars['selected_card_number'] = nums[0]\n        vars['selected_last4'] = l4[0]\n        vars['selected_name'] = names[0]\n    else:\n        vars['cards_state'] = 'many'\n    vars['card_feedback'] = ''\nexcept Exception:\n    vars['cards_state'] = 'error'\n"
+        },
+        "timeout_ms": {
+         "type": "number",
+         "default": 10000
+        }
+       }
+      }
+     }
+    }
+   ],
+   "transitions": [
+    {
+     "target_node": "end_nocard",
+     "description": "no eligible card",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "cards_state",
+        "operator": "equals",
+        "operand": "none",
+        "mode": "exact"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "end_error",
+     "description": "error",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "cards_state",
+        "operator": "equals",
+        "operand": "error",
+        "mode": "exact"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "fetch_balance",
+     "description": "single card",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "cards_state",
+        "operator": "equals",
+        "operand": "one",
+        "mode": "exact"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "card_select",
+     "description": "many",
+     "condition": {
+      "operator": "always"
+     }
+    }
+   ]
+  },
+  "card_select": {
+   "name": "card_select",
+   "node_type": "conversation",
+   "assertions": [],
+   "truncation_strategy": "keep_all",
+   "passthrough": false,
+   "role_message": "",
+   "task_message": "Müşteri hangi kartının borcunu öğrenmek istediğini söyleyecek. Türkçe, kısa konuş. Önce müşterinin son mesajındaki bir soruya tek kısa cümleyle cevap ver, sonra devam et. Kart adını card_name alanına, dört haneyi card_last4 alanına, tam numarayı card_full alanına çıkar. 'Hepsi' derse kart seçilmemiş say ve soruyu tekrar sor. Haneleri geri okuma.",
+   "interruptible": false,
+   "max_node_turns": 3,
+   "max_turn_transition": "end_giveup",
+   "disable_inactivity_monitor": false,
+   "response_mapping": [],
+   "extraction_schema": [
+    {
+     "name": "card_name",
+     "type": "string",
+     "description": "Kart adı (örn. Yıldız Premium), söylenmediyse boş",
+     "min_confidence": 0.6
+    },
+    {
+     "name": "card_last4",
+     "type": "string",
+     "description": "Kartın son dört hanesi, rakamlarla",
+     "min_confidence": 0.6
+    },
+    {
+     "name": "card_full",
+     "type": "string",
+     "description": "Tam kart numarası, söylendiyse",
+     "min_confidence": 0.6
+    }
+   ],
+   "transitions": [
+    {
+     "target_node": "card_resolve",
+     "description": "customer answered",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "card_name",
+        "operator": "is_set"
+       },
+       {
+        "variable": "card_last4",
+        "operator": "is_set"
+       },
+       {
+        "variable": "card_full",
+        "operator": "is_set"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "card_giveup_tick",
+     "description": "no answer",
+     "condition": {
+      "operator": "always"
+     }
+    }
+   ],
+   "on_enter": {
+    "type": "tts",
+    "text": "{{card_feedback}}"
+   }
+  },
+  "card_giveup_tick": {
+   "name": "card_giveup_tick",
+   "node_type": "code",
+   "assertions": [],
+   "truncation_strategy": "keep_all",
+   "passthrough": true,
+   "passthrough_default_transition": "card_select",
+   "on_enter": {
+    "type": "silent"
+   },
+   "disable_inactivity_monitor": true,
+   "pre_actions": [
+    {
+     "type": "function",
+     "function": {
+      "name": "code_exec",
+      "handler": "__function__:code_exec",
+      "parameters": {
+       "type": "object",
+       "properties": {
+        "code": {
+         "type": "string",
+         "default": "try:\n    t = int(str(vars.get('card_tries') or '0')) + 1\n    vars['card_tries'] = str(t)\n    vars['resolve_state'] = 'giveup' if t >= 3 else 'again'\n    vars['card_feedback'] = 'Hangi kartınızın borcunu öğrenmek istersiniz? Örneğin, %s diyebilirsiniz.' % str(vars.get('card_examples') or '')\nexcept Exception:\n    vars['resolve_state'] = 'giveup'\n"
+        },
+        "timeout_ms": {
+         "type": "number",
+         "default": 10000
+        }
+       }
+      }
+     }
+    }
+   ],
+   "transitions": [
+    {
+     "target_node": "end_giveup",
+     "description": "three tries",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "resolve_state",
+        "operator": "equals",
+        "operand": "giveup",
+        "mode": "exact"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "card_select",
+     "description": "again",
+     "condition": {
+      "operator": "always"
+     }
+    }
+   ]
+  },
+  "card_resolve": {
+   "name": "card_resolve",
+   "node_type": "code",
+   "assertions": [],
+   "truncation_strategy": "keep_all",
+   "passthrough": true,
+   "passthrough_default_transition": "card_select",
+   "on_enter": {
+    "type": "silent"
+   },
+   "disable_inactivity_monitor": true,
+   "pre_actions": [
+    {
+     "type": "function",
+     "function": {
+      "name": "code_exec",
+      "handler": "__function__:code_exec",
+      "parameters": {
+       "type": "object",
+       "properties": {
+        "code": {
+         "type": "string",
+         "default": "def low(s):\n    return str(s or '').replace('I', 'i').replace('\\u0130', 'i').lower().strip()\ntry:\n    nums = str(vars.get('card_nums') or '').split('|')\n    l4s = str(vars.get('card_l4s') or '').split('|')\n    names = str(vars.get('card_names') or '').split('|')\n    qn = low(vars.get('card_name'))\n    q4 = ''.join(ch for ch in str(vars.get('card_last4') or '') if ch.isdigit())\n    q4 = q4[-4:] if q4 else ''\n    idx = []\n    for i in range(len(nums)):\n        if qn and qn not in low(names[i]) and low(names[i]) not in qn:\n            continue\n        if q4 and l4s[i] != q4:\n            continue\n        idx.append(i)\n    tries = int(str(vars.get('card_tries') or '0'))\n    vars['card_name'] = ''\n    vars['card_last4'] = ''\n    if len(idx) == 1 and (qn or q4):\n        i = idx[0]\n        vars['selected_card_number'] = nums[i]\n        vars['selected_last4'] = l4s[i]\n        vars['selected_name'] = names[i]\n        vars['resolve_state'] = 'ok'\n        vars['card_feedback'] = ''\n    else:\n        tries += 1\n        vars['card_tries'] = str(tries)\n        if tries >= 3:\n            vars['resolve_state'] = 'giveup'\n        else:\n            vars['resolve_state'] = 'again'\n            if len(idx) > 1 and qn and not q4:\n                vars['card_feedback'] = '%s isimli birden fazla kartınız var. Kartınızın son dört hanesini söyler misiniz?' % str(vars.get('card_names').split('|')[idx[0]] or qn)\n            elif len(idx) > 1:\n                vars['card_feedback'] = 'Son dört hanesi aynı olan birden fazla kartınız var. Kart numaranızın tamamını söyler misiniz?'\n            elif qn or q4:\n                vars['card_feedback'] = 'Bu isimde bir kartınız bulunmuyor. Kartlarınız: %s. Hangisinin borcunu öğrenmek istersiniz?' % str(vars.get('card_all_names') or '')\n            else:\n                vars['card_feedback'] = 'Hangi kartınızın borcunu öğrenmek istersiniz? Örneğin, %s diyebilirsiniz.' % str(vars.get('card_examples') or '')\nexcept Exception:\n    vars['resolve_state'] = 'giveup'\n"
+        },
+        "timeout_ms": {
+         "type": "number",
+         "default": 10000
+        }
+       }
+      }
+     }
+    }
+   ],
+   "transitions": [
+    {
+     "target_node": "fetch_balance",
+     "description": "resolved",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "resolve_state",
+        "operator": "equals",
+        "operand": "ok",
+        "mode": "exact"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "end_giveup",
+     "description": "three tries used",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "resolve_state",
+        "operator": "equals",
+        "operand": "giveup",
+        "mode": "exact"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "card_select",
+     "description": "ask again",
+     "condition": {
+      "operator": "always"
+     }
+    }
+   ]
+  },
+  "fetch_balance": {
+   "name": "fetch_balance",
+   "node_type": "api_request",
+   "assertions": [],
+   "truncation_strategy": "keep_all",
+   "passthrough": true,
+   "passthrough_default_transition": "build_reading",
+   "on_enter": {
+    "type": "silent"
+   },
+   "disable_inactivity_monitor": true,
+   "pre_actions": [
+    {
+     "type": "function",
+     "config": {
+      "timeoutMs": 20000,
+      "maxRetries": 1
+     },
+     "function": {
+      "name": "fetch_balance",
+      "handler": "__function__:api_call",
+      "description": "fetch_balance",
+      "parameters": {
+       "type": "object",
+       "properties": {
+        "url": {
+         "type": "string",
+         "default": "https://bank-mock-final.erenkaan5a.workers.dev/voice/v1/cards.balance"
+        },
+        "method": {
+         "type": "string",
+         "default": "POST"
+        },
+        "headers": {
+         "type": "object",
+         "properties": {
+          "Content-Type": {
+           "type": "string",
+           "default": "application/json"
+          }
+         }
+        },
+        "body": {
+         "type": "object",
+         "required": [
+          "data"
+         ],
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "cardNumber": {
+             "type": "string",
+             "default": "{{selected_card_number}}"
+            }
+           }
+          },
+          "call": {
+           "type": "object",
+           "properties": {
+            "lang": {
+             "type": "string",
+             "default": "tr"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   ],
+   "response_mapping": [
+    {
+     "path": "data.statementDate",
+     "variable": "bal_statementDate"
+    },
+    {
+     "path": "data.lastPayDate",
+     "variable": "bal_lastPayDate"
+    },
+    {
+     "path": "data.nextStatementDate",
+     "variable": "bal_nextStatementDate"
+    },
+    {
+     "path": "data.nextLastPayDate",
+     "variable": "bal_nextLastPayDate"
+    },
+    {
+     "path": "data.cardNumberLast4",
+     "variable": "bal_cardNumberLast4"
+    },
+    {
+     "path": "data.productName",
+     "variable": "bal_productName"
+    },
+    {
+     "path": "data.debtTL.statementDebt",
+     "variable": "bal_TL_statementDebt"
+    },
+    {
+     "path": "data.debtTL.minPayment",
+     "variable": "bal_TL_minPayment"
+    },
+    {
+     "path": "data.debtTL.remainingDebt",
+     "variable": "bal_TL_remainingDebt"
+    },
+    {
+     "path": "data.debtTL.remainingMinPayment",
+     "variable": "bal_TL_remainingMinPayment"
+    },
+    {
+     "path": "data.debtTL.totalDebt",
+     "variable": "bal_TL_totalDebt"
+    },
+    {
+     "path": "data.debtUSD.statementDebt",
+     "variable": "bal_USD_statementDebt"
+    },
+    {
+     "path": "data.debtUSD.minPayment",
+     "variable": "bal_USD_minPayment"
+    },
+    {
+     "path": "data.debtUSD.remainingDebt",
+     "variable": "bal_USD_remainingDebt"
+    },
+    {
+     "path": "data.debtUSD.remainingMinPayment",
+     "variable": "bal_USD_remainingMinPayment"
+    },
+    {
+     "path": "data.debtUSD.totalDebt",
+     "variable": "bal_USD_totalDebt"
+    },
+    {
+     "path": "data.debtEUR.statementDebt",
+     "variable": "bal_EUR_statementDebt"
+    },
+    {
+     "path": "data.debtEUR.minPayment",
+     "variable": "bal_EUR_minPayment"
+    },
+    {
+     "path": "data.debtEUR.remainingDebt",
+     "variable": "bal_EUR_remainingDebt"
+    },
+    {
+     "path": "data.debtEUR.remainingMinPayment",
+     "variable": "bal_EUR_remainingMinPayment"
+    },
+    {
+     "path": "data.debtEUR.totalDebt",
+     "variable": "bal_EUR_totalDebt"
+    },
+    {
+     "path": "data.debtGBP.statementDebt",
+     "variable": "bal_GBP_statementDebt"
+    },
+    {
+     "path": "data.debtGBP.minPayment",
+     "variable": "bal_GBP_minPayment"
+    },
+    {
+     "path": "data.debtGBP.remainingDebt",
+     "variable": "bal_GBP_remainingDebt"
+    },
+    {
+     "path": "data.debtGBP.remainingMinPayment",
+     "variable": "bal_GBP_remainingMinPayment"
+    },
+    {
+     "path": "data.debtGBP.totalDebt",
+     "variable": "bal_GBP_totalDebt"
+    }
+   ],
+   "transitions": [
+    {
+     "target_node": "end_error",
+     "description": "service error",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "fetch_balance_failure_count",
+        "operator": "greater_than",
+        "operand": 0,
+        "mode": "exact"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "build_reading",
+     "description": "always",
+     "condition": {
+      "operator": "always"
+     }
+    }
+   ]
+  },
+  "build_reading": {
+   "name": "build_reading",
+   "node_type": "code",
+   "assertions": [],
+   "truncation_strategy": "keep_all",
+   "passthrough": true,
+   "passthrough_default_transition": "fetch_email",
+   "on_enter": {
+    "type": "silent"
+   },
+   "disable_inactivity_monitor": true,
+   "pre_actions": [
+    {
+     "type": "function",
+     "function": {
+      "name": "code_exec",
+      "handler": "__function__:code_exec",
+      "parameters": {
+       "type": "object",
+       "properties": {
+        "code": {
+         "type": "string",
+         "default": "O = ['', 'bir', 'iki', '\\u00fc\\u00e7', 'd\\u00f6rt', 'be\\u015f', 'alt\\u0131', 'yedi', 'sekiz', 'dokuz']\nT = ['', 'on', 'yirmi', 'otuz', 'k\\u0131rk', 'elli', 'altm\\u0131\\u015f', 'yetmi\\u015f', 'seksen', 'doksan']\nMON = ['Ocak', '\\u015eubat', 'Mart', 'Nisan', 'May\\u0131s', 'Haziran', 'Temmuz', 'A\\u011fustos', 'Eyl\\u00fcl', 'Ekim', 'Kas\\u0131m', 'Aral\\u0131k']\ndef w3(n):\n    h = n // 100; t = (n // 10) % 10; o = n % 10; s = ''\n    if h:\n        s += ('' if h == 1 else O[h] + ' ') + 'y\\u00fcz '\n    if t:\n        s += T[t] + ' '\n    if o:\n        s += O[o] + ' '\n    return s.strip()\ndef w(n):\n    if n == 0:\n        return 's\\u0131f\\u0131r'\n    p = []\n    m = n // 1000000; k = (n // 1000) % 1000; r = n % 1000\n    if m:\n        p.append(w3(m) + ' milyon')\n    if k:\n        p.append(('' if k == 1 else w3(k) + ' ') + 'bin')\n    if r:\n        p.append(w3(r))\n    return ' '.join(p)\ndef money(x, unit, sub):\n    c = int(round(abs(x) * 100)); a = c // 100; b = c % 100\n    s = w(a) + ' ' + unit\n    if b:\n        s += ' ' + w(b) + ' ' + sub\n    return s\ndef dt(s):\n    try:\n        d, m, y = str(s).strip().split('.')\n        return '%d %s %s' % (int(d), MON[int(m) - 1], y)\n    except Exception:\n        return ''\ndef digits(s):\n    D = ['s\\u0131f\\u0131r'] + O[1:]\n    return ' '.join(D[int(ch)] for ch in str(s) if ch.isdigit())\ndef num(cur, f):\n    try:\n        return float(vars.get('bal_%s_%s' % (cur, f)))\n    except Exception:\n        return None\nCUR = [('TL', 'T\\u00fcrk Liras\\u0131', 'lira', 'kuru\\u015f', 'TL'), ('USD', 'Dolar', 'dolar', 'sent', 'USD'),\n       ('EUR', 'Euro', 'euro', 'sent', 'EUR'), ('GBP', '\\u0130ngiliz Sterlini', 'sterlin', 'peni', 'GBP')]\ntry:\n    last4 = str(vars.get('selected_last4') or '')\n    name = str(vars.get('selected_name') or '').strip()\n    sdate = str(vars.get('bal_statementDate') or '').strip()\n    nsdate = str(vars.get('bal_nextStatementDate') or '').strip()\n    lpd = str(vars.get('bal_lastPayDate') or '').strip()\n    nlpd = str(vars.get('bal_nextLastPayDate') or '').strip()\n    today = str(vars.get('today_iso') or '')[:10]\n    try:\n        y, mo, d = today.split('-')\n        today_tr = '%s.%s.%s' % (d, mo, y)\n    except Exception:\n        today_tr = ''\n    intro = 'Sonu %s ile biten %s kart\\u0131n\\u0131za' % (digits(last4), name) if name else 'Sonu %s ile biten kart\\u0131n\\u0131za' % digits(last4)\n    out = []\n    pdf_cur = ''\n    vars['pdf_statement_date'] = sdate\n    if not sdate:\n        out.append('Kart\\u0131n\\u0131z\\u0131n hen\\u00fcz kesilmi\\u015f bir ekstresi olmad\\u0131\\u011f\\u0131 i\\u00e7in ekstre borcunuz bulunmamaktad\\u0131r.')\n        if dt(nsdate):\n            out.append('\\u0130lk hesap kesim tarihiniz %s olacak.' % dt(nsdate))\n        vars['reading_kind'] = 'nostatement'\n    elif nsdate and nsdate == today_tr:\n        out.append('Hesap kesim tarihiniz bug\\u00fcn, ekstreniz saat s\\u0131f\\u0131r s\\u0131f\\u0131r itibar\\u0131yla kesilecek.')\n        nodebt = []\n        for c, full, unit, sub, code in CUR:\n            tdv = num(c, 'totalDebt')\n            if tdv is not None and tdv > 0:\n                out.append('%s toplam borcunuz %s %s.' % (full, money(tdv, unit, sub), code))\n            else:\n                nodebt.append(full)\n        if nodebt:\n            out.append('%s borcunuz bulunmamaktad\\u0131r.' % ', '.join(nodebt))\n        if dt(lpd):\n            out.append('Bor\\u00e7lar\\u0131n\\u0131z i\\u00e7in son \\u00f6deme tarihiniz %s\\'d\\u0131r.' % dt(lpd))\n        vars['reading_kind'] = 'cutday'\n    else:\n        has = []\n        first = True\n        nodebt = []\n        for c, full, unit, sub, code in CUR:\n            rd = num(c, 'remainingDebt'); sd = num(c, 'statementDebt'); mp = num(c, 'minPayment'); rm = num(c, 'remainingMinPayment')\n            if rd is None or sd is None or rd <= 0:\n                nodebt.append((c, full))\n                continue\n            has.append(c)\n            if not pdf_cur:\n                pdf_cur = c\n            lead = ''\n            if first:\n                lead = '%s %s tarihinde kesilen ekstre ' % (intro, dt(sdate))\n                first = False\n            if c == 'TL':\n                if rm is not None and mp is not None and rm <= 0:\n                    s = '%s borcunuz %s, kalan toplam borcunuz %s. Minimum \\u00f6demenizi yapt\\u0131\\u011f\\u0131n\\u0131z i\\u00e7in te\\u015fekk\\u00fcr ederiz.' % (full, money(sd, unit, sub) + ' TL', money(rd, unit, sub) + ' TL')\n                elif rm is not None and mp is not None and rm < mp:\n                    s = '%s borcunuz %s, \\u00f6denmesi gereken minimum tutar %s, kalan toplam borcunuz %s, kalan minimum \\u00f6deme tutar\\u0131n\\u0131z %s.' % (full, money(sd, unit, sub) + ' TL', money(mp or 0, unit, sub) + ' TL', money(rd, unit, sub) + ' TL', money(rm, unit, sub) + ' TL')\n                else:\n                    s = '%s borcunuz %s, \\u00f6denmesi gereken minimum tutar %s.' % (full, money(sd, unit, sub) + ' TL', money(mp or 0, unit, sub) + ' TL')\n            else:\n                s = '%s borcunuz %s %s, kalan toplam borcunuz %s %s, \\u00f6denmesi gereken minimum tutar %s %s.' % (full, money(sd, unit, sub), code, money(rd, unit, sub), code, money(mp or 0, unit, sub), code)\n            out.append(lead + s)\n        if not has:\n            tdv = num('TL', 'totalDebt') or 0.0\n            s = 'Sonu %s ile biten %s kart\\u0131n\\u0131z\\u0131n %s tarihli ekstresinden borcunuz bulunmamaktad\\u0131r.' % (digits(last4), name, dt(sdate))\n            if tdv > 0:\n                s += ' Gelecek d\\u00f6nemler dahil toplam borcunuz %s TL.' % money(tdv, 'lira', 'kuru\\u015f')\n            if dt(nlpd or lpd):\n                s += ' Son \\u00f6deme tarihiniz %s olacakt\\u0131r.' % dt(nlpd or lpd)\n            out = [s]\n            vars['reading_kind'] = 'nodebt'\n        else:\n            if nodebt and len(has) < 4:\n                nm = [f for c, f in nodebt]\n                nm = ['TL' if x == 'T\\u00fcrk Liras\\u0131' else x for x in nm]\n                out.append('%s borcunuz bulunmamaktad\\u0131r.' % ' ve '.join([', '.join(nm[:-1]), nm[-1]] if len(nm) > 1 else nm))\n            if dt(lpd):\n                if lpd == today_tr:\n                    out.append('Bor\\u00e7lar\\u0131n\\u0131z i\\u00e7in son \\u00f6deme tarihiniz bug\\u00fcnd\\u00fcr.')\n                else:\n                    out.append('Bor\\u00e7lar\\u0131n\\u0131z i\\u00e7in son \\u00f6deme tarihiniz %s\\'d\\u0131r.' % dt(lpd))\n            vars['reading_kind'] = 'debt'\n    vars['pdf_currency'] = pdf_cur or 'TL'\n    import re\n    txt = ' '.join(out)\n    txt = re.sub(r'(lira|dolar|euro|sterlin|sent|peni|kuru\\u015f) (TL|USD|EUR|GBP)', r'\\1', txt)\n    vars['reading_text'] = txt\n    vars['reading_state'] = 'ok'\n    more = ' Ba\\u015fka bir kart\\u0131n\\u0131z\\u0131n borcunu \\u00f6\\u011frenmek ister misiniz?' if int(str(vars.get('card_count') or '1')) > 1 else ''\n    vars['more_text'] = more\nexcept Exception:\n    vars['reading_state'] = 'error'\n"
+        },
+        "timeout_ms": {
+         "type": "number",
+         "default": 10000
+        }
+       }
+      }
+     }
+    }
+   ],
+   "transitions": [
+    {
+     "target_node": "end_error",
+     "description": "error",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "reading_state",
+        "operator": "equals",
+        "operand": "error",
+        "mode": "exact"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "fetch_email",
+     "description": "ok",
+     "condition": {
+      "operator": "always"
+     }
+    }
+   ]
+  },
+  "fetch_email": {
+   "name": "fetch_email",
+   "node_type": "api_request",
+   "assertions": [],
+   "truncation_strategy": "keep_all",
+   "passthrough": true,
+   "passthrough_default_transition": "email_prepare",
+   "on_enter": {
+    "type": "silent"
+   },
+   "disable_inactivity_monitor": true,
+   "pre_actions": [
+    {
+     "type": "function",
+     "config": {
+      "timeoutMs": 20000,
+      "maxRetries": 0
+     },
+     "function": {
+      "name": "fetch_email",
+      "handler": "__function__:api_call",
+      "description": "fetch_email",
+      "parameters": {
+       "type": "object",
+       "properties": {
+        "url": {
+         "type": "string",
+         "default": "https://bank-mock-final.erenkaan5a.workers.dev/voice/v1/contact.email.get"
+        },
+        "method": {
+         "type": "string",
+         "default": "POST"
+        },
+        "headers": {
+         "type": "object",
+         "properties": {
+          "Content-Type": {
+           "type": "string",
+           "default": "application/json"
+          }
+         }
+        },
+        "body": {
+         "type": "object",
+         "required": [
+          "data"
+         ],
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "customerNo": {
+             "type": "string",
+             "default": "{{customerNumber}}"
+            },
+            "intAddressInfoType": {
+             "type": "string",
+             "default": "E"
+            }
+           }
+          },
+          "call": {
+           "type": "object",
+           "properties": {
+            "lang": {
+             "type": "string",
+             "default": "tr"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   ],
+   "response_mapping": [
+    {
+     "path": "data.ibanEmail",
+     "variable": "email_address"
+    },
+    {
+     "path": "data.ttsEmail",
+     "variable": "email_tts"
+    }
+   ],
+   "transitions": [
+    {
+     "target_node": "email_prepare",
+     "description": "service error",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "fetch_email_failure_count",
+        "operator": "greater_than",
+        "operand": 0,
+        "mode": "exact"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "email_prepare",
+     "description": "always",
+     "condition": {
+      "operator": "always"
+     }
+    }
+   ]
+  },
+  "email_prepare": {
+   "name": "email_prepare",
+   "node_type": "code",
+   "assertions": [],
+   "truncation_strategy": "keep_all",
+   "passthrough": true,
+   "passthrough_default_transition": "after_reading",
+   "on_enter": {
+    "type": "silent"
+   },
+   "disable_inactivity_monitor": true,
+   "pre_actions": [
+    {
+     "type": "function",
+     "function": {
+      "name": "code_exec",
+      "handler": "__function__:code_exec",
+      "parameters": {
+       "type": "object",
+       "properties": {
+        "code": {
+         "type": "string",
+         "default": "try:\n    em = str(vars.get('email_address') or '').strip()\n    kind = str(vars.get('reading_kind') or '')\n    ok = ('@' in em) and kind == 'debt'\n    vars['has_email'] = 'yes' if ok else 'no'\n    wk = kind != 'nostatement'\n    if ok:\n        vars['offer_text'] = 'Hesap kesim tarihinizi de\\u011fi\\u015ftirebilirim ya da ekstrenizi kay\\u0131tl\\u0131 mail adresinize g\\u00f6nderebilirim.'\n    else:\n        vars['offer_text'] = 'Hesap kesim tarihinizi de\\u011fi\\u015ftirebilirim.'\n    vars['full_say'] = str(vars.get('reading_text') or '') + vars.get('more_text', '') + ' ' + vars['offer_text']\n    if int(str(vars.get('card_count') or '1')) > 1:\n        vars['full_say'] = str(vars.get('reading_text') or '') + ' Ba\\u015fka bir kart\\u0131n\\u0131z\\u0131n borcunu \\u00f6\\u011frenmek ister misiniz? ' + vars['offer_text']\nexcept Exception:\n    vars['has_email'] = 'no'\n    vars['full_say'] = str(vars.get('reading_text') or '')\n"
+        },
+        "timeout_ms": {
+         "type": "number",
+         "default": 10000
+        }
+       }
+      }
+     }
+    }
+   ],
+   "transitions": [
+    {
+     "target_node": "after_reading",
+     "description": "go",
+     "condition": {
+      "operator": "always"
+     }
+    }
+   ]
+  },
+  "after_reading": {
+   "name": "after_reading",
+   "node_type": "conversation",
+   "assertions": [],
+   "truncation_strategy": "keep_all",
+   "passthrough": false,
+   "role_message": "",
+   "task_message": "Okuma ve teklif cümleleri on_enter ile söylendi, tekrar etme. Müşterinin cevabını bekle ve next_choice alanını doldur. Önce müşterinin sorusu varsa tek kısa cümleyle cevap ver. Başka bir kartın borcu: other_card. Ekstreyi e-postayla gönder: email. Hesap kesim tarihini değiştir: week. Başka bir isteği yok / teşekkür / hayır: done. Müşteri temsilcisi isterse: agent. Kapsam dışı bir soru: out_of_scope. Başka dil: other_language. Cevabı belirsizse tekrar sor.",
+   "interruptible": false,
+   "max_node_turns": 4,
+   "max_turn_transition": "end_giveup",
+   "disable_inactivity_monitor": false,
+   "response_mapping": [],
+   "extraction_schema": [
+    {
+     "name": "next_choice",
+     "type": "string",
+     "description": "Müşterinin seçimi",
+     "min_confidence": 0.6,
+     "enum": [
+      "other_card",
+      "email",
+      "week",
+      "done",
+      "agent",
+      "out_of_scope",
+      "other_language"
+     ]
+    }
+   ],
+   "transitions": [
+    {
+     "target_node": "card_reset",
+     "description": "another card",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "next_choice",
+        "operator": "equals",
+        "operand": "other_card",
+        "mode": "exact"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "email_confirm",
+     "description": "email",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "logic": "and",
+        "conditions": [
+         {
+          "variable": "next_choice",
+          "operator": "equals",
+          "operand": "email",
+          "mode": "exact"
+         },
+         {
+          "variable": "has_email",
+          "operator": "equals",
+          "operand": "yes",
+          "mode": "exact"
+         }
+        ]
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "no_email",
+     "description": "no email",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "logic": "and",
+        "conditions": [
+         {
+          "variable": "next_choice",
+          "operator": "equals",
+          "operand": "email",
+          "mode": "exact"
+         },
+         {
+          "variable": "has_email",
+          "operator": "equals",
+          "operand": "no",
+          "mode": "exact"
+         }
+        ]
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "fetch_week",
+     "description": "week change",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "next_choice",
+        "operator": "equals",
+        "operand": "week",
+        "mode": "exact"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "end_menu",
+     "description": "done",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "next_choice",
+        "operator": "equals",
+        "operand": "done",
+        "mode": "exact"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "end_menu",
+     "description": "other language",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "next_choice",
+        "operator": "equals",
+        "operand": "other_language",
+        "mode": "exact"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "end_agent",
+     "description": "agent",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "next_choice",
+        "operator": "equals",
+        "operand": "agent",
+        "mode": "exact"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "end_oos",
+     "description": "oos",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "next_choice",
+        "operator": "equals",
+        "operand": "out_of_scope",
+        "mode": "exact"
+       }
+      ]
+     }
+    }
+   ],
+   "on_enter": {
+    "type": "tts",
+    "text": "{{full_say}}"
+   }
+  },
+  "card_reset": {
+   "name": "card_reset",
+   "node_type": "code",
+   "assertions": [],
+   "truncation_strategy": "keep_all",
+   "passthrough": true,
+   "passthrough_default_transition": "card_select",
+   "on_enter": {
+    "type": "silent"
+   },
+   "disable_inactivity_monitor": true,
+   "pre_actions": [
+    {
+     "type": "function",
+     "function": {
+      "name": "code_exec",
+      "handler": "__function__:code_exec",
+      "parameters": {
+       "type": "object",
+       "properties": {
+        "code": {
+         "type": "string",
+         "default": "vars['card_tries'] = '0'\nvars['card_feedback'] = 'Hangi kartınızın borcunu öğrenmek istersiniz? Örneğin, %s diyebilirsiniz.' % str(vars.get('card_examples') or '')\nvars['next_choice'] = ''\n"
+        },
+        "timeout_ms": {
+         "type": "number",
+         "default": 10000
+        }
+       }
+      }
+     }
+    }
+   ],
+   "transitions": [
+    {
+     "target_node": "card_select",
+     "description": "go",
+     "condition": {
+      "operator": "always"
+     }
+    }
+   ]
+  },
+  "no_email": {
+   "name": "no_email",
+   "node_type": "conversation",
+   "assertions": [],
+   "truncation_strategy": "keep_all",
+   "passthrough": false,
+   "role_message": "",
+   "task_message": "Önce şu cümleyi tam olarak söyle: 'Bankamızda kayıtlı bir e-posta adresiniz bulunmadığı için ekstrenizi gönderemiyorum.' Sonra hesap kesim tarihini değiştirmek isteyip istemediğini sor. Cevabı wants_week alanına yaz.",
+   "interruptible": false,
+   "max_node_turns": 4,
+   "max_turn_transition": "end_giveup",
+   "disable_inactivity_monitor": false,
+   "response_mapping": [],
+   "extraction_schema": [
+    {
+     "name": "wants_week",
+     "type": "string",
+     "description": "Hesap kesim tarihini değiştirmek istiyor mu",
+     "min_confidence": 0.6,
+     "enum": [
+      "yes",
+      "no"
+     ]
+    }
+   ],
+   "transitions": [
+    {
+     "target_node": "fetch_week",
+     "description": "yes",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "wants_week",
+        "operator": "equals",
+        "operand": "yes",
+        "mode": "exact"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "end_menu",
+     "description": "no",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "wants_week",
+        "operator": "equals",
+        "operand": "no",
+        "mode": "exact"
+       }
+      ]
+     }
+    }
+   ],
+   "on_enter": {
+    "type": "silent"
+   }
+  },
+  "email_confirm": {
+   "name": "email_confirm",
+   "node_type": "conversation",
+   "assertions": [],
+   "truncation_strategy": "keep_all",
+   "passthrough": false,
+   "role_message": "",
+   "task_message": "Kayıtlı adres okundu ve izin soruldu (on_enter). Müşterinin cevabını bekle. Önce müşterinin sorusu varsa tek cümleyle cevap ver. Yalnızca açık bir 'evet' sonrasında statement_pdf_send aracını bir kez çağır; başka adrese gönderme, adres değiştirilemez. Araç başarı dönmeden gönderildi deme. Araç hata verirse tekrar çağırma. Hayır derse email_answer=no. Açık evet: email_answer=yes.",
+   "interruptible": false,
+   "max_node_turns": 6,
+   "max_turn_transition": "end_giveup",
+   "disable_inactivity_monitor": false,
+   "response_mapping": [],
+   "extraction_schema": [
+    {
+     "name": "email_answer",
+     "type": "string",
+     "description": "Müşterinin gönderim izni",
+     "min_confidence": 0.6,
+     "enum": [
+      "yes",
+      "no"
+     ]
+    }
+   ],
+   "transitions": [
+    {
+     "target_node": "end_sent",
+     "description": "sent",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "statement_pdf_send_success_count",
+        "operator": "greater_than",
+        "operand": 0,
+        "mode": "exact"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "end_send_fail",
+     "description": "failed",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "statement_pdf_send_failure_count",
+        "operator": "greater_than",
+        "operand": 0,
+        "mode": "exact"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "end_menu",
+     "description": "declined",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "email_answer",
+        "operator": "equals",
+        "operand": "no",
+        "mode": "exact"
+       }
+      ]
+     }
+    }
+   ],
+   "on_enter": {
+    "type": "tts",
+    "text": "Ekstrenizi {{email_tts}} adresine göndermemi ister misiniz?"
+   },
+   "tools": [
+    {
+     "type": "function",
+     "config": {
+      "timeoutMs": 15000,
+      "maxRetries": 0
+     },
+     "function": {
+      "name": "statement_pdf_send",
+      "handler": "__function__:api_call",
+      "description": "Ekstreyi kayıtlı e-posta adresine gönder. Yalnızca açık evetten sonra çağır.",
+      "parameters": {
+       "type": "object",
+       "properties": {
+        "url": {
+         "type": "string",
+         "default": "https://bank-mock-final.erenkaan5a.workers.dev/voice/v1/statement.pdf.send"
+        },
+        "method": {
+         "type": "string",
+         "default": "POST"
+        },
+        "headers": {
+         "type": "object",
+         "properties": {
+          "Content-Type": {
+           "type": "string",
+           "default": "application/json"
+          }
+         }
+        },
+        "body": {
+         "type": "object",
+         "required": [
+          "data"
+         ],
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "customerNo": {
+             "type": "string",
+             "default": "{{customerNumber}}"
+            },
+            "cardNumber": {
+             "type": "string",
+             "default": "{{selected_card_number}}"
+            },
+            "currencyType": {
+             "type": "string",
+             "default": "{{pdf_currency}}"
+            },
+            "statementDate": {
+             "type": "string",
+             "default": "{{pdf_statement_date}}"
+            },
+            "emailAddress": {
+             "type": "string",
+             "default": "{{email_address}}"
+            }
+           }
+          },
+          "call": {
+           "type": "object",
+           "properties": {
+            "lang": {
+             "type": "string",
+             "default": "tr"
+            }
+           }
+          }
+         }
+        }
+       }
+      },
+      "post_process_code": "try:\n    if isinstance(result, dict):\n        result.pop('header', None)\n        d = result.get('data')\n        if not isinstance(d, dict):\n            d = {}\n            result['data'] = d\n        d['what_to_do_next'] = 'Ekstre gönderildi; müşteriye başarıyla gönderildiğini söyle.'\nexcept Exception:\n    pass\n"
+     }
+    }
+   ]
+  },
+  "fetch_week": {
+   "name": "fetch_week",
+   "node_type": "api_request",
+   "assertions": [],
+   "truncation_strategy": "keep_all",
+   "passthrough": true,
+   "passthrough_default_transition": "week_flow",
+   "on_enter": {
+    "type": "silent"
+   },
+   "disable_inactivity_monitor": true,
+   "pre_actions": [
+    {
+     "type": "function",
+     "config": {
+      "timeoutMs": 20000,
+      "maxRetries": 1
+     },
+     "function": {
+      "name": "fetch_week",
+      "handler": "__function__:api_call",
+      "description": "fetch_week",
+      "parameters": {
+       "type": "object",
+       "properties": {
+        "url": {
+         "type": "string",
+         "default": "https://bank-mock-final.erenkaan5a.workers.dev/voice/v1/statement.week.get"
+        },
+        "method": {
+         "type": "string",
+         "default": "POST"
+        },
+        "headers": {
+         "type": "object",
+         "properties": {
+          "Content-Type": {
+           "type": "string",
+           "default": "application/json"
+          }
+         }
+        },
+        "body": {
+         "type": "object",
+         "required": [
+          "data"
+         ],
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "cardNumber": {
+             "type": "string",
+             "default": "{{selected_card_number}}"
+            }
+           }
+          },
+          "call": {
+           "type": "object",
+           "properties": {
+            "lang": {
+             "type": "string",
+             "default": "tr"
+            }
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   ],
+   "response_mapping": [
+    {
+     "path": "data.statementWeek",
+     "variable": "wk_week"
+    },
+    {
+     "path": "data.statementDay",
+     "variable": "wk_day"
+    },
+    {
+     "path": "data.productName",
+     "variable": "wk_name"
+    },
+    {
+     "path": "data.nextStatementDate",
+     "variable": "wk_next"
+    },
+    {
+     "path": "data.nextLastPayDate",
+     "variable": "wk_due"
+    }
+   ],
+   "transitions": [
+    {
+     "target_node": "end_week_fail",
+     "description": "service error",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "fetch_week_failure_count",
+        "operator": "greater_than",
+        "operand": 0,
+        "mode": "exact"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "week_flow",
+     "description": "always",
+     "condition": {
+      "operator": "always"
+     }
+    }
+   ]
+  },
+  "week_flow": {
+   "name": "week_flow",
+   "node_type": "conversation",
+   "assertions": [],
+   "truncation_strategy": "keep_all",
+   "passthrough": false,
+   "role_message": "",
+   "task_message": "Hesap kesim haftası değişikliği. Sırayla: 1) on_enter ile mevcut durum söylendi ve değiştirmek isteyip istemediği soruldu. Hayır derse week_declined=yes. 2) Evet derse tam olarak şunu söyle: 'Hesap kesim tarihinizi ayın 1., 3. ya da 4. haftasına alabilirim. Hangisini tercih edersiniz?' ({{wk_week}}. hafta mevcut hafta; mevcut haftayı seçenek sayma, mevcut hafta 1, 3 ya da 4 ise listeyi ona göre düzenle). 3) Müşteri bir hafta seçince week_decide aracını çağır (önizleme, kartı değiştirmez). Sonucun statementDate ve statementDueDate alanlarını al ve şunu söyle: 'Yeni hesap kesim haftanız her ayın N. haftası olacak. Yeni hesap kesim tarihiniz [statementDate], son ödeme tarihiniz [statementDueDate] olacak. Onaylıyor musunuz?' (tarihleri 21 Ağustos 2026 biçiminde söyle). 4) Yalnızca açık evetten sonra week_change aracını bir kez çağır. Hayır derse week_declined=yes, değişiklik yapılmadı. Düzeltme olursa onay geçersizdir, yeniden week_decide çağır. Araç başarı dönmeden değişti deme. Bir araç hata verirse tekrar çağırma. Her araç sonucundan sonra konuş.",
+   "interruptible": false,
+   "max_node_turns": 10,
+   "max_turn_transition": "end_giveup",
+   "disable_inactivity_monitor": false,
+   "response_mapping": [],
+   "extraction_schema": [
+    {
+     "name": "week_declined",
+     "type": "string",
+     "description": "Müşteri değişiklik istemiyor veya onaylamıyor mu",
+     "min_confidence": 0.6,
+     "enum": [
+      "yes",
+      "no"
+     ]
+    }
+   ],
+   "transitions": [
+    {
+     "target_node": "end_week_done",
+     "description": "changed",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "week_change_success_count",
+        "operator": "greater_than",
+        "operand": 0,
+        "mode": "exact"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "end_week_fail",
+     "description": "change failed",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "week_change_failure_count",
+        "operator": "greater_than",
+        "operand": 0,
+        "mode": "exact"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "end_week_fail",
+     "description": "preview failed",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "week_decide_failure_count",
+        "operator": "greater_than",
+        "operand": 0,
+        "mode": "exact"
+       }
+      ]
+     }
+    },
+    {
+     "target_node": "end_menu",
+     "description": "declined",
+     "condition": {
+      "logic": "or",
+      "conditions": [
+       {
+        "variable": "week_declined",
+        "operator": "equals",
+        "operand": "yes",
+        "mode": "exact"
+       }
+      ]
+     }
+    }
+   ],
+   "on_enter": {
+    "type": "tts",
+    "text": "{{wk_name}} kartınızın hesap kesim tarihi her ayın {{wk_week}}. haftası olarak tanımlı. Bir sonraki hesap kesim tarihiniz {{wk_next}}, son ödeme tarihiniz {{wk_due}}. Hesap kesim tarihinizi değiştirmek ister misiniz?"
+   },
+   "tools": [
+    {
+     "type": "function",
+     "config": {
+      "timeoutMs": 15000,
+      "maxRetries": 0
+     },
+     "function": {
+      "name": "week_decide",
+      "handler": "__function__:api_call",
+      "description": "Yeni haftanın önizlemesini al; kartı değiştirmez.",
+      "parameters": {
+       "type": "object",
+       "properties": {
+        "url": {
+         "type": "string",
+         "default": "https://bank-mock-final.erenkaan5a.workers.dev/voice/v1/statement.week.decide"
+        },
+        "method": {
+         "type": "string",
+         "default": "POST"
+        },
+        "headers": {
+         "type": "object",
+         "properties": {
+          "Content-Type": {
+           "type": "string",
+           "default": "application/json"
+          }
+         }
+        },
+        "body": {
+         "type": "object",
+         "required": [
+          "data"
+         ],
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "cardNumber": {
+             "type": "string",
+             "default": "{{selected_card_number}}"
+            },
+            "newStatementWeek": {
+             "type": "string",
+             "default": "{{newStatementWeek}}",
+             "enum": [
+              "1",
+              "2",
+              "3",
+              "4"
+             ],
+             "description": "Müşterinin seçtiği yeni hafta (1-4)."
+            },
+            "statementDay": {
+             "type": "string",
+             "default": "{{wk_day}}"
+            }
+           }
+          },
+          "call": {
+           "type": "object",
+           "properties": {
+            "lang": {
+             "type": "string",
+             "default": "tr"
+            }
+           }
+          }
+         }
+        }
+       }
+      },
+      "post_process_code": "try:\n    if isinstance(result, dict):\n        result.pop('header', None)\n        d = result.get('data')\n        if not isinstance(d, dict):\n            d = {}\n            result['data'] = d\n        d['what_to_do_next'] = 'Önizleme alındı; yeni tarihleri söyleyip onay iste. Değişiklik henüz yapılmadı.'\nexcept Exception:\n    pass\n"
+     },
+     "response_mapping": [
+      {
+       "path": "data.statementDate",
+       "variable": "new_statement_date"
+      },
+      {
+       "path": "data.statementDueDate",
+       "variable": "new_due_date"
+      }
+     ]
+    },
+    {
+     "type": "function",
+     "config": {
+      "timeoutMs": 15000,
+      "maxRetries": 0
+     },
+     "function": {
+      "name": "week_change",
+      "handler": "__function__:api_call",
+      "description": "Onaylanan hafta değişikliğini kaydet. Yalnızca açık evetten sonra çağır.",
+      "parameters": {
+       "type": "object",
+       "properties": {
+        "url": {
+         "type": "string",
+         "default": "https://bank-mock-final.erenkaan5a.workers.dev/voice/v1/statement.week.change"
+        },
+        "method": {
+         "type": "string",
+         "default": "POST"
+        },
+        "headers": {
+         "type": "object",
+         "properties": {
+          "Content-Type": {
+           "type": "string",
+           "default": "application/json"
+          }
+         }
+        },
+        "body": {
+         "type": "object",
+         "required": [
+          "data"
+         ],
+         "properties": {
+          "data": {
+           "type": "object",
+           "properties": {
+            "cardNumber": {
+             "type": "string",
+             "default": "{{selected_card_number}}"
+            },
+            "newStatementWeek": {
+             "type": "string",
+             "default": "{{newStatementWeek}}",
+             "enum": [
+              "1",
+              "2",
+              "3",
+              "4"
+             ],
+             "description": "Onaylanan yeni hafta (1-4)."
+            },
+            "statementDay": {
+             "type": "string",
+             "default": "{{wk_day}}"
+            }
+           }
+          },
+          "call": {
+           "type": "object",
+           "properties": {
+            "lang": {
+             "type": "string",
+             "default": "tr"
+            }
+           }
+          }
+         }
+        }
+       }
+      },
+      "post_process_code": "try:\n    if isinstance(result, dict):\n        result.pop('header', None)\n        d = result.get('data')\n        if not isinstance(d, dict):\n            d = {}\n            result['data'] = d\n        d['what_to_do_next'] = 'Değişiklik sonucu geldi; başarıysa ve exitState OK ise bildir.'\nexcept Exception:\n    pass\n"
+     }
+    }
+   ]
+  },
+  "end_menu": {
+   "name": "end_menu",
+   "node_type": "end_call",
+   "assertions": [],
+   "truncation_strategy": "keep_all",
+   "on_enter": {
+    "type": "silent"
+   },
+   "disable_inactivity_monitor": true,
+   "transitions": [],
+   "terminal": {
+    "type": "function",
+    "function": {
+     "name": "end_menu_close",
+     "handler": "__function__:end_call",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "message_mode": {
+        "type": "string",
+        "default": "custom"
+       },
+       "spoken_message": {
+        "type": "string",
+        "default": "Sizi ana menüye yönlendiriyorum."
+       }
+      }
+     }
+    }
+   }
+  },
+  "end_oos": {
+   "name": "end_oos",
+   "node_type": "end_call",
+   "assertions": [],
+   "truncation_strategy": "keep_all",
+   "on_enter": {
+    "type": "silent"
+   },
+   "disable_inactivity_monitor": true,
+   "transitions": [],
+   "terminal": {
+    "type": "function",
+    "function": {
+     "name": "end_menu_oos",
+     "handler": "__function__:end_call",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "message_mode": {
+        "type": "string",
+        "default": "custom"
+       },
+       "spoken_message": {
+        "type": "string",
+        "default": "Size bu konuda yardımcı olamıyorum. Sizi ana menüye yönlendiriyorum."
+       }
+      }
+     }
+    }
+   }
+  },
+  "end_giveup": {
+   "name": "end_giveup",
+   "node_type": "end_call",
+   "assertions": [],
+   "truncation_strategy": "keep_all",
+   "on_enter": {
+    "type": "silent"
+   },
+   "disable_inactivity_monitor": true,
+   "transitions": [],
+   "terminal": {
+    "type": "function",
+    "function": {
+     "name": "end_menu_giveup",
+     "handler": "__function__:end_call",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "message_mode": {
+        "type": "string",
+        "default": "custom"
+       },
+       "spoken_message": {
+        "type": "string",
+        "default": "Size şu anda yardımcı olamıyorum. Sizi ana menüye yönlendiriyorum."
+       }
+      }
+     }
+    }
+   }
+  },
+  "end_nocard": {
+   "name": "end_nocard",
+   "node_type": "end_call",
+   "assertions": [],
+   "truncation_strategy": "keep_all",
+   "on_enter": {
+    "type": "silent"
+   },
+   "disable_inactivity_monitor": true,
+   "transitions": [],
+   "terminal": {
+    "type": "function",
+    "function": {
+     "name": "end_menu_nocard",
+     "handler": "__function__:end_call",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "message_mode": {
+        "type": "string",
+        "default": "custom"
+       },
+       "spoken_message": {
+        "type": "string",
+        "default": "Ekstre borcunu sorgulayabileceğiniz uygun bir kredi kartınız bulunmuyor. Sizi ana menüye yönlendiriyorum."
+       }
+      }
+     }
+    }
+   }
+  },
+  "end_sent": {
+   "name": "end_sent",
+   "node_type": "end_call",
+   "assertions": [],
+   "truncation_strategy": "keep_all",
+   "on_enter": {
+    "type": "silent"
+   },
+   "disable_inactivity_monitor": true,
+   "transitions": [],
+   "terminal": {
+    "type": "function",
+    "function": {
+     "name": "end_menu_sent",
+     "handler": "__function__:end_call",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "message_mode": {
+        "type": "string",
+        "default": "custom"
+       },
+       "spoken_message": {
+        "type": "string",
+        "default": "Ekstreniz kayıtlı e-posta adresinize gönderildi. Sizi ana menüye yönlendiriyorum."
+       }
+      }
+     }
+    }
+   }
+  },
+  "end_send_fail": {
+   "name": "end_send_fail",
+   "node_type": "end_call",
+   "assertions": [],
+   "truncation_strategy": "keep_all",
+   "on_enter": {
+    "type": "silent"
+   },
+   "disable_inactivity_monitor": true,
+   "transitions": [],
+   "terminal": {
+    "type": "function",
+    "function": {
+     "name": "end_menu_sendfail",
+     "handler": "__function__:end_call",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "message_mode": {
+        "type": "string",
+        "default": "custom"
+       },
+       "spoken_message": {
+        "type": "string",
+        "default": "Şu anda ekstrenizi gönderemiyorum. Sizi müşteri temsilcimize aktarıyorum."
+       }
+      }
+     }
+    }
+   }
+  },
+  "end_week_done": {
+   "name": "end_week_done",
+   "node_type": "end_call",
+   "assertions": [],
+   "truncation_strategy": "keep_all",
+   "on_enter": {
+    "type": "silent"
+   },
+   "disable_inactivity_monitor": true,
+   "transitions": [],
+   "terminal": {
+    "type": "function",
+    "function": {
+     "name": "end_week_ok",
+     "handler": "__function__:end_call",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "message_mode": {
+        "type": "string",
+        "default": "custom"
+       },
+       "spoken_message": {
+        "type": "string",
+        "default": "Sonu {{selected_last4}} ile biten kartınızın hesap kesim haftası değiştirildi. Yeni hesap kesim tarihiniz {{new_statement_date}}, son ödeme tarihiniz {{new_due_date}}. Sizi ana menüye yönlendiriyorum."
+       }
+      }
+     }
+    }
+   }
+  },
+  "end_week_fail": {
+   "name": "end_week_fail",
+   "node_type": "end_call",
+   "assertions": [],
+   "truncation_strategy": "keep_all",
+   "on_enter": {
+    "type": "silent"
+   },
+   "disable_inactivity_monitor": true,
+   "transitions": [],
+   "terminal": {
+    "type": "function",
+    "function": {
+     "name": "end_week_failed",
+     "handler": "__function__:end_call",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "message_mode": {
+        "type": "string",
+        "default": "custom"
+       },
+       "spoken_message": {
+        "type": "string",
+        "default": "Şu anda hesap kesim tarihinizi değiştiremiyorum, sizi müşteri temsilcimize aktarıyorum."
+       }
+      }
+     }
+    }
+   }
+  },
+  "end_agent": {
+   "name": "end_agent",
+   "node_type": "end_call",
+   "assertions": [],
+   "truncation_strategy": "keep_all",
+   "on_enter": {
+    "type": "silent"
+   },
+   "disable_inactivity_monitor": true,
+   "transitions": [],
+   "terminal": {
+    "type": "function",
+    "function": {
+     "name": "end_agent_transfer",
+     "handler": "__function__:end_call",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "message_mode": {
+        "type": "string",
+        "default": "custom"
+       },
+       "spoken_message": {
+        "type": "string",
+        "default": "Sizi müşteri temsilcimize aktarıyorum."
+       }
+      }
+     }
+    }
+   }
+  },
+  "end_error": {
+   "name": "end_error",
+   "node_type": "end_call",
+   "assertions": [],
+   "truncation_strategy": "keep_all",
+   "on_enter": {
+    "type": "silent"
+   },
+   "disable_inactivity_monitor": true,
+   "transitions": [],
+   "terminal": {
+    "type": "function",
+    "function": {
+     "name": "end_service_error",
+     "handler": "__function__:end_call",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "message_mode": {
+        "type": "string",
+        "default": "custom"
+       },
+       "spoken_message": {
+        "type": "string",
+        "default": "Şu anda bilgilerinize ulaşamıyorum. Sizi müşteri temsilcimize aktarıyorum."
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

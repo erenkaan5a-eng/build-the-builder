@@ -1,0 +1,15 @@
+{
+ "team": "DOLDURUN: takım adı",
+ "members": [
+  {
+   "name": "DOLDURUN: Ad Soyad",
+   "email": "DOLDURUN@eposta"
+  }
+ ],
+ "repo": "https://github.com/erenkaan5a-eng/build-the-builder",
+ "commit": "8781bad59afc6a670189c4ce9f01daf3bc6451c9",
+ "run_command": "python3 builder/build.py {case_folder} https://bank-mock-final.erenkaan5a.workers.dev --slot final-r3-20261011-2058",
+ "workflow": "candidates/final-r3-20261011-2058/20261011-184634/export.json",
+ "trace": "traces/final-r3-20261011-2058-20261011-184634.log",
+ "mock_url": "https://bank-mock-final.erenkaan5a.workers.dev"
+}

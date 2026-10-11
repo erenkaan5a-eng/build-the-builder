@@ -1,0 +1,61 @@
+{
+ "path": "fallback",
+ "slot": "final-r3-20261011-2058",
+ "build_seconds": 693,
+ "model_calls": 70,
+ "trace": "/home/user/build-the-builder/traces/final-r3-20261011-2058-20261011-192442.log",
+ "known_gaps": [
+  "Y\u0131ll\u0131k hafta de\u011fi\u015ftirme hakk\u0131 (y\u0131lda bir kez) - serviste bu hakk\u0131 g\u00f6steren bir alan yok, bu y\u00fczden se\u00e7enekler her zaman sunuluyor.",
+  "Tam kart numaras\u0131 / alt\u0131 haneli e\u015fle\u015ftirme - test verisinde kart numaralar\u0131 maskeli, tam numara maskeli listeyle e\u015fle\u015ftirilemiyor. Ayn\u0131 ad ve ayn\u0131 son d\u00f6rt hane durumunda yaln\u0131zca tam numara sorusu soruluyor.",
+  "Hizmet zaman a\u015f\u0131m\u0131 mesaj\u0131 - brief'te tan\u0131ml\u0131 de\u011fil. Mesaj eklemedim, uzun timeout (15\u201320 sn) ve 1 yeniden deneme kulland\u0131m.",
+  "`statement.pdf.send` i\u00e7in para birimi - brief belirtmiyor. Borcu olan ilk para birimini g\u00f6nderiyorum (TL \u00f6ncelikli). M\u00fc\u015fteriye sormuyorum.",
+  "TL'ye aktar\u0131lan d\u00f6viz tutar\u0131 (`transferAmount` > 0) - c\u00fcmlesi taslakta yok, uydurmad\u0131m.",
+  "`cards.list` 404 (uygun kart yok) ile servis hatas\u0131 - api_request d\u00fc\u011f\u00fcm\u00fc ikisini ay\u0131ram\u0131yor. \u0130kisi de \"m\u00fc\u015fteri temsilcisine aktarma\" kapan\u0131\u015f\u0131na gidiyor, 404 i\u00e7in ayr\u0131 \"uygun kart yok\" c\u00fcmlesi bu y\u00fczden yaln\u0131zca bo\u015f liste durumunda \u00e7al\u0131\u015f\u0131yor.",
+  "Kapsam d\u0131\u015f\u0131 soru - \u00f6nce \"ana men\u00fcye aktarmam\u0131 ister misiniz?\" diye sorma yok. Do\u011frudan ana men\u00fc c\u00fcmlesiyle kapan\u0131yor.",
+  "Sessizlik (3. sessizlikte kapan\u0131\u015f), sinirli/\u015fikayet/\u00f6deme/itiraz i\u00e7in \u00f6zel i\u015fleyici ve 3 sakinle\u015ftirme cevab\u0131 sayac\u0131 - uygulanmad\u0131, platformun varsay\u0131lan davran\u0131\u015f\u0131na b\u0131rak\u0131ld\u0131.",
+  "Kesim g\u00fcn\u00fc ve bor\u00e7suz c\u00fcmleleri - brief'teki c\u00fcmlelerden k\u0131saltarak yazd\u0131m. Yabanc\u0131 para borcu ve \"Ba\u015fka kart?\" soru s\u0131ras\u0131 tam do\u011frulanmad\u0131.",
+  "\u0130\u00e7 i\u00e7e `data` g\u00f6vdesindeki baked default'lar (\u00f6rn. `statementDay` string tipinde, `newStatementWeek` model taraf\u0131ndan doldurulan de\u011fi\u015fken) - lint ve dry-run ge\u00e7ti, ama canl\u0131 \u00e7a\u011fr\u0131da do\u011frulanmad\u0131.",
+  "`week_change_args.newStatementWeek` ve u\u00e7 d\u00fc\u011f\u00fcmlerde `{{var}}` i\u00e7eren `spoken_message` kullan\u0131m\u0131 - dok\u00fcmanda do\u011frulanmad\u0131. Biti\u015f c\u00fcmlesi yeni tarihleri `week_decide` \u00e7\u0131kt\u0131s\u0131ndan al\u0131yor.",
+  "coverage not fully assessed: the fallback path reports only the gaps its agent noticed"
+ ],
+ "inputs": {
+  "brief_arg": "final/package/r3-20261011-2058",
+  "tool_api_arg": "https://bank-mock-final.erenkaan5a.workers.dev",
+  "case_files": 19,
+  "contract_derived": true,
+  "mock_url": "https://bank-mock-final.erenkaan5a.workers.dev",
+  "contract": "/home/user/build-the-builder/candidates/final-r3-20261011-2058/20261011-192442/contract.derived.json",
+  "contract_sha256_16": "71fe7aca7b85fd5d"
+ },
+ "input_problems": [],
+ "argv": [
+  "final/package/r3-20261011-2058",
+  "https://bank-mock-final.erenkaan5a.workers.dev",
+  "--slot",
+  "final-r3-20261011-2058",
+  "--mode",
+  "fallback",
+  "--budget-min",
+  "24"
+ ],
+ "sessions": "/home/user/build-the-builder/traces/final-r3-20261011-2058-20261011-192442.sessions",
+ "release_checks_passed": true,
+ "policy_correctness": "not measured by the build",
+ "lint_problems": 0,
+ "workflow_id": "6d079c07-c690-40f5-9692-3e16c0389aea",
+ "agent_id": "67005014-5987-4a80-9f9b-9858b578819c",
+ "version_number": 3,
+ "version_id": "5ae1d3c3-2114-4e14-be39-c6ed0aa4cad2",
+ "is_published": true,
+ "tested_hash": "871f29e3441807bb",
+ "checks": [
+  [
+   "first turn completes in a text simulation (chat API timed out)",
+   true
+  ]
+ ],
+ "exported_hash": "871f29e3441807bb",
+ "nodes": 26,
+ "global_nodes": 0,
+ "tool_functions": 14
+}
