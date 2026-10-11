@@ -54,9 +54,37 @@ def last_bd(monday):
         if isbd(x):
             best = x
     return best
+def parse_now(raw):
+    """The call's 'now': ISO (T or space, seconds, fraction, Z or offset kept as local wall time) or day.month.year /
+    day/month/year with an optional time. An unreadable value raises: no fallback to the machine clock."""
+    s = str(raw or '').strip()
+    m = re.match(r'^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{1,2}):(\d{2})(?::\d{2}(?:\.\d+)?)?)?(?:Z|[+-]\d{2}:?\d{2})?$', s)
+    if m:
+        y, mo, d, h, mi = m.groups()
+    else:
+        m = re.match(r'^(\d{1,2})[./](\d{1,2})[./](\d{4})(?:[ T,]+(\d{1,2})[:.](\d{2})(?::\d{2})?)?$', s)
+        if not m:
+            raise ValueError('now not readable: ' + s[:40])
+        d, mo, y, h, mi = m.groups()
+    return datetime.datetime(int(y), int(mo), int(d), int(h or 0), int(mi or 0))
+def parse_amount(x):
+    """An amount as digits with an optional decimal part, in either convention: '1234.5', '1,234.50', '1.234,50',
+    '1234,5', '12.500' (dot groups of three = thousands), currency words/signs ignored. Unreadable -> ValueError."""
+    if isinstance(x, (int, float)) and not isinstance(x, bool):
+        return float(x)
+    s = re.sub(r'[^\d.,-]', '', str(x or ''))
+    if not re.search(r'\d', s):
+        raise ValueError('amount not readable')
+    if ',' in s and '.' in s:
+        dec = ',' if s.rfind(',') > s.rfind('.') else '.'
+        s = s.replace('.' if dec == ',' else ',', '').replace(dec, '.')
+    elif ',' in s:
+        s = s.replace(',', '') if re.match(r'^-?\d{1,3}(,\d{3})+$', s) else s.replace(',', '.')
+    elif s.count('.') > 1 or re.match(r'^-?\d{1,3}(\.\d{3})+$', s):
+        s = s.replace('.', '')
+    return float(s)
 def today():
-    raw = str(vars.get(CFG['now_var']) or '')
-    return datetime.datetime.strptime(raw[:10], '%Y-%m-%d').date()
+    return parse_now(vars.get(CFG['now_var'])).date()
 def D(s):
     return datetime.date.fromisoformat(str(s)[:10])
 def load():
@@ -160,7 +188,7 @@ def current_amount(p):
 def propose(p, date_s, amt_s, t, out, named, shared):
     amt = None
     if amt_s not in (None, ''):
-        amt = float(amt_s)
+        amt = parse_amount(amt_s)
         if not math.isfinite(amt):
             raise ValueError('amount not finite')
         if p['floor'] is not None and amt < p['floor'] - 0.005:

@@ -101,9 +101,21 @@ def last_bd(monday):
         if isbd(x):
             best = x
     return best
+def parse_now(raw):
+    """The call's 'now': ISO (T or space, seconds, fraction, Z or offset kept as local wall time) or day.month.year /
+    day/month/year with an optional time. An unreadable value raises: no fallback to the machine clock."""
+    s = str(raw or '').strip()
+    m = re.match(r'^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{1,2}):(\d{2})(?::\d{2}(?:\.\d+)?)?)?(?:Z|[+-]\d{2}:?\d{2})?$', s)
+    if m:
+        y, mo, d, h, mi = m.groups()
+    else:
+        m = re.match(r'^(\d{1,2})[./](\d{1,2})[./](\d{4})(?:[ T,]+(\d{1,2})[:.](\d{2})(?::\d{2})?)?$', s)
+        if not m:
+            raise ValueError('now not readable: ' + s[:40])
+        d, mo, y, h, mi = m.groups()
+    return datetime.datetime(int(y), int(mo), int(d), int(h or 0), int(mi or 0))
 def now_dt():
-    raw = str(vars.get(CFG['now_var']) or '')
-    return datetime.datetime.strptime(raw[:16].replace(' ', 'T'), '%Y-%m-%dT%H:%M')
+    return parse_now(vars.get(CFG['now_var']))
 '''
 
 SETUP_CODE = CAL_HELPERS + r'''

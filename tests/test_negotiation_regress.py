@@ -173,6 +173,20 @@ c = Call([P("p1", "credit card", 300.0, 90.0, "2026-11-02", 1)])
 c.ev(("p1", "proposes", "2026-10-16", ""))
 check("K2 without names in the policy: English as before", "Friday 16 October" in c.v["neg_say"], c.v["neg_say"])
 
+# L) input formats that are not the kit's: the call's 'now' and amounts said in another convention (generic parsing)
+for now in ("2026-10-14T11:00", "2026-10-14 11:00:00", "2026-10-14T11:00:00+03:00", "2026-10-14T08:00:00Z", "14.10.2026 11:00", "14/10/2026", "2026-10-14"):
+    c = Call([P("p1", "kredi kartı", 300.0, 90.0, "2026-11-02", 1)], now=now)
+    c.ev(("p1", "proposes", "2026-10-16", ""))
+    ok = (c.p("p1").get("agreed") or {}).get("date") == "2026-10-16" and not c.v.get("neg_error")
+    check(f"L1 now {now!r} is read (today = Wed 14 Oct): Friday agreed", ok, (c.v.get("neg_error"), c.p("p1")))
+c = Call([P("p1", "kredi kartı", 300.0, 90.0, "2026-11-02", 1)], now="next Tuesday")
+c.ev(("p1", "proposes", "2026-10-16", ""))
+check("L2 an unreadable 'now' is an error (no machine clock)", bool(c.v.get("neg_error")) and "now" in c.v["neg_error"], c.v.get("neg_error"))
+for said, want in (("1.234,56", 1234.56), ("1,234.56", 1234.56), ("1234,5", 1234.5), ("12.500", 12500.0), ("2.125,10 TL", 2125.10), ("₺ 950", 950.0), ("1500", 1500.0)):
+    c = Call([P("p1", "kredi kartı", 20000.0, 100.0, "2026-11-02", 1)])
+    c.ev(("p1", "proposes", "2026-10-16", said))
+    check(f"L3 amount {said!r} -> {want}", (c.p("p1").get("agreed") or {}).get("amount") == want, (c.v.get("neg_error"), c.p("p1").get("agreed")))
+
 # H) section 5 properties of the cloud review not covered above
 c = Call([P("p1", "credit card", 300.0, 90.0, "2026-11-02", 1), P("p2", "personal loan", 600.0, 200.0, "2026-10-23", 2)])
 c.ev(("all", "proposes", "2026-10-16", "")); c.ev(("all", "confirms", "", ""))
