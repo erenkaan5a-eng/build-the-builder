@@ -222,6 +222,27 @@ def _retry_5xx(fn, budget, trace, waits=(30, 90, 180)):
     raise last
 
 
+def sim_smoke(pub, variables, trace):
+    """One short text simulation of the published agent with a generic caller; passes when the agent speaks and the call
+    completes. Returns (name, ok, detail)."""
+    f = common.freya
+    persona = f.create_personas([{"name": f"builder smoke {pub['workflow_id'][:8]}",
+                                  "prompt": "You are a caller. Answer briefly, in the language the assistant uses. When the assistant has "
+                                            "answered your request once, say thank you and that you need nothing else.",
+                                  "successCriteria": "The assistant speaks and the call ends normally.", "tags": ["builder-smoke"]}])["personas"][0]
+    sim_id, it_id, status = f.run_simulation(pub["agent_id"], f"builder smoke {pub['workflow_id'][:8]}", {persona["id"]: variables},
+                                             max_seconds=180, concurrency=1)
+    runs = f.get_iteration(sim_id, it_id).get("runs") or []
+    said, cid = [], None
+    for run in runs:
+        cid = run.get("callId") or run.get("call_id")
+        if cid:
+            said = [m.get("message") or "" for m in f.get_call(cid).get("messages") or [] if m.get("role") == "assistant"]
+    ok = status == "completed" and any(x.strip() for x in said)
+    trace.log("TEST", f"simulation smoke {sim_id} call {cid}: status {status}, {len(said)} assistant message(s); first: {(said[0] if said else '')[:160]!r}")
+    return ("first turn completes in a text simulation (chat API timed out)", ok, f"simulation {sim_id} call {cid}")
+
+
 def final_sequence(slot, wf_path, tool_api, cand, budget, trace, pol=None, practice=None):
     """validate -> publish -> test that published version -> export. Every step checks the shared budget."""
     st = {"release_checks_passed": False, "policy_correctness": "not measured by the build"}
@@ -265,8 +286,17 @@ def final_sequence(slot, wf_path, tool_api, cand, budget, trace, pol=None, pract
             else:
                 tv = dict(wf.get("test_variables") or {})
                 tv["customer_id"] = "c_smoke_test"
-                r = _retry_5xx(lambda: common.chat_smoke(pub["workflow_id"], tv, trace), budget, trace)
-                checks = [("opening line spoken (fallback: structural checks need a policy)", bool((r.get("response") or "").strip()), "")]
+                try:
+                    r = common.chat_smoke(pub["workflow_id"], tv, trace)
+                    checks = [("opening line spoken (fallback: structural checks need a policy)", bool((r.get("response") or "").strip()), "")]
+                except RuntimeError as e:
+                    if not re.search(r"-> 5\d\d", str(e)):
+                        raise
+                    # the chat API's gateway can time out before a workflow's first steps finish (several service calls and
+                    # code steps before the first sentence; final run 11 Oct: 504 x4 while a simulation of the same flow
+                    # completed): one text simulation, the channel the agent is tested in, instead of waiting on retries
+                    trace.log("TEST", f"chat API {str(e)[:70]}; one text simulation instead")
+                    checks = [sim_smoke(pub, tv, trace)]
             if practice and budget.left() > 60:
                 pres, _ = _retry_5xx(lambda: behavior.practice(pub["workflow_id"], practice, trace), budget, trace)
                 checks += pres

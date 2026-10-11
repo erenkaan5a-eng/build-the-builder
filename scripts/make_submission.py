@@ -66,6 +66,7 @@ def main():
     ap.add_argument("--member", action="append", required=True, help='"Name,email" (repeat per member)')
     ap.add_argument("--repo", required=True); ap.add_argument("--mock-url", required=True)
     ap.add_argument("--allow-failed-checks", action="store_true")
+    ap.add_argument("--commit", help="report this commit instead of HEAD (it must hold the run's outputs)")
     ap.add_argument("--out-dir", default=str(ROOT), help="where submission.json and submission/ are written (default: repo root)")
     a = ap.parse_args()
     cand = (ROOT / a.candidate).resolve() if not pathlib.Path(a.candidate).is_absolute() else pathlib.Path(a.candidate)
@@ -95,14 +96,14 @@ def main():
         problems.append(f"the run used mock_url {inputs['mock_url']}, not {a.mock_url}")
     m = re.search(r"source commit ([0-9a-f]{40})", tt)
     run_commit = m.group(1) if m else None
-    head = git("rev-parse", "HEAD")
+    head = git("rev-parse", a.commit or "HEAD")
     if not run_commit:
         problems.append("the trace records no source commit")
     else:
         changed = [p for p in git("diff", "--name-only", run_commit, head).splitlines() if p and not is_output(p)]
         if changed:
             problems.append("between the run's commit and HEAD, files that affect a build changed: " + ", ".join(changed[:10]))
-    dirty = [p for p in changed_paths() if not is_output(p)]
+    dirty = [] if a.commit else [p for p in changed_paths() if not is_output(p)]
     if dirty:
         problems.append("uncommitted changes outside the output paths: " + ", ".join(dirty[:10]))
     sessions = pathlib.Path(man["sessions"]) if man.get("sessions") else trace.with_suffix(".sessions")
@@ -120,10 +121,10 @@ def main():
     # the reported commit (HEAD) must already hold the run's export, trace and session logs, unchanged
     for f in [trace, cand / "export.json", cand / "manifest.json"] + session_files:
         r = str(f.resolve().relative_to(ROOT))
-        if subprocess.run(["git", "ls-files", "--error-unmatch", r], cwd=ROOT, capture_output=True).returncode != 0:
-            problems.append(f"{r} is not committed: commit and push the run's outputs first, then write the submission")
-        elif git("status", "--porcelain", "--", r):
-            problems.append(f"{r} differs from the committed version")
+        if subprocess.run(["git", "cat-file", "-e", f"{head}:{r}"], cwd=ROOT, capture_output=True).returncode != 0:
+            problems.append(f"{r} is not in commit {head[:7]}: commit and push the run's outputs first, then write the submission")
+        elif subprocess.run(["git", "diff", "--quiet", head, "--", r], cwd=ROOT).returncode != 0:
+            problems.append(f"{r} differs from the version in commit {head[:7]}")
     secrets = [(k, v) for k, v in os.environ.items() if re.search(r"(KEY|TOKEN|SECRET|PASSWORD)", k, re.I) and v and len(v) >= 8]
     for f in files:
         if f.exists():
