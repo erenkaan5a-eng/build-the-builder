@@ -121,14 +121,16 @@ def structural(workflow_id, pol, trace):
     return res
 
 
-def practice(workflow_id, case_id, trace):
-    """Dev only: public practice customer -> verify both answers -> account facts reach the negotiation stage."""
+def practice(workflow_id, case_id, trace, raw_answers=False):
+    """Dev only: public practice customer -> verify both answers -> account facts reach the negotiation stage.
+    raw_answers=True sends the identity values unformatted (e.g. '1991-01-08'): a separate regression of the 11 Oct
+    loc-ab v2 failure, not the representative check (callers say a date of birth in words)."""
     sys.path.insert(0, str(ROOT / "tools"))
     from score import http
     case = [c for c in json.load(open(ROOT / "public-test-set.json")) if c["id"] == case_id][0]
     sess = http("/v1/practice/sessions", {"case": case_id})["variables"]
     ident = case["identity"]
-    answers = [spoken(ident[k]) for k in ident]
+    answers = [str(ident[k]) if raw_answers else spoken(ident[k]) for k in ident]
     cid, replies, ev = chat(workflow_id, sess, ["Hello?", "Yes, that's me."] + answers + ["Okay."])
     nodes = [e[1] for e in ev if e[0] == "node"]
     v = calls_of(ev, "verify_identity")
@@ -138,7 +140,15 @@ def practice(workflow_id, case_id, trace):
     after = ev[acct_idx[0]:] if acct_idx else []
     first_stmt = next((e[1] for e in after if e[0] == "assistant" and any(d in e[1].replace(",", "") for d in dues)), "")
     all_stated = bool(first_stmt) and all(d in first_stmt.replace(",", "") for d in dues)
+    # the bank's own record of this practice session: the calls it received must be the ones the events show
+    led = http("/v1/practice/ledger/" + sess["customer_id"])
+    lt = [c.get("tool") for c in led.get("calls") or []]
+    seen = [e[1] for e in ev if e[0] == "call" and e[1] in ("verify_identity", "get_account", "create_promise", "add_note", "close_call",
+                                                           "transfer_to_agent", "schedule_callback")]
+    bank_ok = lt == seen and lt.count("get_account") == (1 if acct_idx else 0) and not set(lt) - {"verify_identity", "get_account"}
     res = [("both answers sent to verify_identity", len(v) >= len(answers), f"{len(v)} verify calls"),
+           ("bank ledger = the call events (identity calls, one get_account after verification, no write)", bank_ok,
+            f"ledger {' > '.join(lt)} | events {' > '.join(seen)}"),
            ("account fetched after verification", bool(acct_idx), " > ".join(nodes)[:240]),
            ("negotiation stage reached with account facts", neg, ""),
            ("every product's past-due amount stated in the debt statement, before any offer", all_stated, first_stmt[:220])]

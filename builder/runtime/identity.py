@@ -24,8 +24,13 @@ Event/transition table (one customer message = one call of ID_EVENT):
   human           first time(s): the policy's 'can I help first' sentence; after that: engine-run transfer
   answer          parts for the named (or active) question; a question already verified is never sent again
   correction      replaces the parts it names (digits: the whole answer)
-  refuses / stop / asks_purpose (only without an answer in the same message)
-                  -> one decline; the first is answered with the policy's explanation; the policy's count closes 'declined'
+  refuses / asks_purpose (only when the same message does not answer the question being asked)
+                  -> one decline (at most one per message); the first is answered with the policy's explanation; the
+                  policy's count closes 'declined' (A15: an explicit refusal, or 'what is this about?' instead of answering)
+  asks_why        'why do you need that?' about the security question: answered with the explanation (once per call),
+                  never counted (A15 counts refusals and 'what is the call about' questions only); sent together with
+                  'refuses' when the same message also refuses
+  stop            counted over the whole stage (A45)
   robot / scam    the policy's answer, then the step continues
   other           the step continues (the open question or its missing part is asked)
 After the events: active question complete and valid -> one verify request; incomplete -> only the missing part is asked;
@@ -217,6 +222,10 @@ try:
             save(st)
             raise StopIteration()
     act = first_open(st)
+    act_field = qs()[act]['field'] if act is not None else None
+    # an answer to the question being asked (a part counts; no field = the asked one) takes the place of a refusal in the
+    # same message; an answer to another question does not ('instead of answering', A15)
+    ans_active = [e for e in answers if act_field is not None and (not e['field'] or qby(e['field']) is None or e['field'] == act_field)]
     for e in answers:
         q = qby(e['field']) if e['field'] else None
         if q is None and act is not None:
@@ -227,10 +236,10 @@ try:
     stop_now = 'stop' in kinds
     if stop_now:
         st['stops'] = int(st.get('stops') or 0) + 1     # A45 'says twice': counted over the whole stage, not reset
-    dec_now = not answers and bool([e for e in E if e['type'] in ('refuses', 'asks_purpose')])
+    dec_now = not ans_active and bool([e for e in E if e['type'] in ('refuses', 'asks_purpose')])
     if dec_now:
         st['declines'] = int(st.get('declines') or 0) + 1
-    if (dec_now or stop_now) and not answers:
+    if (dec_now or stop_now) and not ans_active:
         if st['declines'] >= int(CFG['declines_to_close']) or int(st.get('stops') or 0) >= int(CFG['stops_to_close']):
             close(st, 'declined', 'declined', words)
             save(st)
@@ -238,6 +247,9 @@ try:
         if not st.get('explained'):
             st['explained'] = True
             words.append(say('decline_explain'))
+    if 'asks_why' in kinds and not st.get('explained'):
+        st['explained'] = True
+        words.append(say('decline_explain'))
     next_step(st, words)
     save(st)
 except StopIteration:
@@ -422,4 +434,4 @@ except Exception as e:
     vars['xfer_done'] = 'failed'
 '''
 
-EVENT_TYPES = ["answer", "correction", "refuses", "asks_purpose", "stop", "robot", "scam", "human", "other"]
+EVENT_TYPES = ["answer", "correction", "refuses", "asks_purpose", "asks_why", "stop", "robot", "scam", "human", "other"]

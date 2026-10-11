@@ -43,5 +43,9 @@ for label, cand in (("A", "tests/fixtures/policy-a.json"), ("A+B", "tests/fixtur
           (xs("identity"), xs("negotiate"), xs("neg_relay")))
     check(f"{label}: identity stage is run by code (parts, bank result, close: tests/test_identity.py); the model only sends events",
           [t["function"]["name"] for t in N["identity"]["tools"]] == ["identity_event"], N["identity"]["tools"])
+    idt2 = N["identity"]["task_message"]
+    en = N["identity"]["tools"][0]["function"]["parameters"]["properties"]["events"]["items"]["properties"]["type"]["enum"]
+    check(f"{label}: A15 intents are separate identity events (refuses / asks_purpose / asks_why; a combined message gets both)",
+          {"refuses", "asks_purpose", "asks_why"} <= set(en) and "asks_why + refuses" in idt2, en)
     check(f"{label}: notes only in a brief that uses them", ("note_one" in N) == bool(pol.get("uses_notes")), ("note_one" in N, pol.get("uses_notes")))
 print("FAILURES:", len(FAILS)); sys.exit(1 if FAILS else 0)

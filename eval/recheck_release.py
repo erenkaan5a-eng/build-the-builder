@@ -29,6 +29,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("candidate")
     ap.add_argument("--practice")
+    ap.add_argument("--raw-answers", action="store_true", help="practice with the identity values unformatted (ISO date regression)")
     a = ap.parse_args()
     cand = pathlib.Path(a.candidate)
     man = json.load(open(cand / "manifest.json", encoding="utf-8"))
@@ -38,14 +39,14 @@ def main():
     pv = common.published_version(man["workflow_id"])
     tr = _Trace(ROOT / "traces" / f"{man['slot']}-recheck-{time.strftime('%Y%m%d-%H%M%S')}.log")
     tr.log("RECHECK", f"candidate {cand} workflow {man['workflow_id']} published version {pv['version_number']} live hash {live} exported hash {exported}")
-    out = {"candidate": str(cand), "workflow_id": man["workflow_id"], "published_version": pv["version_number"], "live_hash": live, "exported_hash": exported, "checks": []}
+    out = {"raw_answers": bool(a.raw_answers), "candidate": str(cand), "workflow_id": man["workflow_id"], "published_version": pv["version_number"], "live_hash": live, "exported_hash": exported, "checks": []}
     if live != exported:
         tr.log("RECHECK", "live workflow differs from the exported candidate: not checked")
     else:
         budget = common.Budget(10)
         res = _retry_5xx(lambda: behavior.structural(man["workflow_id"], pol, tr), budget, tr)
         if a.practice:
-            pres, _ = _retry_5xx(lambda: behavior.practice(man["workflow_id"], a.practice, tr), budget, tr)
+            pres, _ = _retry_5xx(lambda: behavior.practice(man["workflow_id"], a.practice, tr, raw_answers=a.raw_answers), budget, tr)
             res += pres
         out["checks"] = [[n, ok] for n, ok, _ in res]
     out["all_passed"] = bool(out["checks"]) and all(ok for _, ok in out["checks"])

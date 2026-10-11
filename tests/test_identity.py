@@ -137,6 +137,54 @@ for mode in ("hook", "nohook"):
     b = Bank("1986-05-17", "1502"); c = IdCall(POL, b, mode)
     c.msg("stop"); c.msg(A(day=17, month=5, year=1986)); c.msg("stop")
     check(f"I11g {M} A45: 'I do not want to talk' twice in the identity stage -> declined, even with an answer in between", c.end == DECLINED, c.end)
+    # I12 A15 intents kept apart (Brief A rule 15): counted = an explicit refusal, or asking what the call is about INSTEAD
+    # of answering the question being asked; NOT counted = asking why the security question is needed (answered with the
+    # protection explanation). The count runs over the stage; an answer in between does not restart it.
+    b = Bank("1986-05-17", "1502"); c = IdCall(POL, b, mode)
+    r = c.msg("asks_why")
+    check(f"I12a {M} 'why do you need that?' alone: the explanation + the question, not a decline", "protect" in r and ASK_DOB in r
+          and int(c.st().get("declines") or 0) == 0 and c.end is None and b.calls == [], (r, c.st().get("declines")))
+    c.msg(A(day=17, month=5, year=1986)); r = c.msg("asks_why")
+    check(f"I12b {M} asked again at the next question: not a decline, explanation not repeated, the phone question again",
+          int(c.st().get("declines") or 0) == 0 and c.end is None and "protect" not in r and ASK_PHONE in r, (r, c.st().get("declines")))
+    b = Bank("1986-05-17", "1502"); c = IdCall(POL, b, mode)
+    r = c.msg("asks_why", "refuses")
+    check(f"I12c {M} 'why do you need that? I won't tell you': the refusal is not missed (one decline), explanation once",
+          int(c.st().get("declines") or 0) == 1 and r.count("protect") == 1 and c.end is None, (r, c.st().get("declines")))
+    c.msg("asks_purpose")
+    check(f"I12d {M} ... then 'what is this about?' instead of an answer: the second decline closes 'declined', no bank call",
+          c.end == DECLINED and b.calls == [], (c.end, b.calls))
+    b = Bank("1986-05-17", "1502"); c = IdCall(POL, b, mode)
+    c.msg("asks_why"); c.msg(A(day=17, month=5, year=1986)); c.msg("asks_purpose"); c.msg(A(digits="1502"))
+    check(f"I12e {M} kit style asks_back as two questions alone ('why do you need that?', later 'which account is this about?'), each followed by the answer: account reached",
+          c.end == ("account",) and int(c.st().get("declines") or 0) == 1 and len(b.calls) == 2, (c.end, c.st().get("declines"), b.calls))
+    b = Bank("1986-05-17", "1502"); c = IdCall(POL, b, mode)
+    c.msg(A(day=17, month=5, year=1986)); c.msg(A(day=17, month=5, year=1986, field="date_of_birth"), "refuses")
+    check(f"I12f {M} an answer to another (already verified) question does not hide a refusal of the question being asked",
+          int(c.st().get("declines") or 0) == 1 and len(b.calls) == 1, (c.st().get("declines"), b.calls))
+    b = Bank("1986-05-17", "1502"); c = IdCall(POL, b, mode)
+    c.msg("refuses", A(day=17, month=5, year=1986))
+    check(f"I12g {M} 'I'd rather not... fine, 17 May 1986': the active question is answered, no decline, one bank call",
+          int(c.st().get("declines") or 0) == 0 and b.calls == [("date_of_birth", "1986-05-17")], (c.st().get("declines"), b.calls))
+
+    # I13 the ISO date failure (release check loc-ab v2, 11 Oct; chat 8669ea77): the dialogue model split '1991-01-08' as
+    # day 19 / month 91 / year '01-08', then took the next answer '6604' for date parts. Kept as a regression with the exact
+    # events the model sent: no bank call, no wrong answer used, the customer is asked again.
+    b = Bank("1991-01-08", "6604"); c = IdCall(POL, b, mode)
+    r = c.msg(A(day="19", month="91", year="01-08", field="date_of_birth"))
+    check(f"I13a {M} impossible date parts (month 91): no bank call, no try used, 'could not read' + the date question",
+          b.calls == [] and b.left == 3 and ASK_DOB in r and c.end is None, (b.calls, b.left, r))
+    r = c.msg(A(day="6", month="6", year="04", field="date_of_birth"))
+    check(f"I13b {M} a two-digit year: no bank call, no try used, only the year is asked", b.calls == [] and b.left == 3 and "year" in r, (b.calls, r))
+    r = c.msg(A(year="1991"))
+    check(f"I13c {M} the date is only sent once it is complete and valid (here 6 June 1991: the parts heard, one call, the bank decides)",
+          b.calls == [("date_of_birth", "1991-06-06")], b.calls)
+    b = Bank("1991-01-08", "6604"); c = IdCall(POL, b, mode)
+    r = c.msg(A(day="31", month="2", year="1991"))
+    check(f"I13d {M} 31 February: no bank call, no try used, asked again", b.calls == [] and b.left == 3 and ASK_DOB in r, (b.calls, r))
+    r = c.msg(A(day="8", month="1", year="1991"))
+    check(f"I13e {M} the corrected date is sent once and verified", b.calls == [("date_of_birth", "1991-01-08")], b.calls)
+
     b = Bank("1986-05-17", "1502"); c = IdCall(POL, b, mode)
     for _ in range(6):
         c.msg("other")

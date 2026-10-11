@@ -397,7 +397,10 @@ def build(pol, ts):
                     + (f" ({q.get('answer_format', '')})" if q.get("answer_format") else "") for i, q in enumerate(qs))
     id_events_doc = ("EVENTS (one item per statement, in order): answer = the customer gives all or PART of an answer (send only the parts said in this message; "
                      "never complete a part they did not say); correction = the customer corrects something they said before (send the corrected parts); "
-                     "refuses = does not want to answer; asks_purpose = asks what the call is about or why you are calling instead of answering; "
+                     "refuses = says they will not answer or do not want to answer (also when the same message asks something); "
+                     "asks_purpose = asks what the call is about or why you are calling, instead of answering; "
+                     "asks_why = asks why this security question is needed, without saying they will not answer; "
+                     "a message with several of these gets one event each (e.g. 'Why do you need that? I won't tell you.' = asks_why + refuses); "
                      "stop = does not want to talk; robot = asks whether you are a robot or an AI; scam = asks whether the call is a scam; "
                      "human = asks for a person / a human agent; other = anything else.")
     t_id = {"type": "function", "config": {"timeoutMs": 10000, "preSpeech": {"mode": "static", "message": ng["say"]["checking"], "interruptible": False}},
