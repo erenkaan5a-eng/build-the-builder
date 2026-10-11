@@ -51,8 +51,12 @@ class Trace:
             self.path = KIT / "traces" / f"{base}-{n}.log"
         self.f = self.path.open("x", encoding="utf-8")
         self.model_calls = 0
+        self.session_store, self._sessions_logged = None, False   # full model-session logs (session_log.py)
 
     def log(self, kind, msg):
+        if kind == "END" and self.session_store is not None and not self._sessions_logged:
+            self._sessions_logged = True
+            self.session_store.summary()
         line = f"{time.strftime('%Y-%m-%dT%H:%M:%S%z')} [{kind}] {msg}"
         print(line, flush=True)
         self.f.write(line + "\n")

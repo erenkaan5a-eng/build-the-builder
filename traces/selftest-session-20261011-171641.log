@@ -1,0 +1,5 @@
+2026-10-11T17:16:44+0000 [SESSION] session f9f518b6-3a9f-4473-a237-e08691ad2d57 -> traces/selftest-session-20261011-171641.sessions/f9f518b6-3a9f-4473-a237-e08691ad2d57.jsonl
+2026-10-11T17:16:44+0000 [MODEL] #1 model=claude-haiku-5-5 purpose=session-log self test usage={"in": 2, "cache_create": 3734, "cache_read": 17006, "out": 4, "s": 1, "session": "f9f518b6-3a9f-4473-a237-e08691ad2d57"}
+2026-10-11T17:16:44+0000 [SESSION] traces/selftest-session-20261011-171641.sessions/f9f518b6-3a9f-4473-a237-e08691ad2d57.jsonl: 20 entries, sha256 86ca9ac9bcff3b4d
+2026-10-11T17:16:44+0000 [SESSION] 1 session file(s); 3 secret value(s) redacted
+2026-10-11T17:16:44+0000 [END] self test done

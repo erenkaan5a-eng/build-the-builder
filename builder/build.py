@@ -13,7 +13,7 @@ import argparse, asyncio, hashlib, json, os, pathlib, re, shutil, sys, time
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import common  # noqa: E402  (loads env.sh, imports freya)
 import lint as linter  # noqa: E402
-import toolspec, spec_extract, components, behavior, case_input  # noqa: E402
+import toolspec, spec_extract, components, behavior, case_input, session_log  # noqa: E402
 from common import KIT, Budget, Trace  # noqa: E402
 
 RESERVE_S = 5 * 60            # kept for validate, publish, behaviour test, export
@@ -117,11 +117,12 @@ async def _fallback_agent(brief, tool_api, out, seconds, trace, workdir, repair=
               f"You have {minutes} minutes in total; stop before that with the best lint-clean version on disk.")
     if repair:
         prompt += " REPAIR TASK: the workflow at " + out + " already exists. " + repair + " Change only what this needs, re-run the linter, keep everything else."
+    so = session_log.options(trace)   # own session id + full session log of this agent run (incl. tool calls and results)
     options = ClaudeAgentOptions(
         cwd=str(KIT), model=FALLBACK_MODEL, skills=["build-phone-agent-final"], setting_sources=["project"],
         allowed_tools=["Read", "Write", "Edit", "Glob", "Grep", "Bash"], disallowed_tools=["Read(./env.sh)", "Read(**/env.sh)"],
-        permission_mode="dontAsk", max_turns=80,
-        env={"BASH_DEFAULT_TIMEOUT_MS": "120000", "BASH_MAX_TIMEOUT_MS": "300000", "CLAUDE_CODE_DISABLE_BACKGROUND_TASKS": "1"})
+        permission_mode="dontAsk", max_turns=80, session_id=so["session_id"], session_store=so["session_store"],
+        env={"BASH_DEFAULT_TIMEOUT_MS": "120000", "BASH_MAX_TIMEOUT_MS": "300000", "CLAUDE_CODE_DISABLE_BACKGROUND_TASKS": "1", **so["env"]})
     async for m in query(prompt=prompt, options=options):
         if isinstance(m, AssistantMessage):
             tools = [f"{b.name}({str(b.input)[:60]})" for b in m.content if isinstance(b, ToolUseBlock)]
@@ -132,7 +133,7 @@ async def _fallback_agent(brief, tool_api, out, seconds, trace, workdir, repair=
             trace.model_call(m.model, "fallback builder step: " + ("; ".join(tools) or full[:100].replace("\n", " ") or "thinking"))
         elif isinstance(m, ResultMessage):
             u = m.usage or {}
-            trace.log("AGENT", f"fallback agent done: turns={m.num_turns} duration_s={m.duration_ms/1000:.0f} is_error={m.is_error} "
+            trace.log("AGENT", f"fallback agent done: session={m.session_id} turns={m.num_turns} duration_s={m.duration_ms/1000:.0f} is_error={m.is_error} "
                                f"tokens_in={u.get('input_tokens')} cache_create={u.get('cache_creation_input_tokens')} "
                                f"cache_read={u.get('cache_read_input_tokens')} tokens_out={u.get('output_tokens')}")
 

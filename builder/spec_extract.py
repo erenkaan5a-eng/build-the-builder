@@ -141,14 +141,16 @@ def project_instructions():
 
 async def _ask(prompt, system, model, trace, purpose):
     from claude_agent_sdk import AssistantMessage, ClaudeAgentOptions, ResultMessage, TextBlock, query
-    opts = ClaudeAgentOptions(model=model, system_prompt=system, setting_sources=[], allowed_tools=[], permission_mode="dontAsk", max_turns=1)
+    import session_log
+    opts = ClaudeAgentOptions(model=model, system_prompt=system, setting_sources=[], allowed_tools=[], permission_mode="dontAsk", max_turns=1,
+                              **session_log.options(trace))
     text, usage = "", None
     async for m in query(prompt=prompt, options=opts):
         if isinstance(m, AssistantMessage):
             text += "".join(b.text for b in m.content if isinstance(b, TextBlock))
         elif isinstance(m, ResultMessage):
             usage = {"in": (m.usage or {}).get("input_tokens"), "cache_create": (m.usage or {}).get("cache_creation_input_tokens"),
-                     "cache_read": (m.usage or {}).get("cache_read_input_tokens"), "out": (m.usage or {}).get("output_tokens"), "s": round((m.duration_ms or 0) / 1000)}
+                     "cache_read": (m.usage or {}).get("cache_read_input_tokens"), "out": (m.usage or {}).get("output_tokens"), "s": round((m.duration_ms or 0) / 1000), "session": m.session_id}
     trace.model_call(model, purpose, usage)
     return text
 
