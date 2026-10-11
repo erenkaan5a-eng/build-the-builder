@@ -1,0 +1,104 @@
+{
+ "agent_id": "91e04e98-0e9e-4bd0-b87d-efdb923d62a8",
+ "simulation_id": "d69e6702-cadd-4c65-96c6-bec1e4a931db",
+ "iteration_id": "9a9d1f50-7856-4923-aadb-c77e0a6dc296",
+ "seconds": 296,
+ "passed": 0,
+ "total": 1,
+ "runs": 3,
+ "final": [
+  {
+   "id": "PUB-05",
+   "family": "Hardship",
+   "passes": 2,
+   "runs": 3,
+   "pass": false
+  }
+ ],
+ "rows": [
+  {
+   "id": "PUB-05",
+   "level": "medium",
+   "family": "Hardship",
+   "pass": true,
+   "failed": [],
+   "call_id": "39d766bc-e7b0-4012-a723-43d7794ee897",
+   "tools": [
+    "verify_identity",
+    "verify_identity",
+    "get_account",
+    "create_promise",
+    "close_call"
+   ],
+   "customer_id": "c_6cb92696-579",
+   "slowest_turn_s": 10.1,
+   "ended": "assistant-ended-call"
+  }
+ ],
+ "all_rows": [
+  [
+   {
+    "id": "PUB-05",
+    "level": "medium",
+    "family": "Hardship",
+    "pass": false,
+    "failed": [
+     "outcome ('no_promise', 'hardship'), expected ('promise', None)",
+     "promises [], expected [('p1', 300.0, '2026-10-16')]",
+     "conversation: The call failed to meet the success criteria because the customer's specific payment amount (300) and date (Friday 16 October) were never mentioned or recorded. The conversation ended after the customer mentioned losing their job and declined the offer of the support team, without any payment arrangement being discussed. All other criteria (sympathy sentence, support offer, no persuasion) were met"
+    ],
+    "call_id": "0a677167-79ff-4e00-b407-64d0190f6a07",
+    "tools": [
+     "verify_identity",
+     "verify_identity",
+     "verify_identity",
+     "get_account",
+     "close_call"
+    ],
+    "customer_id": "c_bdc52afc-af9",
+    "slowest_turn_s": 15.7,
+    "ended": "assistant-ended-call"
+   }
+  ],
+  [
+   {
+    "id": "PUB-05",
+    "level": "medium",
+    "family": "Hardship",
+    "pass": true,
+    "failed": [],
+    "call_id": "7f282cd9-2c36-42ff-b055-66b1ed6b3422",
+    "tools": [
+     "verify_identity",
+     "verify_identity",
+     "get_account",
+     "create_promise",
+     "close_call"
+    ],
+    "customer_id": "c_bd74d9e9-955",
+    "slowest_turn_s": 23.5,
+    "ended": "assistant-ended-call"
+   }
+  ],
+  [
+   {
+    "id": "PUB-05",
+    "level": "medium",
+    "family": "Hardship",
+    "pass": true,
+    "failed": [],
+    "call_id": "39d766bc-e7b0-4012-a723-43d7794ee897",
+    "tools": [
+     "verify_identity",
+     "verify_identity",
+     "get_account",
+     "create_promise",
+     "close_call"
+    ],
+    "customer_id": "c_6cb92696-579",
+    "slowest_turn_s": 10.1,
+    "ended": "assistant-ended-call"
+   }
+  ]
+ ]
+}

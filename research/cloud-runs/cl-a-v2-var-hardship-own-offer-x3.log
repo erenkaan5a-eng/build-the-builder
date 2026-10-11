@@ -1,1 +1,25 @@
 cloud proxy mode: on: Freya Authorization left to the proxy; bank x-team-key left to the proxy
+FAIL PUB-05 medium Hardship       | verify > verify > verify > get_account > close_call
+       - outcome ('no_promise', 'hardship'), expected ('promise', None)
+       - promises [], expected [('p1', 300.0, '2026-10-16')]
+       - conversation: The call failed to meet the success criteria because the customer's specific payment amount (300) and date (Friday 16 October) were never mentioned or recorded. The conversation ended after the customer mentioned losing their job and declined the
+
+slowest agent turn per call: median 16 s, worst 16 s. Failed calls where the customer hung up: 0.
+WARNING: the phone agent was slow in this run. If the same agent is fast in another run, the model was busy and this score is too low.
+-- run 1 of 3: 0 / 1 passed, 98 s
+
+PASS PUB-05 medium Hardship       | verify > verify > get_account > promise > close_call
+
+slowest agent turn per call: median 24 s, worst 24 s. Failed calls where the customer hung up: 0.
+WARNING: the phone agent was slow in this run. If the same agent is fast in another run, the model was busy and this score is too low.
+-- run 2 of 3: 1 / 1 passed, 109 s
+
+PASS PUB-05 medium Hardship       | verify > verify > get_account > promise > close_call
+
+slowest agent turn per call: median 10 s, worst 10 s. Failed calls where the customer hung up: 0.
+WARNING: the phone agent was slow in this run. If the same agent is fast in another run, the model was busy and this score is too low.
+-- run 3 of 3: 1 / 1 passed, 88 s
+
+FAIL PUB-05 2/3
+
+0 / 1 passed (bank records and conversation checks), a customer counts with 3 of 3 runs. Last simulation d69e6702-cadd-4c65-96c6-bec1e4a931db, status completed, 296 s.
