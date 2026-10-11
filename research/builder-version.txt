@@ -1,0 +1,2 @@
+1a5910570bcf9fe0  measured: n6 candidates (cmp-a v8, cmp-ab v7) and F builds
+84894192a420329c  current: local fixes of 11 Oct, NOT measured live

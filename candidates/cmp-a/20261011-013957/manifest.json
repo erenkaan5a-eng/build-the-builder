@@ -1,0 +1,71 @@
+{
+ "path": "main",
+ "slot": "cmp-a",
+ "build_seconds": 138,
+ "model_calls": 1,
+ "trace": "C:\\Users\\ASUS\\OneDrive\\Masa\u00fcst\u00fc\\build-the-builder\\traces\\cmp-a-20261011-013957.log",
+ "known_gaps": [
+  "turning the customer's words into negotiation events (and dates into YYYY-MM-DD) is done by the dialogue model; offers, counters, dates, amounts, read-back, recording, notes and the close are code",
+  "callback window validity is decided by the dialogue model from code-computed window facts (not code)",
+  "identity flow (which question, re-asks, declines) follows the dialogue model with the bank's verification results",
+  "extra rule (stateful, stage opening): Confirmation that the right person is on the line: ask at most twice, answer the customer's questions first, then close not_reached/unclear. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage identity): Count wrong answers across both questions. Three in total close the call as not_verified/failed and point the customer to the mobile app or a branch. A day_month_swapped retry does not count. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage identity): Declining identity: explain once that the questions protect the account. A second refusal, or a second question about what the call is about, closes not_verified/declined. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Count persuasion attempts by band: early 1, late 2. Each flat refusal, non-answer, refused floor, refused below-floor substitute or refused deadline uses one. When none are left, close no_promise/refused without repeating a refused offer. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Offer the floor only once after 'too much', and say the rest stays overdue. The only exception is attempt 2 (floor on the deadline). - left to the dialogue model's prompt",
+  "extra rule (computational, stage negotiate): Interpret 'next <weekday>' as that weekday in the following calendar week and 'this <weekday>' as the one in the current week, relative to now. Then validate the date in code. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Hardship (illness, death in the family, job loss): one sentence of sympathy, no persuasion, offer support. Accept: transfer to support. Decline: no_promise/hardship. This takes precedence over rules 30 and 41. A date or amount the customer names themselves is still handled under sections 7 and 8. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): A change to the date or amount at confirmation invalidates the earlier confirmation. Re-check the new value and read it back again before create_promise. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage global): A human request: ask once whether you can help first. Transfer to the general queue only if the customer insists. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage global): If the customer says twice that they do not want to talk: no_promise/refused after verification, not_verified/declined before it. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage closing): If a transfer follows a recorded promise, close as transferred with that transfer's reason, not as promise. - left to the dialogue model's prompt",
+  "unresolved conflict: Repeating the floor in attempt 2 after the customer refused the floor: chose 'In the late band, attempt 2 offers the floor on the deadline even if the floor was refused earlier on a different date. Do not repeat an identical amount and date the customer already refused.' (Rule 26 explicitly allows the floor again on the deadline. An offer is the amount and date together, so the floor on a different date is a new offer.)"
+ ],
+ "release_checks_passed": true,
+ "policy_correctness": "not measured by the build",
+ "lint_problems": 0,
+ "workflow_id": "1fd64b44-c8bc-4d02-b609-53ad5ee9205e",
+ "agent_id": "5384dbbe-dcdc-441d-b24e-ee4f1c1d1a7a",
+ "version_number": 3,
+ "version_id": "910269fe-070b-4bc6-9ce8-d7059fba3b58",
+ "is_published": true,
+ "tested_hash": "6a645cdc4a087dc4",
+ "checks": [
+  [
+   "opening line spoken",
+   true
+  ],
+  [
+   "identity stage entered after confirmation",
+   true
+  ],
+  [
+   "first security answer reaches verify_identity with the right field",
+   true
+  ],
+  [
+   "no account or write call before verification",
+   true
+  ],
+  [
+   "both answers sent to verify_identity",
+   true
+  ],
+  [
+   "account fetched after verification",
+   true
+  ],
+  [
+   "negotiation stage reached with account facts",
+   true
+  ],
+  [
+   "every product's past-due amount stated in the debt statement, before any offer",
+   true
+  ]
+ ],
+ "exported_hash": "6a645cdc4a087dc4",
+ "nodes": 19,
+ "global_nodes": 0,
+ "tool_functions": 22
+}

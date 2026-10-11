@@ -1,0 +1,76 @@
+{
+ "path": "main",
+ "slot": "cmp-ab",
+ "build_seconds": 131,
+ "model_calls": 1,
+ "trace": "C:\\Users\\ASUS\\OneDrive\\Masa\u00fcst\u00fc\\build-the-builder\\traces\\cmp-ab-20261011-020344.log",
+ "known_gaps": [
+  "turning the customer's words into negotiation events (and dates into YYYY-MM-DD) is done by the dialogue model; offers, counters, dates, amounts, read-back, recording, notes and the close are code",
+  "callback window validity is decided by the dialogue model from code-computed window facts (not code)",
+  "identity flow (which question, re-asks, declines) follows the dialogue model with the bank's verification results",
+  "extra rule (stateful, stage opening): Identity confirmation needs an explicit yes/'that's me'/'speaking'/own name; ask at most twice (a customer question answered first does not reset), then close not_reached/unclear. - left to the dialogue model's prompt",
+  "extra rule (computational, stage identity): Convert spoken dates of birth to YYYY-MM-DD; numeric-only dates are day, month, year. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage identity): Declining security questions: explain once that they protect the account; a second refusal or second 'what is this about' closes not_verified/declined. - left to the dialogue model's prompt",
+  "extra rule (computational, stage negotiate): Interpret 'next <weekday>' as following calendar week and 'this <weekday>' as current week. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Floor offer after 'too much' and floor offer after below-floor amount are each made once; refusal of the floor or of the offered deadline is a flat refusal using an attempt. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Track per-product persuasion attempts by band; never repeat an offer the customer already refused; a customer-proposed date or amount is never a refusal. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Hardship (illness, death in family, job loss) suppresses all persuasion and takes precedence over rules 30 and 41; customer-named date/amount still recorded. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Any change of date or amount at confirmation invalidates the confirmation; re-check and read back again before create_promise. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Recorded promises cannot be changed or cancelled; refer to the mobile app; one promise per product. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage global): Human request: ask once whether you can help first; transfer to general only if they insist. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage global): Two statements of not wanting to talk close the call (no_promise/refused after verification, not_verified/declined before). - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): On any transfer, add no notes before or after; agreed but unrecorded promises are not recorded. - left to the dialogue model's prompt",
+  "extra rule (computational, stage closing): No-promise close reason in multi-product calls is the note reason of the first product in get_account order whose note is not paid; all paid -> paid. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Say the promise is recorded only after create_promise returns ok: true. - left to the dialogue model's prompt",
+  "unresolved conflict: Hardship declined in a multi-product call: chose 'note hardship on every product without a recorded promise, make no persuasion attempts on any, then close no_promise/hardship (or promise if one was recorded)' (Rule 32 forbids persuasion after hardship and refers to the customer, not a product; Brief B does not address it, but B8 requires a note for every unpromised product.)",
+  "unresolved conflict: Shared date after deadline: offer vs record: chose 'B6 for a single date named for all products; A23 for a date named for one product' (B6 explicitly replaces for the 'one date for everything' case; the read-back confirmation still gives the customer consent.)",
+  "unresolved conflict: Hardship support transfer after recorded promises: chose 'transferred/support' (Brief A: 'If a transfer follows a recorded promise, close as transferred with that transfer's reason'; B closing exception names only rule 10 but B10 also states no notes on any transfer.)"
+ ],
+ "release_checks_passed": true,
+ "policy_correctness": "not measured by the build",
+ "lint_problems": 0,
+ "workflow_id": "6979adbf-ec19-433c-8389-2777a0619d32",
+ "agent_id": "4fede9a3-f331-4b8c-9131-faa81f7c22a6",
+ "version_number": 4,
+ "version_id": "fd886c8c-036a-46e8-b394-b351380afb2c",
+ "is_published": true,
+ "tested_hash": "f49b52e8c055489f",
+ "checks": [
+  [
+   "opening line spoken",
+   true
+  ],
+  [
+   "identity stage entered after confirmation",
+   true
+  ],
+  [
+   "first security answer reaches verify_identity with the right field",
+   true
+  ],
+  [
+   "no account or write call before verification",
+   true
+  ],
+  [
+   "both answers sent to verify_identity",
+   true
+  ],
+  [
+   "account fetched after verification",
+   true
+  ],
+  [
+   "negotiation stage reached with account facts",
+   true
+  ],
+  [
+   "every product's past-due amount stated in the debt statement, before any offer",
+   true
+  ]
+ ],
+ "exported_hash": "f49b52e8c055489f",
+ "nodes": 21,
+ "global_nodes": 0,
+ "tool_functions": 24
+}

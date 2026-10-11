@@ -1,0 +1,120 @@
+{
+ "tool": {
+  "type": "function",
+  "config": {
+   "timeoutMs": 10000,
+   "preSpeech": {
+    "mode": "static",
+    "message": "One moment, let me check that date.",
+    "interruptible": false
+   }
+  },
+  "function": {
+   "name": "check_payment_date",
+   "handler": "__function__:code_exec",
+   "description": "CALL it every time the customer names a payment day or a period, before you say anything about that day. date = the day as YYYY-MM-DD read from the calendar in your instructions, or 'vague' when the customer gave no exact day. product_id = the product the date is for. The decision is read out after the call; do not judge the day yourself.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "code": {
+      "type": "string",
+      "default": "\nimport json, datetime, re\nCFG = json.loads(r\"\"\"{\n \"now_var\": \"now\",\n \"weekend_days\": [\n  5,\n  6\n ],\n \"holidays\": [\n  \"2026-10-26\",\n  \"2026-11-11\",\n  \"2026-11-26\",\n  \"2026-12-25\",\n  \"2027-01-01\"\n ],\n \"products_vars\": [\n  \"products\"\n ],\n \"product_id_field\": \"product_id\",\n \"days_late_field\": \"days_late\",\n \"bands\": [\n  {\n   \"min\": 1,\n   \"max\": 7,\n   \"deadline_business_days\": 12\n  },\n  {\n   \"min\": 8,\n   \"max\": 45,\n   \"deadline_business_days\": 7\n  }\n ],\n \"vague_asks_before_deadline\": 1,\n \"say\": {\n  \"checking\": \"One moment, let me check that date.\",\n  \"ok\": \"{day} works, I can record that date.\",\n  \"not_business_day\": \"{day} is not a business day. The next business day is {next}. Would {next} work for you?\",\n  \"after_deadline\": \"The latest date I can record is {deadline}. Would {deadline} work for you?\",\n  \"past\": \"That date has already passed. Which date from today onward works for you?\",\n  \"ask_exact\": \"Could you tell me the exact day you can pay?\",\n  \"vague_propose_deadline\": \"Since I do not have an exact day, the latest date I can record is {deadline}. Would {deadline} work for you?\",\n  \"error\": \"I could not check that date. Could you tell me the exact day again?\"\n }\n}\"\"\")\nMONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']\nDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']\ndef spoken(d):\n    return DAYS[d.weekday()] + ' ' + str(d.day) + ' ' + MONTHS[d.month - 1]\ndef isbd(d):\n    return d.weekday() not in CFG['weekend_days'] and d.isoformat() not in CFG['holidays']\ndef add_bd(d, n):\n    c = 0\n    while c < n:\n        d = d + datetime.timedelta(days=1)\n        if isbd(d):\n            c += 1\n    return d\ndef next_bd(d):\n    d = d + datetime.timedelta(days=1)\n    while not isbd(d):\n        d = d + datetime.timedelta(days=1)\n    return d\ndef load_products():\n    for name in CFG['products_vars']:\n        v = vars.get(name)\n        if isinstance(v, str):\n            try:\n                v = json.loads(v)\n            except Exception:\n                try:\n                    import ast\n                    v = ast.literal_eval(v)\n                except Exception:\n                    v = None\n        if isinstance(v, list) and v:\n            return [p for p in v if isinstance(p, dict)]\n    found = dict()\n    for k in list(vars.keys()):\n        m = re.search(r'products\\.(\\d+)\\.(\\w+)$', str(k))\n        if m:\n            found.setdefault(int(m.group(1)), dict())[m.group(2)] = vars.get(k)\n    return [found[i] for i in sorted(found.keys())]\ndecision, say, proposed, pid = 'error', CFG['say']['error'], '', ''\ntry:\n    args = params if isinstance(params, dict) else dict()\nexcept Exception:\n    args = dict()\ntry:\n    today = datetime.datetime.strptime(str(vars.get(CFG.get('now_var', 'now')))[:10], '%Y-%m-%d').date()\n    prods = load_products()\n    pid = str(args.get('product_id') or '').strip()\n    prod = None\n    for p in prods:\n        if str(p.get(CFG['product_id_field'])) == pid:\n            prod = p\n    if prod is None and len(prods) == 1:\n        prod = prods[0]\n        pid = str(prod.get(CFG['product_id_field']))\n    if prod is None:\n        raise ValueError('unknown product')\n    late = int(float(prod.get(CFG['days_late_field'])))\n    band = [b for b in CFG['bands'] if b['min'] <= late <= b['max']]\n    if not band:\n        raise ValueError('no band')\n    deadline = add_bd(today, int(band[0]['deadline_business_days']))\n    raw = str(args.get('date') or '').strip().lower()\n    day = None\n    if re.match(r'^\\d{4}-\\d{2}-\\d{2}$', raw):\n        day = datetime.date.fromisoformat(raw)\n    key = 'date_vague_count_' + re.sub(r'\\W', '_', pid)\n    if day is None:\n        n = int(vars.get(key) or 0) + 1\n        vars[key] = str(n)\n        if n <= int(CFG.get('vague_asks_before_deadline', 1)):\n            decision, say = 'ask_exact', CFG['say']['ask_exact']\n        else:\n            decision, proposed = 'propose_deadline', deadline.isoformat()\n            say = CFG['say']['vague_propose_deadline'].format(deadline=spoken(deadline))\n    elif day < today:\n        decision, say = 'past', CFG['say']['past'].format(day=spoken(day))\n    elif day > deadline:\n        decision, proposed = 'after_deadline', deadline.isoformat()\n        say = CFG['say']['after_deadline'].format(day=spoken(day), deadline=spoken(deadline))\n    elif not isbd(day):\n        nb = next_bd(day)\n        decision, proposed = 'not_business_day', nb.isoformat()\n        say = CFG['say']['not_business_day'].format(day=spoken(day), next=spoken(nb), deadline=spoken(deadline))\n    else:\n        decision, proposed = 'ok', day.isoformat()\n        say = CFG['say']['ok'].format(day=spoken(day), deadline=spoken(deadline))\nexcept Exception as e:\n    vars['date_error'] = str(e)[:120]\nvars['date_decision'] = decision\nvars['date_say'] = say\nvars['date_proposed'] = proposed\nvars['date_product'] = pid\nvars['date_flag'] = 'new'\n"
+     },
+     "timeout_ms": {
+      "type": "number",
+      "default": 5000
+     },
+     "date": {
+      "type": "string",
+      "description": "YYYY-MM-DD, or 'vague'"
+     },
+     "product_id": {
+      "type": "string",
+      "description": "product id from the account result"
+     }
+    },
+    "required": [
+     "date",
+     "product_id"
+    ]
+   }
+  }
+ },
+ "nodes": {
+  "date_consume": {
+   "name": "date_consume",
+   "node_type": "code",
+   "passthrough": true,
+   "passthrough_default_transition": "date_relay",
+   "on_enter": {
+    "type": "silent"
+   },
+   "pre_actions": [
+    {
+     "type": "function",
+     "function": {
+      "name": "code_exec",
+      "handler": "__function__:code_exec",
+      "parameters": {
+       "type": "object",
+       "properties": {
+        "code": {
+         "type": "string",
+         "default": "vars['date_flag'] = 'used'\n"
+        },
+        "timeout_ms": {
+         "type": "number",
+         "default": 5000
+        }
+       }
+      }
+     }
+    }
+   ],
+   "transitions": [
+    {
+     "target_node": "date_relay",
+     "description": "always",
+     "condition": {
+      "operator": "always"
+     }
+    }
+   ]
+  },
+  "date_relay": {
+   "name": "date_relay",
+   "node_type": "conversation",
+   "on_enter": {
+    "type": "llm",
+    "prompt": "First, if the customer's last message asked you a question or said something your instructions require you to respond to, answer it in one short sentence. Then say this decision exactly, word for word, without changing any day, date or amount: \"{{date_say}}\" Do not call any tool. Say nothing else about which days are possible."
+   },
+   "task_message": "First, if the customer's last message asked you a question or said something your instructions require you to respond to, answer it in one short sentence. Then say this decision exactly, word for word, without changing any day, date or amount: \"{{date_say}}\" Do not call any tool. Say nothing else about which days are possible.",
+   "max_node_turns": 5,
+   "max_turn_transition": "negotiate",
+   "transitions": [
+    {
+     "target_node": "negotiate",
+     "description": "always",
+     "condition": {
+      "operator": "always"
+     }
+    }
+   ]
+  }
+ },
+ "transition": {
+  "target_node": "date_consume",
+  "description": "the date check produced a new decision",
+  "condition": {
+   "logic": "or",
+   "conditions": [
+    {
+     "variable": "date_flag",
+     "operator": "equals",
+     "operand": "new"
+    }
+   ]
+  }
+ },
+ "instructions": "Add `tool` to node negotiate's tools. Put `transition` FIRST in negotiate's transitions. Add `nodes` to the workflow. In the negotiation prompt: call check_payment_date for every day or period the customer names; never say yourself whether a day is allowed; after the decision is read out, continue from it. The last decision is in {{date_decision}} (ok, not_business_day, after_deadline, past, ask_exact, propose_deadline, error) and the date to use is {{date_proposed}}."
+}

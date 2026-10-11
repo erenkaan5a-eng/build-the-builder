@@ -1,0 +1,17 @@
+import json, sys
+cfg = {
+ "now_var": "now", "weekend_days": [5, 6],
+ "holidays": ["2026-10-26", "2026-11-11", "2026-11-26", "2026-12-25", "2027-01-01"],
+ "products_vars": ["products"], "product_id_field": "product_id", "days_late_field": "days_late",
+ "bands": [{"min": 1, "max": 7, "deadline_business_days": 12}, {"min": 8, "max": 45, "deadline_business_days": 7}],
+ "vague_asks_before_deadline": 1,
+ "say": {
+  "checking": "One moment, let me check that date.",
+  "ok": "{day} works, I can record that date.",
+  "not_business_day": "{day} is not a business day. The next business day is {next}. Would {next} work for you?",
+  "after_deadline": "The latest date I can record is {deadline}. Would {deadline} work for you?",
+  "past": "That date has already passed. Which date from today onward works for you?",
+  "ask_exact": "Could you tell me the exact day you can pay?",
+  "vague_propose_deadline": "Since I do not have an exact day, the latest date I can record is {deadline}. Would {deadline} work for you?",
+  "error": "I could not check that date. Could you tell me the exact day again?"}}
+json.dump(cfg, open(sys.argv[1], "w", encoding="utf-8"), indent=1)

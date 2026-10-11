@@ -1,0 +1,4314 @@
+{
+ "workflow_id": "cc174f57-52bd-443c-bf22-b7592c3798d4",
+ "agent_id": "bd50875d-b5f5-42c8-8d18-4bf72629f02f",
+ "updated_at": "2026-10-10T21:15:37.866Z",
+ "workflow": {
+  "nodes": {
+   "acct": {
+    "name": "acct",
+    "tools": [],
+    "on_enter": {
+     "type": "silent"
+    },
+    "node_type": "code",
+    "assertions": [],
+    "passthrough": true,
+    "pre_actions": [
+     {
+      "type": "function",
+      "function": {
+       "name": "code_exec",
+       "handler": "__function__:code_exec",
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "code": {
+          "type": "string",
+          "default": "\nimport json, re, datetime\nHOL = [\"2026-10-26\", \"2026-11-11\", \"2026-11-26\", \"2026-12-25\", \"2027-01-01\"]\ntry:\n    found = dict()\n    for k in list(vars.keys()):\n        m = re.search(r'products\\.(\\d+)\\.(\\w+)$', str(k))\n        if m:\n            found.setdefault(int(m.group(1)), dict())[m.group(2)] = vars.get(k)\n    p = None\n    if found:\n        p = found[sorted(found.keys())[0]]\n    else:\n        v = vars.get('products')\n        if isinstance(v, str):\n            v = json.loads(v)\n        if isinstance(v, list) and v:\n            p = v[0]\n    if not p or not p.get('product_id'):\n        raise ValueError('no product')\n    typ = str(p.get('type'))\n    late = int(float(p.get('days_late')))\n    due = float(p.get('past_due'))\n    if typ == 'credit_card':\n        name = 'credit card ending ' + str(p.get('card_last4'))\n        floor = float(p.get('minimum_payment'))\n    elif typ == 'personal_loan':\n        name = 'personal loan'\n        floor = float(p.get('instalment_amount'))\n    else:\n        name = 'car loan'\n        floor = float(p.get('instalment_amount'))\n    if late < 1 or late > 45:\n        raise ValueError('days late out of range')\n    today = datetime.datetime.strptime(str(vars.get('now'))[:10], '%Y-%m-%d').date()\n    n = 12 if late <= 7 else 7\n    d = today\n    c = 0\n    while c < n:\n        d = d + datetime.timedelta(days=1)\n        if d.weekday() < 5 and d.isoformat() not in HOL:\n            c += 1\n    band = 'early' if late <= 7 else 'late'\n    att = 1 if band == 'early' else 2\n    vars['product_id'] = str(p.get('product_id'))\n    vars['acct_block'] = ('Product: ' + name + ' (product_id ' + str(p.get('product_id')) + '). Past-due amount: %.2f. Days late: ' + str(late) + '. Band: ' + band + '. Floor (lowest amount that can be recorded): %.2f. Deadline (latest promise date): ' + d.isoformat() + '. Persuasion attempts allowed: ' + str(att) + '.') % (due, floor)\n    vars['acct_state'] = 'known'\nexcept Exception as e:\n    vars['acct_block'] = 'Account unavailable.'\n    vars['acct_state'] = 'unknown'\n"
+         },
+         "timeout_ms": {
+          "type": "number",
+          "default": 8000
+         }
+        }
+       },
+       "description": ""
+      }
+     }
+    ],
+    "transitions": [
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "mode": "exact",
+         "operand": "known",
+         "operator": "equals",
+         "variable": "acct_state"
+        }
+       ]
+      },
+      "description": "account loaded",
+      "target_node": "negotiate"
+     },
+     {
+      "condition": {
+       "mode": "exact",
+       "operator": "always"
+      },
+      "description": "always",
+      "target_node": "fin_service_error"
+     }
+    ],
+    "role_message": "",
+    "task_message": "",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": false,
+    "passthrough_default_transition": "fin_service_error",
+    "return_to_previous_on_interrupt": false
+   },
+   "prep": {
+    "name": "prep",
+    "tools": [],
+    "on_enter": {
+     "type": "silent"
+    },
+    "node_type": "code",
+    "assertions": [],
+    "passthrough": true,
+    "pre_actions": [
+     {
+      "type": "function",
+      "function": {
+       "name": "code_exec",
+       "handler": "__function__:code_exec",
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "code": {
+          "type": "string",
+          "default": "\nimport datetime\nDAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']\nMONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']\nHOL = [\"2026-10-26\", \"2026-11-11\", \"2026-11-26\", \"2026-12-25\", \"2027-01-01\"]\ntry:\n    raw = str(vars.get('now') or '').strip()\n    now = datetime.datetime.strptime(raw[:16].replace(' ', 'T'), '%Y-%m-%dT%H:%M') if len(raw) >= 16 else datetime.datetime.strptime(raw[:10], '%Y-%m-%d')\n    today = now.date()\n    def isbd(d):\n        return d.weekday() < 5 and d.isoformat() not in HOL\n    def nbd(d):\n        d = d + datetime.timedelta(days=1)\n        while not isbd(d):\n            d = d + datetime.timedelta(days=1)\n        return d\n    def sp(d):\n        return d.isoformat() + ' (' + DAYS[d.weekday()] + ' ' + str(d.day) + ' ' + MONTHS[d.month-1] + ')'\n    mon = today - datetime.timedelta(days=today.weekday())\n    def lastbd(m):\n        for i in range(6, -1, -1):\n            d = m + datetime.timedelta(days=i)\n            if isbd(d):\n                return d\n        return m\n    lb = lastbd(mon)\n    prop1 = lb if today != lb else lastbd(mon + datetime.timedelta(days=7))\n    lines = ['Today is ' + sp(today) + '. Current time: ' + now.strftime('%H:%M') + '.']\n    lines.append('Is today a business day: ' + ('yes' if isbd(today) else 'no') + '.')\n    lines.append('Next business day after today: ' + sp(nbd(today)) + '.')\n    lines.append('\"This <weekday>\" (current calendar week, Monday to Sunday):')\n    for i in range(7):\n        lines.append('  this ' + DAYS[i] + ' = ' + sp(mon + datetime.timedelta(days=i)))\n    lines.append('\"Next <weekday>\" (the following calendar week):')\n    for i in range(7):\n        lines.append('  next ' + DAYS[i] + ' = ' + sp(mon + datetime.timedelta(days=7+i)))\n    lines.append('Persuasion attempt 1 date (last business day of this week, or of next week if today is that day): ' + sp(prop1) + '.')\n    lines.append('Callback window: today or ' + nbd(today).isoformat() + ', time 10:00 to 19:00 both included, and later than ' + now.strftime('%H:%M') + ' if today.')\n    vars['calendar'] = '\\n'.join(lines)\n    vars['prep_state'] = 'ok'\nexcept Exception:\n    vars['calendar'] = 'Calendar unavailable.'\n    vars['prep_state'] = 'missing'\n"
+         },
+         "timeout_ms": {
+          "type": "number",
+          "default": 8000
+         }
+        }
+       },
+       "description": ""
+      }
+     }
+    ],
+    "transitions": [
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "mode": "exact",
+         "operand": "missing",
+         "operator": "equals",
+         "variable": "prep_state"
+        }
+       ]
+      },
+      "description": "call variable now missing",
+      "target_node": "end_nonow"
+     },
+     {
+      "condition": {
+       "mode": "exact",
+       "operator": "always"
+      },
+      "description": "always",
+      "target_node": "greet"
+     }
+    ],
+    "role_message": "",
+    "task_message": "",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": false,
+    "passthrough_default_transition": "greet",
+    "return_to_previous_on_interrupt": false
+   },
+   "greet": {
+    "name": "greet",
+    "tools": [
+     {
+      "type": "function",
+      "config": {
+       "timeoutMs": 12000,
+       "maxRetries": 1
+      },
+      "function": {
+       "name": "transfer_to_agent",
+       "handler": "__function__:api_call",
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "url": {
+          "type": "string",
+          "default": "https://freya-bank-mock.freyavoice.workers.dev/v1/transfer_to_agent"
+         },
+         "body": {
+          "type": "object",
+          "required": [
+           "queue"
+          ],
+          "properties": {
+           "queue": {
+            "enum": [
+             "restructuring",
+             "general",
+             "support"
+            ],
+            "type": "string",
+            "default": "{{queue}}",
+            "description": "support (illness, death in family, job loss, customer accepted help), restructuring (new payment plan or lower instalments), general (customer insists on a human)"
+           },
+           "customer_id": {
+            "type": "string",
+            "default": "{{customer_id}}"
+           }
+          }
+         },
+         "method": {
+          "type": "string",
+          "default": "POST"
+         },
+         "headers": {
+          "type": "object",
+          "properties": {
+           "Content-Type": {
+            "type": "string",
+            "default": "application/json"
+           }
+          }
+         }
+        }
+       },
+       "description": "CALL it ONLY in the cases the prompt names (restructuring request, insisted human request, hardship help accepted). Pick the queue as described. One call only."
+      },
+      "post_process_code": "try:\n    result.pop('header', None)\n    d = result.get('data')\n    if isinstance(d, dict):\n        ok = str(d.get('ok')).lower() == 'true'\n        d['what_to_do_next'] = 'The transfer is done. Say nothing more.' if ok else 'The transfer was NOT done. Say so plainly and try once more; if it fails again say you could not transfer.'\nexcept Exception:\n    pass\n"
+     }
+    ],
+    "on_enter": {
+     "text": "Hello, this is a digital assistant calling from Freya Bank, and this call is recorded. Am I speaking with {{title}} {{last_name}}?",
+     "type": "tts"
+    },
+    "node_type": "conversation",
+    "assertions": [],
+    "passthrough": false,
+    "pre_actions": [],
+    "transitions": [
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "logic": "and",
+         "conditions": [
+          {
+           "mode": "exact",
+           "operand": "true",
+           "operator": "equals",
+           "variable": "transfer_to_agent_response.data.ok"
+          },
+          {
+           "mode": "exact",
+           "operand": "support",
+           "operator": "equals",
+           "variable": "transfer_to_agent_args.queue"
+          }
+         ]
+        },
+        {
+         "logic": "and",
+         "conditions": [
+          {
+           "mode": "exact",
+           "operand": "True",
+           "operator": "equals",
+           "variable": "transfer_to_agent_response.data.ok"
+          },
+          {
+           "mode": "exact",
+           "operand": "support",
+           "operator": "equals",
+           "variable": "transfer_to_agent_args.queue"
+          }
+         ]
+        }
+       ]
+      },
+      "description": "transfer to support done",
+      "target_node": "fin_transferred_support"
+     },
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "logic": "and",
+         "conditions": [
+          {
+           "mode": "exact",
+           "operand": "true",
+           "operator": "equals",
+           "variable": "transfer_to_agent_response.data.ok"
+          },
+          {
+           "mode": "exact",
+           "operand": "restructuring",
+           "operator": "equals",
+           "variable": "transfer_to_agent_args.queue"
+          }
+         ]
+        },
+        {
+         "logic": "and",
+         "conditions": [
+          {
+           "mode": "exact",
+           "operand": "True",
+           "operator": "equals",
+           "variable": "transfer_to_agent_response.data.ok"
+          },
+          {
+           "mode": "exact",
+           "operand": "restructuring",
+           "operator": "equals",
+           "variable": "transfer_to_agent_args.queue"
+          }
+         ]
+        }
+       ]
+      },
+      "description": "transfer to restructuring done",
+      "target_node": "fin_transferred_restructuring"
+     },
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "logic": "and",
+         "conditions": [
+          {
+           "mode": "exact",
+           "operand": "true",
+           "operator": "equals",
+           "variable": "transfer_to_agent_response.data.ok"
+          },
+          {
+           "mode": "exact",
+           "operand": "general",
+           "operator": "equals",
+           "variable": "transfer_to_agent_args.queue"
+          }
+         ]
+        },
+        {
+         "logic": "and",
+         "conditions": [
+          {
+           "mode": "exact",
+           "operand": "True",
+           "operator": "equals",
+           "variable": "transfer_to_agent_response.data.ok"
+          },
+          {
+           "mode": "exact",
+           "operand": "general",
+           "operator": "equals",
+           "variable": "transfer_to_agent_args.queue"
+          }
+         ]
+        }
+       ]
+      },
+      "description": "transfer to general done",
+      "target_node": "fin_transferred_human"
+     },
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "mode": "exact",
+         "operand": "confirmed",
+         "operator": "equals",
+         "variable": "party"
+        }
+       ]
+      },
+      "description": "confirmed",
+      "target_node": "identity"
+     },
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "mode": "exact",
+         "operand": "other_person",
+         "operator": "equals",
+         "variable": "party"
+        }
+       ]
+      },
+      "description": "someone else",
+      "target_node": "third_party"
+     },
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "mode": "exact",
+         "operand": "wrong_number",
+         "operator": "equals",
+         "variable": "party"
+        }
+       ]
+      },
+      "description": "wrong number",
+      "target_node": "fin_wrong_number"
+     },
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "mode": "exact",
+         "operand": "deceased",
+         "operator": "equals",
+         "variable": "party"
+        }
+       ]
+      },
+      "description": "deceased",
+      "target_node": "fin_deceased"
+     },
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "mode": "exact",
+         "operand": "declines",
+         "operator": "equals",
+         "variable": "party"
+        }
+       ]
+      },
+      "description": "no talk",
+      "target_node": "fin_declined"
+     },
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "mode": "exact",
+         "operand": "unsure",
+         "operator": "equals",
+         "variable": "party"
+        }
+       ]
+      },
+      "description": "unclear, ask once more",
+      "target_node": "greet2"
+     },
+     {
+      "condition": {
+       "mode": "exact",
+       "operator": "always"
+      },
+      "description": "always",
+      "target_node": "greet"
+     }
+    ],
+    "role_message": "",
+    "task_message": "You asked: 'Am I speaking with {{title}} {{last_name}}?' Wait for the answer. Only 'yes', 'that's me', 'speaking' or the customer's own name counts as confirmation; 'hello', 'go ahead', 'who is this' do not. Do not say why you are calling or mention any account, debt, payment or product. If the customer asks for a human, ask once whether you can help first; if they insist, call transfer_to_agent with queue general. No other tool calls.",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [
+     {
+      "name": "party",
+      "type": "string",
+      "description": "confirmed ONLY if the customer said yes / that's me / speaking / their own name. other_person: someone else answers (relative, colleague) or says the customer is not available. wrong_number: says the number does not belong to the customer. deceased: says the customer has died. declines: says twice they do not want to talk. unsure: hello, go ahead, who is this, or anything else unclear. Empty if no answer yet.",
+      "enum_values": [
+       "confirmed",
+       "other_person",
+       "wrong_number",
+       "deceased",
+       "unsure",
+       "declines"
+      ],
+      "min_confidence": 0.65
+     }
+    ],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": true,
+    "disable_inactivity_monitor": false,
+    "passthrough_default_transition": null,
+    "return_to_previous_on_interrupt": false
+   },
+   "greet2": {
+    "name": "greet2",
+    "tools": [
+     {
+      "type": "function",
+      "config": {
+       "timeoutMs": 12000,
+       "maxRetries": 1
+      },
+      "function": {
+       "name": "transfer_to_agent",
+       "handler": "__function__:api_call",
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "url": {
+          "type": "string",
+          "default": "https://freya-bank-mock.freyavoice.workers.dev/v1/transfer_to_agent"
+         },
+         "body": {
+          "type": "object",
+          "required": [
+           "queue"
+          ],
+          "properties": {
+           "queue": {
+            "enum": [
+             "restructuring",
+             "general",
+             "support"
+            ],
+            "type": "string",
+            "default": "{{queue}}",
+            "description": "support (illness, death in family, job loss, customer accepted help), restructuring (new payment plan or lower instalments), general (customer insists on a human)"
+           },
+           "customer_id": {
+            "type": "string",
+            "default": "{{customer_id}}"
+           }
+          }
+         },
+         "method": {
+          "type": "string",
+          "default": "POST"
+         },
+         "headers": {
+          "type": "object",
+          "properties": {
+           "Content-Type": {
+            "type": "string",
+            "default": "application/json"
+           }
+          }
+         }
+        }
+       },
+       "description": "CALL it ONLY in the cases the prompt names (restructuring request, insisted human request, hardship help accepted). Pick the queue as described. One call only."
+      },
+      "post_process_code": "try:\n    result.pop('header', None)\n    d = result.get('data')\n    if isinstance(d, dict):\n        ok = str(d.get('ok')).lower() == 'true'\n        d['what_to_do_next'] = 'The transfer is done. Say nothing more.' if ok else 'The transfer was NOT done. Say so plainly and try once more; if it fails again say you could not transfer.'\nexcept Exception:\n    pass\n"
+     }
+    ],
+    "on_enter": {
+     "type": "llm",
+     "prompt": "Answer any question the customer just asked in one short sentence, then ask exactly: Am I speaking with {{title}} {{last_name}}? Mention nothing about why you call."
+    },
+    "node_type": "conversation",
+    "assertions": [],
+    "passthrough": false,
+    "pre_actions": [],
+    "transitions": [
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "logic": "and",
+         "conditions": [
+          {
+           "mode": "exact",
+           "operand": "true",
+           "operator": "equals",
+           "variable": "transfer_to_agent_response.data.ok"
+          },
+          {
+           "mode": "exact",
+           "operand": "support",
+           "operator": "equals",
+           "variable": "transfer_to_agent_args.queue"
+          }
+         ]
+        },
+        {
+         "logic": "and",
+         "conditions": [
+          {
+           "mode": "exact",
+           "operand": "True",
+           "operator": "equals",
+           "variable": "transfer_to_agent_response.data.ok"
+          },
+          {
+           "mode": "exact",
+           "operand": "support",
+           "operator": "equals",
+           "variable": "transfer_to_agent_args.queue"
+          }
+         ]
+        }
+       ]
+      },
+      "description": "transfer to support done",
+      "target_node": "fin_transferred_support"
+     },
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "logic": "and",
+         "conditions": [
+          {
+           "mode": "exact",
+           "operand": "true",
+           "operator": "equals",
+           "variable": "transfer_to_agent_response.data.ok"
+          },
+          {
+           "mode": "exact",
+           "operand": "restructuring",
+           "operator": "equals",
+           "variable": "transfer_to_agent_args.queue"
+          }
+         ]
+        },
+        {
+         "logic": "and",
+         "conditions": [
+          {
+           "mode": "exact",
+           "operand": "True",
+           "operator": "equals",
+           "variable": "transfer_to_agent_response.data.ok"
+          },
+          {
+           "mode": "exact",
+           "operand": "restructuring",
+           "operator": "equals",
+           "variable": "transfer_to_agent_args.queue"
+          }
+         ]
+        }
+       ]
+      },
+      "description": "transfer to restructuring done",
+      "target_node": "fin_transferred_restructuring"
+     },
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "logic": "and",
+         "conditions": [
+          {
+           "mode": "exact",
+           "operand": "true",
+           "operator": "equals",
+           "variable": "transfer_to_agent_response.data.ok"
+          },
+          {
+           "mode": "exact",
+           "operand": "general",
+           "operator": "equals",
+           "variable": "transfer_to_agent_args.queue"
+          }
+         ]
+        },
+        {
+         "logic": "and",
+         "conditions": [
+          {
+           "mode": "exact",
+           "operand": "True",
+           "operator": "equals",
+           "variable": "transfer_to_agent_response.data.ok"
+          },
+          {
+           "mode": "exact",
+           "operand": "general",
+           "operator": "equals",
+           "variable": "transfer_to_agent_args.queue"
+          }
+         ]
+        }
+       ]
+      },
+      "description": "transfer to general done",
+      "target_node": "fin_transferred_human"
+     },
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "mode": "exact",
+         "operand": "confirmed",
+         "operator": "equals",
+         "variable": "party2"
+        }
+       ]
+      },
+      "description": "confirmed",
+      "target_node": "identity"
+     },
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "mode": "exact",
+         "operand": "other_person",
+         "operator": "equals",
+         "variable": "party2"
+        }
+       ]
+      },
+      "description": "someone else",
+      "target_node": "third_party"
+     },
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "mode": "exact",
+         "operand": "wrong_number",
+         "operator": "equals",
+         "variable": "party2"
+        }
+       ]
+      },
+      "description": "wrong number",
+      "target_node": "fin_wrong_number"
+     },
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "mode": "exact",
+         "operand": "deceased",
+         "operator": "equals",
+         "variable": "party2"
+        }
+       ]
+      },
+      "description": "deceased",
+      "target_node": "fin_deceased"
+     },
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "mode": "exact",
+         "operand": "declines",
+         "operator": "equals",
+         "variable": "party2"
+        }
+       ]
+      },
+      "description": "no talk",
+      "target_node": "fin_declined"
+     },
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "mode": "exact",
+         "operand": "unsure",
+         "operator": "equals",
+         "variable": "party2"
+        }
+       ]
+      },
+      "description": "still unclear",
+      "target_node": "fin_unclear"
+     },
+     {
+      "condition": {
+       "mode": "exact",
+       "operator": "always"
+      },
+      "description": "always",
+      "target_node": "greet2"
+     }
+    ],
+    "role_message": "",
+    "task_message": "You asked: 'Am I speaking with {{title}} {{last_name}}?' This is the second ask: answer any question first, then ask the same question again. Only 'yes', 'that's me', 'speaking' or the customer's own name counts as confirmation; 'hello', 'go ahead', 'who is this' do not. Do not say why you are calling or mention any account, debt, payment or product. If the customer asks for a human, ask once whether you can help first; if they insist, call transfer_to_agent with queue general. No other tool calls.",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [
+     {
+      "name": "party2",
+      "type": "string",
+      "description": "confirmed ONLY if the customer said yes / that's me / speaking / their own name. other_person: someone else answers (relative, colleague) or says the customer is not available. wrong_number: says the number does not belong to the customer. deceased: says the customer has died. declines: says twice they do not want to talk. unsure: hello, go ahead, who is this, or anything else unclear. Empty if no answer yet.",
+      "enum_values": [
+       "confirmed",
+       "other_person",
+       "wrong_number",
+       "deceased",
+       "unsure",
+       "declines"
+      ],
+      "min_confidence": 0.65
+     }
+    ],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": false,
+    "passthrough_default_transition": null,
+    "return_to_previous_on_interrupt": false
+   },
+   "confirm": {
+    "name": "confirm",
+    "tools": [
+     {
+      "type": "function",
+      "config": {
+       "timeoutMs": 12000,
+       "maxRetries": 1
+      },
+      "function": {
+       "name": "create_promise",
+       "handler": "__function__:api_call",
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "url": {
+          "type": "string",
+          "default": "https://freya-bank-mock.freyavoice.workers.dev/v1/create_promise"
+         },
+         "body": {
+          "type": "object",
+          "required": [
+           "product_id",
+           "amount",
+           "date"
+          ],
+          "properties": {
+           "date": {
+            "type": "string",
+            "default": "{{date}}",
+            "description": "Agreed promise date YYYY-MM-DD"
+           },
+           "amount": {
+            "type": "number",
+            "default": "{{amount}}",
+            "description": "Agreed amount, a number"
+           },
+           "product_id": {
+            "type": "string",
+            "default": "{{product_id}}",
+            "description": "product_id from the account facts, copied unchanged"
+           },
+           "customer_id": {
+            "type": "string",
+            "default": "{{customer_id}}"
+           }
+          }
+         },
+         "method": {
+          "type": "string",
+          "default": "POST"
+         },
+         "headers": {
+          "type": "object",
+          "properties": {
+           "Content-Type": {
+            "type": "string",
+            "default": "application/json"
+           }
+          }
+         }
+        }
+       },
+       "description": "CALL it once, only after the customer clearly said yes to the read-back of product, amount and date. Never call it again after it reported failure."
+      },
+      "post_process_code": "try:\n    result.pop('header', None)\n    d = result.get('data')\n    if isinstance(d, dict):\n        ok = str(d.get('ok')).lower() == 'true'\n        d['what_to_do_next'] = 'The promise is recorded. Do not say anything else; the call is closed for you.' if ok else 'The promise was NOT recorded. All allowed tries are used up. Do not call create_promise again. Say you could not record it.'\nexcept Exception:\n    pass\n"
+     },
+     {
+      "type": "function",
+      "config": {
+       "timeoutMs": 12000,
+       "maxRetries": 1
+      },
+      "function": {
+       "name": "transfer_to_agent",
+       "handler": "__function__:api_call",
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "url": {
+          "type": "string",
+          "default": "https://freya-bank-mock.freyavoice.workers.dev/v1/transfer_to_agent"
+         },
+         "body": {
+          "type": "object",
+          "required": [
+           "queue"
+          ],
+          "properties": {
+           "queue": {
+            "enum": [
+             "restructuring",
+             "general",
+             "support"
+            ],
+            "type": "string",
+            "default": "{{queue}}",
+            "description": "support (illness, death in family, job loss, customer accepted help), restructuring (new payment plan or lower instalments), general (customer insists on a human)"
+           },
+           "customer_id": {
+            "type": "string",
+            "default": "{{customer_id}}"
+           }
+          }
+         },
+         "method": {
+          "type": "string",
+          "default": "POST"
+         },
+         "headers": {
+          "type": "object",
+          "properties": {
+           "Content-Type": {
+            "type": "string",
+            "default": "application/json"
+           }
+          }
+         }
+        }
+       },
+       "description": "CALL it ONLY in the cases the prompt names (restructuring request, insisted human request, hardship help accepted). Pick the queue as described. One call only."
+      },
+      "post_process_code": "try:\n    result.pop('header', None)\n    d = result.get('data')\n    if isinstance(d, dict):\n        ok = str(d.get('ok')).lower() == 'true'\n        d['what_to_do_next'] = 'The transfer is done. Say nothing more.' if ok else 'The transfer was NOT done. Say so plainly and try once more; if it fails again say you could not transfer.'\nexcept Exception:\n    pass\n"
+     }
+    ],
+    "on_enter": {
+     "type": "llm",
+     "prompt": "Read the product, the amount and the date back to the customer and ask exactly: \"Do you confirm?\""
+    },
+    "node_type": "conversation",
+    "assertions": [],
+    "passthrough": false,
+    "pre_actions": [],
+    "transitions": [
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "logic": "and",
+         "conditions": [
+          {
+           "mode": "exact",
+           "operand": "true",
+           "operator": "equals",
+           "variable": "transfer_to_agent_response.data.ok"
+          },
+          {
+           "mode": "exact",
+           "operand": "support",
+           "operator": "equals",
+           "variable": "transfer_to_agent_args.queue"
+          }
+         ]
+        },
+        {
+         "logic": "and",
+         "conditions": [
+          {
+           "mode": "exact",
+           "operand": "True",
+           "operator": "equals",
+           "variable": "transfer_to_agent_response.data.ok"
+          },
+          {
+           "mode": "exact",
+           "operand": "support",
+           "operator": "equals",
+           "variable": "transfer_to_agent_args.queue"
+          }
+         ]
+        }
+       ]
+      },
+      "description": "transfer to support done",
+      "target_node": "fin_transferred_support"
+     },
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "logic": "and",
+         "conditions": [
+          {
+           "mode": "exact",
+           "operand": "true",
+           "operator": "equals",
+           "variable": "transfer_to_agent_response.data.ok"
+          },
+          {
+           "mode": "exact",
+           "operand": "restructuring",
+           "operator": "equals",
+           "variable": "transfer_to_agent_args.queue"
+          }
+         ]
+        },
+        {
+         "logic": "and",
+         "conditions": [
+          {
+           "mode": "exact",
+           "operand": "True",
+           "operator": "equals",
+           "variable": "transfer_to_agent_response.data.ok"
+          },
+          {
+           "mode": "exact",
+           "operand": "restructuring",
+           "operator": "equals",
+           "variable": "transfer_to_agent_args.queue"
+          }
+         ]
+        }
+       ]
+      },
+      "description": "transfer to restructuring done",
+      "target_node": "fin_transferred_restructuring"
+     },
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "logic": "and",
+         "conditions": [
+          {
+           "mode": "exact",
+           "operand": "true",
+           "operator": "equals",
+           "variable": "transfer_to_agent_response.data.ok"
+          },
+          {
+           "mode": "exact",
+           "operand": "general",
+           "operator": "equals",
+           "variable": "transfer_to_agent_args.queue"
+          }
+         ]
+        },
+        {
+         "logic": "and",
+         "conditions": [
+          {
+           "mode": "exact",
+           "operand": "True",
+           "operator": "equals",
+           "variable": "transfer_to_agent_response.data.ok"
+          },
+          {
+           "mode": "exact",
+           "operand": "general",
+           "operator": "equals",
+           "variable": "transfer_to_agent_args.queue"
+          }
+         ]
+        }
+       ]
+      },
+      "description": "transfer to general done",
+      "target_node": "fin_transferred_human"
+     },
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "logic": "and",
+         "conditions": [
+          {
+           "mode": "exact",
+           "operand": "true",
+           "operator": "equals",
+           "variable": "create_promise_response.data.ok"
+          }
+         ]
+        },
+        {
+         "logic": "and",
+         "conditions": [
+          {
+           "mode": "exact",
+           "operand": "True",
+           "operator": "equals",
+           "variable": "create_promise_response.data.ok"
+          }
+         ]
+        }
+       ]
+      },
+      "description": "promise recorded",
+      "target_node": "fin_promise"
+     },
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "mode": "exact",
+         "operand": 0,
+         "operator": "greater_than",
+         "variable": "create_promise_failure_count"
+        }
+       ]
+      },
+      "description": "promise failed after retries",
+      "target_node": "fin_service_error"
+     },
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "mode": "exact",
+         "operand": "changed",
+         "operator": "equals",
+         "variable": "confirm_state"
+        }
+       ]
+      },
+      "description": "customer changes",
+      "target_node": "reset_deal"
+     },
+     {
+      "condition": {
+       "mode": "exact",
+       "operator": "always"
+      },
+      "description": "always",
+      "target_node": "confirm"
+     }
+    ],
+    "role_message": "",
+    "task_message": "Account facts: {{acct_block}}\nThe customer agreed to an amount and a date. Read the product (in words), the amount and the date back and ask exactly: \"Do you confirm?\" Answer any customer question first in one short sentence.\nCALL create_promise only after a clear yes to this read-back, with product_id from the account facts, the agreed amount and the agreed date as YYYY-MM-DD. If the customer says no or wants to change the date or the amount, do not call create_promise; set confirm_state to changed. If the create_promise result says it was not recorded, all allowed tries are used up: do not call it again; say plainly that you could not record it.\nIf the customer asks for a human, ask once whether you can help first; if they insist CALL transfer_to_agent with queue general. For a new payment plan or lower instalments CALL transfer_to_agent with queue restructuring.",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [
+     {
+      "name": "confirm_state",
+      "type": "string",
+      "description": "changed if the customer said no or wants a different date or amount at the read-back; else none",
+      "enum_values": [
+       "none",
+       "changed"
+      ],
+      "min_confidence": 0.65
+     }
+    ],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": false,
+    "passthrough_default_transition": null,
+    "return_to_previous_on_interrupt": false
+   },
+   "end_paid": {
+    "name": "end_paid",
+    "tools": [],
+    "on_enter": {
+     "type": "silent"
+    },
+    "terminal": {
+     "type": "function",
+     "function": {
+      "name": "closed_paid",
+      "handler": "__function__:end_call",
+      "parameters": {
+       "type": "object",
+       "properties": {
+        "message_mode": {
+         "type": "string",
+         "default": "custom"
+        },
+        "spoken_message": {
+         "type": "string",
+         "default": "Payments can take one business day to appear. Thank you for your time, goodbye."
+        }
+       }
+      },
+      "description": ""
+     }
+    },
+    "node_type": "end_call",
+    "assertions": [],
+    "passthrough": false,
+    "pre_actions": [],
+    "transitions": [],
+    "role_message": "",
+    "task_message": "",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": true,
+    "passthrough_default_transition": null,
+    "return_to_previous_on_interrupt": false
+   },
+   "fin_paid": {
+    "name": "fin_paid",
+    "tools": [],
+    "on_enter": {
+     "type": "silent"
+    },
+    "node_type": "code",
+    "assertions": [],
+    "passthrough": true,
+    "pre_actions": [
+     {
+      "type": "function",
+      "function": {
+       "name": "code_exec",
+       "handler": "__function__:code_exec",
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "code": {
+          "type": "string",
+          "default": "vars['outcome'] = 'paid'\nvars['reason'] = ''\n"
+         },
+         "timeout_ms": {
+          "type": "number",
+          "default": 8000
+         }
+        }
+       },
+       "description": ""
+      }
+     }
+    ],
+    "transitions": [
+     {
+      "condition": {
+       "mode": "exact",
+       "operator": "always"
+      },
+      "description": "always",
+      "target_node": "end_paid"
+     }
+    ],
+    "role_message": "",
+    "task_message": "",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": false,
+    "passthrough_default_transition": "end_paid",
+    "return_to_previous_on_interrupt": false
+   },
+   "identity": {
+    "name": "identity",
+    "tools": [
+     {
+      "type": "function",
+      "config": {
+       "timeoutMs": 12000,
+       "maxRetries": 0
+      },
+      "function": {
+       "name": "verify_identity",
+       "handler": "__function__:api_call",
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "url": {
+          "type": "string",
+          "default": "https://freya-bank-mock.freyavoice.workers.dev/v1/verify_identity"
+         },
+         "body": {
+          "type": "object",
+          "required": [
+           "field",
+           "answer"
+          ],
+          "properties": {
+           "field": {
+            "enum": [
+             "date_of_birth",
+             "phone_last4"
+            ],
+            "type": "string",
+            "default": "{{field}}",
+            "description": "Which answer this is"
+           },
+           "answer": {
+            "type": "string",
+            "default": "{{answer}}",
+            "description": "date_of_birth as YYYY-MM-DD; phone_last4 as four digits"
+           },
+           "customer_id": {
+            "type": "string",
+            "default": "{{customer_id}}"
+           }
+          }
+         },
+         "method": {
+          "type": "string",
+          "default": "POST"
+         },
+         "headers": {
+          "type": "object",
+          "properties": {
+           "Content-Type": {
+            "type": "string",
+            "default": "application/json"
+           }
+          }
+         }
+        }
+       },
+       "description": "CALL it every time the customer gives a security answer. One answer per call."
+      },
+      "post_process_code": "try:\n    result.pop('header', None)\n    d = result.get('data')\n    if isinstance(d, dict):\n        ok = str(d.get('ok')).lower() == 'true'\n        if ok and str(d.get('all_verified')).lower() == 'true':\n            d['what_to_do_next'] = 'Both answers passed. Identity is verified. Say nothing about the debt yet; the next step is handled for you.'\n        elif d.get('hint') == 'day_month_swapped':\n            d['what_to_do_next'] = 'Day and month look swapped. Ask the customer to say the month as a word, then call verify_identity again with date_of_birth as YYYY-MM-DD. This retry is not a wrong answer.'\n        elif not ok:\n            d['what_to_do_next'] = 'The answer could not be read and was NOT counted as wrong. Ask the same question again and call verify_identity again with the corrected format.'\n        elif str(d.get('verified')).lower() == 'true':\n            d['what_to_do_next'] = 'This answer is correct. Ask the next security question (date of birth first, then the last four digits of the phone number on file).'\n        else:\n            d['what_to_do_next'] = 'Wrong answer. Wrong answers left: ' + str(d.get('wrong_answers_left')) + '. If more than 0, say it did not match and ask the same question again. If 0, the check is over: do not state any debt and do not ask more.'\nexcept Exception:\n    pass\n"
+     },
+     {
+      "type": "function",
+      "config": {
+       "timeoutMs": 12000,
+       "maxRetries": 1
+      },
+      "function": {
+       "name": "transfer_to_agent",
+       "handler": "__function__:api_call",
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "url": {
+          "type": "string",
+          "default": "https://freya-bank-mock.freyavoice.workers.dev/v1/transfer_to_agent"
+         },
+         "body": {
+          "type": "object",
+          "required": [
+           "queue"
+          ],
+          "properties": {
+           "queue": {
+            "enum": [
+             "restructuring",
+             "general",
+             "support"
+            ],
+            "type": "string",
+            "default": "{{queue}}",
+            "description": "support (illness, death in family, job loss, customer accepted help), restructuring (new payment plan or lower instalments), general (customer insists on a human)"
+           },
+           "customer_id": {
+            "type": "string",
+            "default": "{{customer_id}}"
+           }
+          }
+         },
+         "method": {
+          "type": "string",
+          "default": "POST"
+         },
+         "headers": {
+          "type": "object",
+          "properties": {
+           "Content-Type": {
+            "type": "string",
+            "default": "application/json"
+           }
+          }
+         }
+        }
+       },
+       "description": "CALL it ONLY in the cases the prompt names (restructuring request, insisted human request, hardship help accepted). Pick the queue as described. One call only."
+      },
+      "post_process_code": "try:\n    result.pop('header', None)\n    d = result.get('data')\n    if isinstance(d, dict):\n        ok = str(d.get('ok')).lower() == 'true'\n        d['what_to_do_next'] = 'The transfer is done. Say nothing more.' if ok else 'The transfer was NOT done. Say so plainly and try once more; if it fails again say you could not transfer.'\nexcept Exception:\n    pass\n"
+     }
+    ],
+    "on_enter": {
+     "type": "llm",
+     "prompt": "Answer any question the customer asked in one short sentence (do not mention the debt or account). Then ask for their date of birth."
+    },
+    "node_type": "conversation",
+    "assertions": [],
+    "passthrough": false,
+    "pre_actions": [],
+    "transitions": [
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "logic": "and",
+         "conditions": [
+          {
+           "mode": "exact",
+           "operand": "true",
+           "operator": "equals",
+           "variable": "transfer_to_agent_response.data.ok"
+          },
+          {
+           "mode": "exact",
+           "operand": "support",
+           "operator": "equals",
+           "variable": "transfer_to_agent_args.queue"
+          }
+         ]
+        },
+        {
+         "logic": "and",
+         "conditions": [
+          {
+           "mode": "exact",
+           "operand": "True",
+           "operator": "equals",
+           "variable": "transfer_to_agent_response.data.ok"
+          },
+          {
+           "mode": "exact",
+           "operand": "support",
+           "operator": "equals",
+           "variable": "transfer_to_agent_args.queue"
+          }
+         ]
+        }
+       ]
+      },
+      "description": "transfer to support done",
+      "target_node": "fin_transferred_support"
+     },
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "logic": "and",
+         "conditions": [
+          {
+           "mode": "exact",
+           "operand": "true",
+           "operator": "equals",
+           "variable": "transfer_to_agent_response.data.ok"
+          },
+          {
+           "mode": "exact",
+           "operand": "restructuring",
+           "operator": "equals",
+           "variable": "transfer_to_agent_args.queue"
+          }
+         ]
+        },
+        {
+         "logic": "and",
+         "conditions": [
+          {
+           "mode": "exact",
+           "operand": "True",
+           "operator": "equals",
+           "variable": "transfer_to_agent_response.data.ok"
+          },
+          {
+           "mode": "exact",
+           "operand": "restructuring",
+           "operator": "equals",
+           "variable": "transfer_to_agent_args.queue"
+          }
+         ]
+        }
+       ]
+      },
+      "description": "transfer to restructuring done",
+      "target_node": "fin_transferred_restructuring"
+     },
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "logic": "and",
+         "conditions": [
+          {
+           "mode": "exact",
+           "operand": "true",
+           "operator": "equals",
+           "variable": "transfer_to_agent_response.data.ok"
+          },
+          {
+           "mode": "exact",
+           "operand": "general",
+           "operator": "equals",
+           "variable": "transfer_to_agent_args.queue"
+          }
+         ]
+        },
+        {
+         "logic": "and",
+         "conditions": [
+          {
+           "mode": "exact",
+           "operand": "True",
+           "operator": "equals",
+           "variable": "transfer_to_agent_response.data.ok"
+          },
+          {
+           "mode": "exact",
+           "operand": "general",
+           "operator": "equals",
+           "variable": "transfer_to_agent_args.queue"
+          }
+         ]
+        }
+       ]
+      },
+      "description": "transfer to general done",
+      "target_node": "fin_transferred_human"
+     },
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "mode": "exact",
+         "operand": "true",
+         "operator": "equals",
+         "variable": "verify_identity_response.data.all_verified"
+        },
+        {
+         "mode": "exact",
+         "operand": "True",
+         "operator": "equals",
+         "variable": "verify_identity_response.data.all_verified"
+        }
+       ]
+      },
+      "description": "both passed",
+      "target_node": "get_account_call"
+     },
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "mode": "exact",
+         "operand": "0",
+         "operator": "equals",
+         "variable": "verify_identity_response.data.wrong_answers_left"
+        }
+       ]
+      },
+      "description": "three wrong answers",
+      "target_node": "fin_failed"
+     },
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "mode": "exact",
+         "operand": "declined",
+         "operator": "equals",
+         "variable": "id_state"
+        }
+       ]
+      },
+      "description": "declined",
+      "target_node": "fin_declined"
+     },
+     {
+      "condition": {
+       "mode": "exact",
+       "operator": "always"
+      },
+      "description": "always",
+      "target_node": "identity"
+     }
+    ],
+    "role_message": "",
+    "task_message": "The customer confirmed who they are. Verify identity with two security questions, one at a time: first the date of birth, then the last four digits of the phone number on file. Do not mention any debt, payment, or product.\nCALL verify_identity after each answer: field date_of_birth with the answer as YYYY-MM-DD whatever way they said it (a date given only as numbers is day, then month, then year), or field phone_last4 with four digits. Calendar for reference:\n{{calendar}}\nFollow what_to_do_next in every tool result. A wrong answer may be asked again; three wrong answers in total end the check. A day_month_swapped hint: ask the customer to say the month as a word; that retry is not a wrong answer.\nIf the customer does not want to answer, explain once that the questions protect their account. Asking what the call is about instead of answering counts as declining. If they still decline, or decline a second time, set id_state to declined. Same if they say twice they do not want to talk.\nIf the customer asks for a human, ask once whether you can help first; if they insist, call transfer_to_agent with queue general. If they ask for a new payment plan, call transfer_to_agent with queue restructuring.",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [
+     {
+      "name": "id_state",
+      "type": "string",
+      "description": "declined only if the customer refused to answer after you explained the questions protect their account (or asked about the call a second time, or twice said they do not want to talk); else none",
+      "enum_values": [
+       "none",
+       "declined"
+      ],
+      "min_confidence": 0.65
+     }
+    ],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": false,
+    "passthrough_default_transition": null,
+    "return_to_previous_on_interrupt": false
+   },
+   "end_nonow": {
+    "name": "end_nonow",
+    "tools": [],
+    "on_enter": {
+     "type": "silent"
+    },
+    "terminal": {
+     "type": "function",
+     "function": {
+      "name": "error_no_now",
+      "handler": "__function__:end_call",
+      "parameters": {
+       "type": "object",
+       "properties": {
+        "message_mode": {
+         "type": "string",
+         "default": "custom"
+        },
+        "spoken_message": {
+         "type": "string",
+         "default": "I am sorry, I cannot continue this call right now. Goodbye."
+        }
+       }
+      },
+      "description": ""
+     }
+    },
+    "node_type": "end_call",
+    "assertions": [],
+    "passthrough": false,
+    "pre_actions": [],
+    "transitions": [],
+    "role_message": "",
+    "task_message": "",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": true,
+    "passthrough_default_transition": null,
+    "return_to_previous_on_interrupt": false
+   },
+   "negotiate": {
+    "name": "negotiate",
+    "tools": [
+     {
+      "type": "function",
+      "config": {
+       "preSpeech": {
+        "mode": "static",
+        "message": "One moment, let me check that date.",
+        "interruptible": false
+       },
+       "timeoutMs": 10000
+      },
+      "function": {
+       "name": "check_payment_date",
+       "handler": "__function__:code_exec",
+       "parameters": {
+        "type": "object",
+        "required": [
+         "date",
+         "product_id"
+        ],
+        "properties": {
+         "code": {
+          "type": "string",
+          "default": "\nimport json, datetime, re\nCFG = json.loads(r\"\"\"{\n \"now_var\": \"now\",\n \"weekend_days\": [\n  5,\n  6\n ],\n \"holidays\": [\n  \"2026-10-26\",\n  \"2026-11-11\",\n  \"2026-11-26\",\n  \"2026-12-25\",\n  \"2027-01-01\"\n ],\n \"products_vars\": [\n  \"products\"\n ],\n \"product_id_field\": \"product_id\",\n \"days_late_field\": \"days_late\",\n \"bands\": [\n  {\n   \"min\": 1,\n   \"max\": 7,\n   \"deadline_business_days\": 12\n  },\n  {\n   \"min\": 8,\n   \"max\": 45,\n   \"deadline_business_days\": 7\n  }\n ],\n \"vague_asks_before_deadline\": 1,\n \"say\": {\n  \"checking\": \"One moment, let me check that date.\",\n  \"ok\": \"{day} works, I can record that date.\",\n  \"not_business_day\": \"{day} is not a business day. The next business day is {next}. Would {next} work for you?\",\n  \"after_deadline\": \"The latest date I can record is {deadline}. Would {deadline} work for you?\",\n  \"past\": \"That date has already passed. Which date from today onward works for you?\",\n  \"ask_exact\": \"Could you tell me the exact day you can pay?\",\n  \"vague_propose_deadline\": \"Since I do not have an exact day, the latest date I can record is {deadline}. Would {deadline} work for you?\",\n  \"error\": \"I could not check that date. Could you tell me the exact day again?\"\n }\n}\"\"\")\nMONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']\nDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']\ndef spoken(d):\n    return DAYS[d.weekday()] + ' ' + str(d.day) + ' ' + MONTHS[d.month - 1]\ndef isbd(d):\n    return d.weekday() not in CFG['weekend_days'] and d.isoformat() not in CFG['holidays']\ndef add_bd(d, n):\n    c = 0\n    while c < n:\n        d = d + datetime.timedelta(days=1)\n        if isbd(d):\n            c += 1\n    return d\ndef next_bd(d):\n    d = d + datetime.timedelta(days=1)\n    while not isbd(d):\n        d = d + datetime.timedelta(days=1)\n    return d\ndef load_products():\n    for name in CFG['products_vars']:\n        v = vars.get(name)\n        if isinstance(v, str):\n            try:\n                v = json.loads(v)\n            except Exception:\n                try:\n                    import ast\n                    v = ast.literal_eval(v)\n                except Exception:\n                    v = None\n        if isinstance(v, list) and v:\n            return [p for p in v if isinstance(p, dict)]\n    found = dict()\n    for k in list(vars.keys()):\n        m = re.search(r'products\\.(\\d+)\\.(\\w+)$', str(k))\n        if m:\n            found.setdefault(int(m.group(1)), dict())[m.group(2)] = vars.get(k)\n    return [found[i] for i in sorted(found.keys())]\ndecision, say, proposed, pid = 'error', CFG['say']['error'], '', ''\ntry:\n    args = params if isinstance(params, dict) else dict()\nexcept Exception:\n    args = dict()\ntry:\n    today = datetime.datetime.strptime(str(vars.get(CFG.get('now_var', 'now')))[:10], '%Y-%m-%d').date()\n    prods = load_products()\n    pid = str(args.get('product_id') or '').strip()\n    prod = None\n    for p in prods:\n        if str(p.get(CFG['product_id_field'])) == pid:\n            prod = p\n    if prod is None and len(prods) == 1:\n        prod = prods[0]\n        pid = str(prod.get(CFG['product_id_field']))\n    if prod is None:\n        raise ValueError('unknown product')\n    late = int(float(prod.get(CFG['days_late_field'])))\n    band = [b for b in CFG['bands'] if b['min'] <= late <= b['max']]\n    if not band:\n        raise ValueError('no band')\n    deadline = add_bd(today, int(band[0]['deadline_business_days']))\n    raw = str(args.get('date') or '').strip().lower()\n    day = None\n    if re.match(r'^\\d{4}-\\d{2}-\\d{2}$', raw):\n        day = datetime.date.fromisoformat(raw)\n    key = 'date_vague_count_' + re.sub(r'\\W', '_', pid)\n    if day is None:\n        n = int(vars.get(key) or 0) + 1\n        vars[key] = str(n)\n        if n <= int(CFG.get('vague_asks_before_deadline', 1)):\n            decision, say = 'ask_exact', CFG['say']['ask_exact']\n        else:\n            decision, proposed = 'propose_deadline', deadline.isoformat()\n            say = CFG['say']['vague_propose_deadline'].format(deadline=spoken(deadline))\n    elif day < today:\n        decision, say = 'past', CFG['say']['past'].format(day=spoken(day))\n    elif day > deadline:\n        decision, proposed = 'after_deadline', deadline.isoformat()\n        say = CFG['say']['after_deadline'].format(day=spoken(day), deadline=spoken(deadline))\n    elif not isbd(day):\n        nb = next_bd(day)\n        decision, proposed = 'not_business_day', nb.isoformat()\n        say = CFG['say']['not_business_day'].format(day=spoken(day), next=spoken(nb), deadline=spoken(deadline))\n    else:\n        decision, proposed = 'ok', day.isoformat()\n        say = CFG['say']['ok'].format(day=spoken(day), deadline=spoken(deadline))\nexcept Exception as e:\n    vars['date_error'] = str(e)[:120]\nvars['date_decision'] = decision\nvars['date_say'] = say\nvars['date_proposed'] = proposed\nvars['date_product'] = pid\nvars['date_flag'] = 'new'\n"
+         },
+         "date": {
+          "type": "string",
+          "description": "YYYY-MM-DD, or 'vague'"
+         },
+         "product_id": {
+          "type": "string",
+          "description": "product id from the account result"
+         },
+         "timeout_ms": {
+          "type": "number",
+          "default": 5000
+         }
+        }
+       },
+       "description": "CALL it every time the customer names a payment day or a period, before you say anything about that day. date = the day as YYYY-MM-DD read from the calendar in your instructions, or 'vague' when the customer gave no exact day. product_id = the product the date is for. The decision is read out after the call; do not judge the day yourself."
+      }
+     },
+     {
+      "type": "function",
+      "config": {
+       "timeoutMs": 12000,
+       "maxRetries": 1
+      },
+      "function": {
+       "name": "transfer_to_agent",
+       "handler": "__function__:api_call",
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "url": {
+          "type": "string",
+          "default": "https://freya-bank-mock.freyavoice.workers.dev/v1/transfer_to_agent"
+         },
+         "body": {
+          "type": "object",
+          "required": [
+           "queue"
+          ],
+          "properties": {
+           "queue": {
+            "enum": [
+             "restructuring",
+             "general",
+             "support"
+            ],
+            "type": "string",
+            "default": "{{queue}}",
+            "description": "support (illness, death in family, job loss, customer accepted help), restructuring (new payment plan or lower instalments), general (customer insists on a human)"
+           },
+           "customer_id": {
+            "type": "string",
+            "default": "{{customer_id}}"
+           }
+          }
+         },
+         "method": {
+          "type": "string",
+          "default": "POST"
+         },
+         "headers": {
+          "type": "object",
+          "properties": {
+           "Content-Type": {
+            "type": "string",
+            "default": "application/json"
+           }
+          }
+         }
+        }
+       },
+       "description": "CALL it ONLY in the cases the prompt names (restructuring request, insisted human request, hardship help accepted). Pick the queue as described. One call only."
+      },
+      "post_process_code": "try:\n    result.pop('header', None)\n    d = result.get('data')\n    if isinstance(d, dict):\n        ok = str(d.get('ok')).lower() == 'true'\n        d['what_to_do_next'] = 'The transfer is done. Say nothing more.' if ok else 'The transfer was NOT done. Say so plainly and try once more; if it fails again say you could not transfer.'\nexcept Exception:\n    pass\n"
+     }
+    ],
+    "on_enter": {
+     "type": "llm"
+    },
+    "node_type": "conversation",
+    "assertions": [],
+    "passthrough": false,
+    "pre_actions": [],
+    "transitions": [
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "mode": "exact",
+         "operand": "new",
+         "operator": "equals",
+         "variable": "date_flag"
+        }
+       ]
+      },
+      "description": "the date check produced a new decision",
+      "target_node": "date_consume"
+     },
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "logic": "and",
+         "conditions": [
+          {
+           "mode": "exact",
+           "operand": "true",
+           "operator": "equals",
+           "variable": "transfer_to_agent_response.data.ok"
+          },
+          {
+           "mode": "exact",
+           "operand": "support",
+           "operator": "equals",
+           "variable": "transfer_to_agent_args.queue"
+          }
+         ]
+        },
+        {
+         "logic": "and",
+         "conditions": [
+          {
+           "mode": "exact",
+           "operand": "True",
+           "operator": "equals",
+           "variable": "transfer_to_agent_response.data.ok"
+          },
+          {
+           "mode": "exact",
+           "operand": "support",
+           "operator": "equals",
+           "variable": "transfer_to_agent_args.queue"
+          }
+         ]
+        }
+       ]
+      },
+      "description": "transfer to support done",
+      "target_node": "fin_transferred_support"
+     },
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "logic": "and",
+         "conditions": [
+          {
+           "mode": "exact",
+           "operand": "true",
+           "operator": "equals",
+           "variable": "transfer_to_agent_response.data.ok"
+          },
+          {
+           "mode": "exact",
+           "operand": "restructuring",
+           "operator": "equals",
+           "variable": "transfer_to_agent_args.queue"
+          }
+         ]
+        },
+        {
+         "logic": "and",
+         "conditions": [
+          {
+           "mode": "exact",
+           "operand": "True",
+           "operator": "equals",
+           "variable": "transfer_to_agent_response.data.ok"
+          },
+          {
+           "mode": "exact",
+           "operand": "restructuring",
+           "operator": "equals",
+           "variable": "transfer_to_agent_args.queue"
+          }
+         ]
+        }
+       ]
+      },
+      "description": "transfer to restructuring done",
+      "target_node": "fin_transferred_restructuring"
+     },
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "logic": "and",
+         "conditions": [
+          {
+           "mode": "exact",
+           "operand": "true",
+           "operator": "equals",
+           "variable": "transfer_to_agent_response.data.ok"
+          },
+          {
+           "mode": "exact",
+           "operand": "general",
+           "operator": "equals",
+           "variable": "transfer_to_agent_args.queue"
+          }
+         ]
+        },
+        {
+         "logic": "and",
+         "conditions": [
+          {
+           "mode": "exact",
+           "operand": "True",
+           "operator": "equals",
+           "variable": "transfer_to_agent_response.data.ok"
+          },
+          {
+           "mode": "exact",
+           "operand": "general",
+           "operator": "equals",
+           "variable": "transfer_to_agent_args.queue"
+          }
+         ]
+        }
+       ]
+      },
+      "description": "transfer to general done",
+      "target_node": "fin_transferred_human"
+     },
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "mode": "exact",
+         "operand": "agreed",
+         "operator": "equals",
+         "variable": "deal_state"
+        }
+       ]
+      },
+      "description": "agreed amount and date",
+      "target_node": "confirm"
+     },
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "mode": "exact",
+         "operand": "paid",
+         "operator": "equals",
+         "variable": "deal_state"
+        }
+       ]
+      },
+      "description": "already paid",
+      "target_node": "fin_paid"
+     },
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "mode": "exact",
+         "operand": "dispute",
+         "operator": "equals",
+         "variable": "deal_state"
+        }
+       ]
+      },
+      "description": "dispute",
+      "target_node": "fin_dispute"
+     },
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "mode": "exact",
+         "operand": "refused",
+         "operator": "equals",
+         "variable": "deal_state"
+        }
+       ]
+      },
+      "description": "refused",
+      "target_node": "fin_refused"
+     },
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "mode": "exact",
+         "operand": "hardship_declined",
+         "operator": "equals",
+         "variable": "deal_state"
+        }
+       ]
+      },
+      "description": "hardship declined",
+      "target_node": "fin_hardship"
+     },
+     {
+      "condition": {
+       "mode": "exact",
+       "operator": "always"
+      },
+      "description": "always",
+      "target_node": "negotiate"
+     }
+    ],
+    "role_message": "",
+    "task_message": "Account facts (from the system, exact): {{acct_block}}\nCalendar:\n{{calendar}}\nIdentity is verified. Work through these steps in order:\n1. In your first message say you are calling from the collections team about a late payment, name the product in words, state the past-due amount and how many days late it is, then ask exactly: \"Can you make this payment today?\"\n2. Amounts: you propose every amount; never ask 'how much can you pay'. Ask for the full past-due amount first. If the customer says the full amount is too much, offer the floor once and say the rest stays overdue. A customer amount from the floor up to the full amount is accepted. Below the floor say it cannot be recorded and offer the floor once; if they do not accept the floor, it is a flat refusal.\n3. Dates: for every day or period the customer names (also 'today', 'tomorrow', 'this Friday', 'next Tuesday', 'end of the month'), CALL check_payment_date with date as YYYY-MM-DD read from the calendar above, or 'vague' if no exact day was given, and product_id from the account facts. Never say yourself whether a day is allowed. After its decision is read out, continue from it. If the customer refuses the deadline date, it is a flat refusal.\n4. A date or amount proposed by the customer is never a refusal. A flat refusal or a non-answer (a no to paying today with no date and no amount) uses one persuasion attempt. Attempts allowed are in the account facts. Attempt 1: propose the full past-due amount (or the floor if the customer already said the full amount is too much) on the attempt 1 date from the calendar (check it with check_payment_date first). Attempt 2 (late band only): propose the floor amount on the deadline date. Never repeat an offer already refused. When the attempts are used up, stop and set deal_state to refused.\n5. When the customer clearly agrees to an amount and a date that the date check approved, set deal_state to agreed (say nothing more; the next step reads it back).\nSpecial cases (these come before the persuasion rules): illness, death in the family or job loss: say one short sentence of sympathy, make no persuasion attempt, offer to connect them with the customer support team; if they accept, CALL transfer_to_agent with queue support; if they decline set deal_state to hardship_declined. If they still name a date or amount themselves, handle it as in steps 2-3.\n'I already paid': say payments can take one business day to appear, take no promise, set deal_state to paid.\n'This debt is not mine', 'I never had this product', or the product was closed or paid off in the past: do not argue, take no promise, set deal_state to dispute.\nA request for a new payment plan or lower instalments: describe no plan; CALL transfer_to_agent with queue restructuring.\nA request for a human: ask once whether you can help first; if they insist CALL transfer_to_agent with queue general.\nIf the customer says twice that they do not want to talk, set deal_state to refused.\nOnly one promise per product. If asked about changing a recorded promise, say they can change it in the mobile app.",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [
+     {
+      "name": "deal_state",
+      "type": "string",
+      "description": "agreed: customer clearly accepted a specific amount and date that was checked. paid: says they already paid this past-due amount. dispute: not their debt/product, or product closed or paid off in the past. refused: persuasion attempts used up with no agreement, or twice said they do not want to talk. hardship_declined: had illness/death/job loss and declined support transfer. none otherwise.",
+      "enum_values": [
+       "none",
+       "agreed",
+       "paid",
+       "dispute",
+       "refused",
+       "hardship_declined"
+      ],
+      "min_confidence": 0.65
+     }
+    ],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": true,
+    "disable_inactivity_monitor": false,
+    "passthrough_default_transition": null,
+    "return_to_previous_on_interrupt": false
+   },
+   "date_relay": {
+    "name": "date_relay",
+    "tools": [],
+    "on_enter": {
+     "type": "llm",
+     "prompt": "First, if the customer's last message asked you a question or said something your instructions require you to respond to, answer it in one short sentence. Then say this decision exactly, word for word, without changing any day, date or amount: \"{{date_say}}\" Do not call any tool. Say nothing else about which days are possible."
+    },
+    "node_type": "conversation",
+    "assertions": [],
+    "passthrough": false,
+    "pre_actions": [],
+    "transitions": [
+     {
+      "condition": {
+       "mode": "exact",
+       "operator": "always"
+      },
+      "description": "always",
+      "target_node": "negotiate"
+     }
+    ],
+    "role_message": "",
+    "task_message": "First, if the customer's last message asked you a question or said something your instructions require you to respond to, answer it in one short sentence. Then say this decision exactly, word for word, without changing any day, date or amount: \"{{date_say}}\" Do not call any tool. Say nothing else about which days are possible.",
+    "interruptible": true,
+    "max_node_turns": 5,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": "negotiate",
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": false,
+    "passthrough_default_transition": null,
+    "return_to_previous_on_interrupt": false
+   },
+   "end_failed": {
+    "name": "end_failed",
+    "tools": [],
+    "on_enter": {
+     "type": "silent"
+    },
+    "terminal": {
+     "type": "function",
+     "function": {
+      "name": "closed_failed",
+      "handler": "__function__:end_call",
+      "parameters": {
+       "type": "object",
+       "properties": {
+        "message_mode": {
+         "type": "string",
+         "default": "custom"
+        },
+        "spoken_message": {
+         "type": "string",
+         "default": "I cannot continue without verifying your identity. Please use the mobile app or a branch. Thank you, goodbye."
+        }
+       }
+      },
+      "description": ""
+     }
+    },
+    "node_type": "end_call",
+    "assertions": [],
+    "passthrough": false,
+    "pre_actions": [],
+    "transitions": [],
+    "role_message": "",
+    "task_message": "",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": true,
+    "passthrough_default_transition": null,
+    "return_to_previous_on_interrupt": false
+   },
+   "fin_failed": {
+    "name": "fin_failed",
+    "tools": [],
+    "on_enter": {
+     "type": "silent"
+    },
+    "node_type": "code",
+    "assertions": [],
+    "passthrough": true,
+    "pre_actions": [
+     {
+      "type": "function",
+      "function": {
+       "name": "code_exec",
+       "handler": "__function__:code_exec",
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "code": {
+          "type": "string",
+          "default": "vars['outcome'] = 'not_verified'\nvars['reason'] = 'failed'\n"
+         },
+         "timeout_ms": {
+          "type": "number",
+          "default": 8000
+         }
+        }
+       },
+       "description": ""
+      }
+     }
+    ],
+    "transitions": [
+     {
+      "condition": {
+       "mode": "exact",
+       "operator": "always"
+      },
+      "description": "always",
+      "target_node": "end_failed"
+     }
+    ],
+    "role_message": "",
+    "task_message": "",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": false,
+    "passthrough_default_transition": "end_failed",
+    "return_to_previous_on_interrupt": false
+   },
+   "reset_deal": {
+    "name": "reset_deal",
+    "tools": [],
+    "on_enter": {
+     "type": "silent"
+    },
+    "node_type": "code",
+    "assertions": [],
+    "passthrough": true,
+    "pre_actions": [
+     {
+      "type": "function",
+      "function": {
+       "name": "code_exec",
+       "handler": "__function__:code_exec",
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "code": {
+          "type": "string",
+          "default": "vars['deal_state'] = 'none'\nvars['confirm_state'] = 'none'\n"
+         },
+         "timeout_ms": {
+          "type": "number",
+          "default": 8000
+         }
+        }
+       },
+       "description": ""
+      }
+     }
+    ],
+    "transitions": [
+     {
+      "condition": {
+       "mode": "exact",
+       "operator": "always"
+      },
+      "description": "always",
+      "target_node": "negotiate"
+     }
+    ],
+    "role_message": "",
+    "task_message": "",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": false,
+    "passthrough_default_transition": "negotiate",
+    "return_to_previous_on_interrupt": false
+   },
+   "end_dispute": {
+    "name": "end_dispute",
+    "tools": [],
+    "on_enter": {
+     "type": "silent"
+    },
+    "terminal": {
+     "type": "function",
+     "function": {
+      "name": "closed_dispute",
+      "handler": "__function__:end_call",
+      "parameters": {
+       "type": "object",
+       "properties": {
+        "message_mode": {
+         "type": "string",
+         "default": "custom"
+        },
+        "spoken_message": {
+         "type": "string",
+         "default": "I understand. Thank you for your time, goodbye."
+        }
+       }
+      },
+      "description": ""
+     }
+    },
+    "node_type": "end_call",
+    "assertions": [],
+    "passthrough": false,
+    "pre_actions": [],
+    "transitions": [],
+    "role_message": "",
+    "task_message": "",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": true,
+    "passthrough_default_transition": null,
+    "return_to_previous_on_interrupt": false
+   },
+   "end_promise": {
+    "name": "end_promise",
+    "tools": [],
+    "on_enter": {
+     "type": "silent"
+    },
+    "terminal": {
+     "type": "function",
+     "function": {
+      "name": "closed_promise",
+      "handler": "__function__:end_call",
+      "parameters": {
+       "type": "object",
+       "properties": {
+        "message_mode": {
+         "type": "string",
+         "default": "custom"
+        },
+        "spoken_message": {
+         "type": "string",
+         "default": "Thank you for your time. You will receive a text message confirming this promise. Goodbye."
+        }
+       }
+      },
+      "description": ""
+     }
+    },
+    "node_type": "end_call",
+    "assertions": [],
+    "passthrough": false,
+    "pre_actions": [],
+    "transitions": [],
+    "role_message": "",
+    "task_message": "",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": true,
+    "passthrough_default_transition": null,
+    "return_to_previous_on_interrupt": false
+   },
+   "end_refused": {
+    "name": "end_refused",
+    "tools": [],
+    "on_enter": {
+     "type": "silent"
+    },
+    "terminal": {
+     "type": "function",
+     "function": {
+      "name": "closed_refused",
+      "handler": "__function__:end_call",
+      "parameters": {
+       "type": "object",
+       "properties": {
+        "message_mode": {
+         "type": "string",
+         "default": "custom"
+        },
+        "spoken_message": {
+         "type": "string",
+         "default": "I understand. Thank you for your time, goodbye."
+        }
+       }
+      },
+      "description": ""
+     }
+    },
+    "node_type": "end_call",
+    "assertions": [],
+    "passthrough": false,
+    "pre_actions": [],
+    "transitions": [],
+    "role_message": "",
+    "task_message": "",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": true,
+    "passthrough_default_transition": null,
+    "return_to_previous_on_interrupt": false
+   },
+   "end_unclear": {
+    "name": "end_unclear",
+    "tools": [],
+    "on_enter": {
+     "type": "silent"
+    },
+    "terminal": {
+     "type": "function",
+     "function": {
+      "name": "closed_unclear",
+      "handler": "__function__:end_call",
+      "parameters": {
+       "type": "object",
+       "properties": {
+        "message_mode": {
+         "type": "string",
+         "default": "custom"
+        },
+        "spoken_message": {
+         "type": "string",
+         "default": "I could not confirm who I am speaking with. Thank you, goodbye."
+        }
+       }
+      },
+      "description": ""
+     }
+    },
+    "node_type": "end_call",
+    "assertions": [],
+    "passthrough": false,
+    "pre_actions": [],
+    "transitions": [],
+    "role_message": "",
+    "task_message": "",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": true,
+    "passthrough_default_transition": null,
+    "return_to_previous_on_interrupt": false
+   },
+   "fin_dispute": {
+    "name": "fin_dispute",
+    "tools": [],
+    "on_enter": {
+     "type": "silent"
+    },
+    "node_type": "code",
+    "assertions": [],
+    "passthrough": true,
+    "pre_actions": [
+     {
+      "type": "function",
+      "function": {
+       "name": "code_exec",
+       "handler": "__function__:code_exec",
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "code": {
+          "type": "string",
+          "default": "vars['outcome'] = 'no_promise'\nvars['reason'] = 'dispute'\n"
+         },
+         "timeout_ms": {
+          "type": "number",
+          "default": 8000
+         }
+        }
+       },
+       "description": ""
+      }
+     }
+    ],
+    "transitions": [
+     {
+      "condition": {
+       "mode": "exact",
+       "operator": "always"
+      },
+      "description": "always",
+      "target_node": "end_dispute"
+     }
+    ],
+    "role_message": "",
+    "task_message": "",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": false,
+    "passthrough_default_transition": "end_dispute",
+    "return_to_previous_on_interrupt": false
+   },
+   "fin_promise": {
+    "name": "fin_promise",
+    "tools": [],
+    "on_enter": {
+     "type": "silent"
+    },
+    "node_type": "code",
+    "assertions": [],
+    "passthrough": true,
+    "pre_actions": [
+     {
+      "type": "function",
+      "function": {
+       "name": "code_exec",
+       "handler": "__function__:code_exec",
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "code": {
+          "type": "string",
+          "default": "vars['outcome'] = 'promise'\nvars['reason'] = ''\n"
+         },
+         "timeout_ms": {
+          "type": "number",
+          "default": 8000
+         }
+        }
+       },
+       "description": ""
+      }
+     }
+    ],
+    "transitions": [
+     {
+      "condition": {
+       "mode": "exact",
+       "operator": "always"
+      },
+      "description": "always",
+      "target_node": "end_promise"
+     }
+    ],
+    "role_message": "",
+    "task_message": "",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": false,
+    "passthrough_default_transition": "end_promise",
+    "return_to_previous_on_interrupt": false
+   },
+   "fin_refused": {
+    "name": "fin_refused",
+    "tools": [],
+    "on_enter": {
+     "type": "silent"
+    },
+    "node_type": "code",
+    "assertions": [],
+    "passthrough": true,
+    "pre_actions": [
+     {
+      "type": "function",
+      "function": {
+       "name": "code_exec",
+       "handler": "__function__:code_exec",
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "code": {
+          "type": "string",
+          "default": "vars['outcome'] = 'no_promise'\nvars['reason'] = 'refused'\n"
+         },
+         "timeout_ms": {
+          "type": "number",
+          "default": 8000
+         }
+        }
+       },
+       "description": ""
+      }
+     }
+    ],
+    "transitions": [
+     {
+      "condition": {
+       "mode": "exact",
+       "operator": "always"
+      },
+      "description": "always",
+      "target_node": "end_refused"
+     }
+    ],
+    "role_message": "",
+    "task_message": "",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": false,
+    "passthrough_default_transition": "end_refused",
+    "return_to_previous_on_interrupt": false
+   },
+   "fin_unclear": {
+    "name": "fin_unclear",
+    "tools": [],
+    "on_enter": {
+     "type": "silent"
+    },
+    "node_type": "code",
+    "assertions": [],
+    "passthrough": true,
+    "pre_actions": [
+     {
+      "type": "function",
+      "function": {
+       "name": "code_exec",
+       "handler": "__function__:code_exec",
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "code": {
+          "type": "string",
+          "default": "vars['outcome'] = 'not_reached'\nvars['reason'] = 'unclear'\n"
+         },
+         "timeout_ms": {
+          "type": "number",
+          "default": 8000
+         }
+        }
+       },
+       "description": ""
+      }
+     }
+    ],
+    "transitions": [
+     {
+      "condition": {
+       "mode": "exact",
+       "operator": "always"
+      },
+      "description": "always",
+      "target_node": "end_unclear"
+     }
+    ],
+    "role_message": "",
+    "task_message": "",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": false,
+    "passthrough_default_transition": "end_unclear",
+    "return_to_previous_on_interrupt": false
+   },
+   "third_party": {
+    "name": "third_party",
+    "tools": [
+     {
+      "type": "function",
+      "config": {
+       "timeoutMs": 12000,
+       "maxRetries": 1
+      },
+      "function": {
+       "name": "schedule_callback",
+       "handler": "__function__:api_call",
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "url": {
+          "type": "string",
+          "default": "https://freya-bank-mock.freyavoice.workers.dev/v1/schedule_callback"
+         },
+         "body": {
+          "type": "object",
+          "required": [
+           "date",
+           "time"
+          ],
+          "properties": {
+           "date": {
+            "type": "string",
+            "default": "{{date}}",
+            "description": "Callback date YYYY-MM-DD, today or the next business day"
+           },
+           "time": {
+            "type": "string",
+            "default": "{{time}}",
+            "description": "Callback time HH:MM 24h, from 10:00 to 19:00, later than now"
+           },
+           "customer_id": {
+            "type": "string",
+            "default": "{{customer_id}}"
+           }
+          }
+         },
+         "method": {
+          "type": "string",
+          "default": "POST"
+         },
+         "headers": {
+          "type": "object",
+          "properties": {
+           "Content-Type": {
+            "type": "string",
+            "default": "application/json"
+           }
+          }
+         }
+        }
+       },
+       "description": "CALL it once the person gave a valid callback date and time inside the window. Never call it for an invalid time."
+      },
+      "post_process_code": "try:\n    result.pop('header', None)\n    d = result.get('data')\n    if isinstance(d, dict):\n        ok = str(d.get('ok')).lower() == 'true'\n        d['what_to_do_next'] = 'Callback is booked. Say nothing more about it.' if ok else 'The callback was NOT booked. Say so plainly and try the tool once more with the same date and time.'\nexcept Exception:\n    pass\n"
+     }
+    ],
+    "on_enter": {
+     "type": "llm",
+     "prompt": "Answer any question briefly without saying why you call or anything about an account, then ask when the customer can be reached."
+    },
+    "node_type": "conversation",
+    "assertions": [],
+    "passthrough": false,
+    "pre_actions": [],
+    "transitions": [
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "logic": "and",
+         "conditions": [
+          {
+           "mode": "exact",
+           "operand": "true",
+           "operator": "equals",
+           "variable": "schedule_callback_response.data.ok"
+          }
+         ]
+        },
+        {
+         "logic": "and",
+         "conditions": [
+          {
+           "mode": "exact",
+           "operand": "True",
+           "operator": "equals",
+           "variable": "schedule_callback_response.data.ok"
+          }
+         ]
+        }
+       ]
+      },
+      "description": "callback booked",
+      "target_node": "fin_callback"
+     },
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "mode": "exact",
+         "operand": "wrong_number",
+         "operator": "equals",
+         "variable": "third_state"
+        }
+       ]
+      },
+      "description": "wrong number",
+      "target_node": "fin_wrong_number"
+     },
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "mode": "exact",
+         "operand": "deceased",
+         "operator": "equals",
+         "variable": "third_state"
+        }
+       ]
+      },
+      "description": "deceased",
+      "target_node": "fin_deceased"
+     },
+     {
+      "condition": {
+       "logic": "or",
+       "conditions": [
+        {
+         "mode": "exact",
+         "operand": "no_callback",
+         "operator": "equals",
+         "variable": "third_state"
+        }
+       ]
+      },
+      "description": "no valid callback",
+      "target_node": "fin_no_callback"
+     },
+     {
+      "condition": {
+       "mode": "exact",
+       "operator": "always"
+      },
+      "description": "always",
+      "target_node": "third_party"
+     }
+    ],
+    "role_message": "",
+    "task_message": "Someone other than the customer is on the line. Say nothing about why you are calling, and tell them nothing about any account, even if they offer to pay; they may not answer security questions. Ask when the customer can be reached.\nCalendar:\n{{calendar}}\nA callback must be today or the next business day, between 10:00 and 19:00 both included, and later than the current time. When the person offers a valid date and time, CALL schedule_callback (date YYYY-MM-DD, time HH:MM 24h). If they offer a day or time outside the window, ask once for another time. If the second offer is also outside the window, or they refuse, do not schedule. If they say the number does not belong to the customer, or that the customer has died, ask nothing else. Set third_state accordingly.",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [
+     {
+      "name": "third_state",
+      "type": "string",
+      "description": "wrong_number if the person says this number does not belong to the customer; deceased if they say the customer died; no_callback if the person's second proposed day/time is again outside the window, or they refuse to give a time; else none",
+      "enum_values": [
+       "none",
+       "wrong_number",
+       "deceased",
+       "no_callback"
+      ],
+      "min_confidence": 0.65
+     }
+    ],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": false,
+    "passthrough_default_transition": null,
+    "return_to_previous_on_interrupt": false
+   },
+   "date_consume": {
+    "name": "date_consume",
+    "tools": [],
+    "on_enter": {
+     "type": "silent"
+    },
+    "node_type": "code",
+    "assertions": [],
+    "passthrough": true,
+    "pre_actions": [
+     {
+      "type": "function",
+      "function": {
+       "name": "code_exec",
+       "handler": "__function__:code_exec",
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "code": {
+          "type": "string",
+          "default": "vars['date_flag'] = 'used'\n"
+         },
+         "timeout_ms": {
+          "type": "number",
+          "default": 5000
+         }
+        }
+       },
+       "description": ""
+      }
+     }
+    ],
+    "transitions": [
+     {
+      "condition": {
+       "mode": "exact",
+       "operator": "always"
+      },
+      "description": "always",
+      "target_node": "date_relay"
+     }
+    ],
+    "role_message": "",
+    "task_message": "",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": false,
+    "passthrough_default_transition": "date_relay",
+    "return_to_previous_on_interrupt": false
+   },
+   "end_callback": {
+    "name": "end_callback",
+    "tools": [],
+    "on_enter": {
+     "type": "silent"
+    },
+    "terminal": {
+     "type": "function",
+     "function": {
+      "name": "closed_callback",
+      "handler": "__function__:end_call",
+      "parameters": {
+       "type": "object",
+       "properties": {
+        "message_mode": {
+         "type": "string",
+         "default": "custom"
+        },
+        "spoken_message": {
+         "type": "string",
+         "default": "Thank you, we will call back at the time you gave. Goodbye."
+        }
+       }
+      },
+      "description": ""
+     }
+    },
+    "node_type": "end_call",
+    "assertions": [],
+    "passthrough": false,
+    "pre_actions": [],
+    "transitions": [],
+    "role_message": "",
+    "task_message": "",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": true,
+    "passthrough_default_transition": null,
+    "return_to_previous_on_interrupt": false
+   },
+   "end_deceased": {
+    "name": "end_deceased",
+    "tools": [],
+    "on_enter": {
+     "type": "silent"
+    },
+    "terminal": {
+     "type": "function",
+     "function": {
+      "name": "closed_deceased",
+      "handler": "__function__:end_call",
+      "parameters": {
+       "type": "object",
+       "properties": {
+        "message_mode": {
+         "type": "string",
+         "default": "custom"
+        },
+        "spoken_message": {
+         "type": "string",
+         "default": "I am sorry for your loss. Goodbye."
+        }
+       }
+      },
+      "description": ""
+     }
+    },
+    "node_type": "end_call",
+    "assertions": [],
+    "passthrough": false,
+    "pre_actions": [],
+    "transitions": [],
+    "role_message": "",
+    "task_message": "",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": true,
+    "passthrough_default_transition": null,
+    "return_to_previous_on_interrupt": false
+   },
+   "end_declined": {
+    "name": "end_declined",
+    "tools": [],
+    "on_enter": {
+     "type": "silent"
+    },
+    "terminal": {
+     "type": "function",
+     "function": {
+      "name": "closed_declined",
+      "handler": "__function__:end_call",
+      "parameters": {
+       "type": "object",
+       "properties": {
+        "message_mode": {
+         "type": "string",
+         "default": "custom"
+        },
+        "spoken_message": {
+         "type": "string",
+         "default": "I understand. Thank you for your time, goodbye."
+        }
+       }
+      },
+      "description": ""
+     }
+    },
+    "node_type": "end_call",
+    "assertions": [],
+    "passthrough": false,
+    "pre_actions": [],
+    "transitions": [],
+    "role_message": "",
+    "task_message": "",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": true,
+    "passthrough_default_transition": null,
+    "return_to_previous_on_interrupt": false
+   },
+   "end_hardship": {
+    "name": "end_hardship",
+    "tools": [],
+    "on_enter": {
+     "type": "silent"
+    },
+    "terminal": {
+     "type": "function",
+     "function": {
+      "name": "closed_hardship",
+      "handler": "__function__:end_call",
+      "parameters": {
+       "type": "object",
+       "properties": {
+        "message_mode": {
+         "type": "string",
+         "default": "custom"
+        },
+        "spoken_message": {
+         "type": "string",
+         "default": "I understand. Thank you for your time, goodbye."
+        }
+       }
+      },
+      "description": ""
+     }
+    },
+    "node_type": "end_call",
+    "assertions": [],
+    "passthrough": false,
+    "pre_actions": [],
+    "transitions": [],
+    "role_message": "",
+    "task_message": "",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": true,
+    "passthrough_default_transition": null,
+    "return_to_previous_on_interrupt": false
+   },
+   "fin_callback": {
+    "name": "fin_callback",
+    "tools": [],
+    "on_enter": {
+     "type": "silent"
+    },
+    "node_type": "code",
+    "assertions": [],
+    "passthrough": true,
+    "pre_actions": [
+     {
+      "type": "function",
+      "function": {
+       "name": "code_exec",
+       "handler": "__function__:code_exec",
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "code": {
+          "type": "string",
+          "default": "vars['outcome'] = 'not_reached'\nvars['reason'] = 'callback'\n"
+         },
+         "timeout_ms": {
+          "type": "number",
+          "default": 8000
+         }
+        }
+       },
+       "description": ""
+      }
+     }
+    ],
+    "transitions": [
+     {
+      "condition": {
+       "mode": "exact",
+       "operator": "always"
+      },
+      "description": "always",
+      "target_node": "end_callback"
+     }
+    ],
+    "role_message": "",
+    "task_message": "",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": false,
+    "passthrough_default_transition": "end_callback",
+    "return_to_previous_on_interrupt": false
+   },
+   "fin_deceased": {
+    "name": "fin_deceased",
+    "tools": [],
+    "on_enter": {
+     "type": "silent"
+    },
+    "node_type": "code",
+    "assertions": [],
+    "passthrough": true,
+    "pre_actions": [
+     {
+      "type": "function",
+      "function": {
+       "name": "code_exec",
+       "handler": "__function__:code_exec",
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "code": {
+          "type": "string",
+          "default": "vars['outcome'] = 'not_reached'\nvars['reason'] = 'deceased'\n"
+         },
+         "timeout_ms": {
+          "type": "number",
+          "default": 8000
+         }
+        }
+       },
+       "description": ""
+      }
+     }
+    ],
+    "transitions": [
+     {
+      "condition": {
+       "mode": "exact",
+       "operator": "always"
+      },
+      "description": "always",
+      "target_node": "end_deceased"
+     }
+    ],
+    "role_message": "",
+    "task_message": "",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": false,
+    "passthrough_default_transition": "end_deceased",
+    "return_to_previous_on_interrupt": false
+   },
+   "fin_declined": {
+    "name": "fin_declined",
+    "tools": [],
+    "on_enter": {
+     "type": "silent"
+    },
+    "node_type": "code",
+    "assertions": [],
+    "passthrough": true,
+    "pre_actions": [
+     {
+      "type": "function",
+      "function": {
+       "name": "code_exec",
+       "handler": "__function__:code_exec",
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "code": {
+          "type": "string",
+          "default": "vars['outcome'] = 'not_verified'\nvars['reason'] = 'declined'\n"
+         },
+         "timeout_ms": {
+          "type": "number",
+          "default": 8000
+         }
+        }
+       },
+       "description": ""
+      }
+     }
+    ],
+    "transitions": [
+     {
+      "condition": {
+       "mode": "exact",
+       "operator": "always"
+      },
+      "description": "always",
+      "target_node": "end_declined"
+     }
+    ],
+    "role_message": "",
+    "task_message": "",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": false,
+    "passthrough_default_transition": "end_declined",
+    "return_to_previous_on_interrupt": false
+   },
+   "fin_hardship": {
+    "name": "fin_hardship",
+    "tools": [],
+    "on_enter": {
+     "type": "silent"
+    },
+    "node_type": "code",
+    "assertions": [],
+    "passthrough": true,
+    "pre_actions": [
+     {
+      "type": "function",
+      "function": {
+       "name": "code_exec",
+       "handler": "__function__:code_exec",
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "code": {
+          "type": "string",
+          "default": "vars['outcome'] = 'no_promise'\nvars['reason'] = 'hardship'\n"
+         },
+         "timeout_ms": {
+          "type": "number",
+          "default": 8000
+         }
+        }
+       },
+       "description": ""
+      }
+     }
+    ],
+    "transitions": [
+     {
+      "condition": {
+       "mode": "exact",
+       "operator": "always"
+      },
+      "description": "always",
+      "target_node": "end_hardship"
+     }
+    ],
+    "role_message": "",
+    "task_message": "",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": false,
+    "passthrough_default_transition": "end_hardship",
+    "return_to_previous_on_interrupt": false
+   },
+   "end_no_callback": {
+    "name": "end_no_callback",
+    "tools": [],
+    "on_enter": {
+     "type": "silent"
+    },
+    "terminal": {
+     "type": "function",
+     "function": {
+      "name": "closed_no_callback",
+      "handler": "__function__:end_call",
+      "parameters": {
+       "type": "object",
+       "properties": {
+        "message_mode": {
+         "type": "string",
+         "default": "custom"
+        },
+        "spoken_message": {
+         "type": "string",
+         "default": "Thank you for your time. Goodbye."
+        }
+       }
+      },
+      "description": ""
+     }
+    },
+    "node_type": "end_call",
+    "assertions": [],
+    "passthrough": false,
+    "pre_actions": [],
+    "transitions": [],
+    "role_message": "",
+    "task_message": "",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": true,
+    "passthrough_default_transition": null,
+    "return_to_previous_on_interrupt": false
+   },
+   "fin_no_callback": {
+    "name": "fin_no_callback",
+    "tools": [],
+    "on_enter": {
+     "type": "silent"
+    },
+    "node_type": "code",
+    "assertions": [],
+    "passthrough": true,
+    "pre_actions": [
+     {
+      "type": "function",
+      "function": {
+       "name": "code_exec",
+       "handler": "__function__:code_exec",
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "code": {
+          "type": "string",
+          "default": "vars['outcome'] = 'not_reached'\nvars['reason'] = 'no_callback'\n"
+         },
+         "timeout_ms": {
+          "type": "number",
+          "default": 8000
+         }
+        }
+       },
+       "description": ""
+      }
+     }
+    ],
+    "transitions": [
+     {
+      "condition": {
+       "mode": "exact",
+       "operator": "always"
+      },
+      "description": "always",
+      "target_node": "end_no_callback"
+     }
+    ],
+    "role_message": "",
+    "task_message": "",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": false,
+    "passthrough_default_transition": "end_no_callback",
+    "return_to_previous_on_interrupt": false
+   },
+   "end_wrong_number": {
+    "name": "end_wrong_number",
+    "tools": [],
+    "on_enter": {
+     "type": "silent"
+    },
+    "terminal": {
+     "type": "function",
+     "function": {
+      "name": "closed_wrong_number",
+      "handler": "__function__:end_call",
+      "parameters": {
+       "type": "object",
+       "properties": {
+        "message_mode": {
+         "type": "string",
+         "default": "custom"
+        },
+        "spoken_message": {
+         "type": "string",
+         "default": "I am sorry for the mistake. Goodbye."
+        }
+       }
+      },
+      "description": ""
+     }
+    },
+    "node_type": "end_call",
+    "assertions": [],
+    "passthrough": false,
+    "pre_actions": [],
+    "transitions": [],
+    "role_message": "",
+    "task_message": "",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": true,
+    "passthrough_default_transition": null,
+    "return_to_previous_on_interrupt": false
+   },
+   "fin_wrong_number": {
+    "name": "fin_wrong_number",
+    "tools": [],
+    "on_enter": {
+     "type": "silent"
+    },
+    "node_type": "code",
+    "assertions": [],
+    "passthrough": true,
+    "pre_actions": [
+     {
+      "type": "function",
+      "function": {
+       "name": "code_exec",
+       "handler": "__function__:code_exec",
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "code": {
+          "type": "string",
+          "default": "vars['outcome'] = 'not_reached'\nvars['reason'] = 'wrong_number'\n"
+         },
+         "timeout_ms": {
+          "type": "number",
+          "default": 8000
+         }
+        }
+       },
+       "description": ""
+      }
+     }
+    ],
+    "transitions": [
+     {
+      "condition": {
+       "mode": "exact",
+       "operator": "always"
+      },
+      "description": "always",
+      "target_node": "end_wrong_number"
+     }
+    ],
+    "role_message": "",
+    "task_message": "",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": false,
+    "passthrough_default_transition": "end_wrong_number",
+    "return_to_previous_on_interrupt": false
+   },
+   "get_account_call": {
+    "name": "get_account_call",
+    "tools": [],
+    "on_enter": {
+     "type": "silent"
+    },
+    "node_type": "api_request",
+    "assertions": [],
+    "passthrough": true,
+    "pre_actions": [
+     {
+      "type": "function",
+      "config": {
+       "timeoutMs": 12000,
+       "maxRetries": 2
+      },
+      "function": {
+       "name": "get_account",
+       "handler": "__function__:api_call",
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "url": {
+          "type": "string",
+          "default": "https://freya-bank-mock.freyavoice.workers.dev/v1/get_account"
+         },
+         "body": {
+          "type": "object",
+          "required": [],
+          "properties": {
+           "customer_id": {
+            "type": "string",
+            "default": "{{customer_id}}"
+           }
+          }
+         },
+         "method": {
+          "type": "string",
+          "default": "POST"
+         },
+         "headers": {
+          "type": "object",
+          "properties": {
+           "Content-Type": {
+            "type": "string",
+            "default": "application/json"
+           }
+          }
+         }
+        }
+       },
+       "description": "Get the late products."
+      }
+     }
+    ],
+    "transitions": [
+     {
+      "condition": {
+       "mode": "exact",
+       "operator": "always"
+      },
+      "description": "always",
+      "target_node": "acct"
+     }
+    ],
+    "role_message": "",
+    "task_message": "",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": false,
+    "passthrough_default_transition": "acct",
+    "return_to_previous_on_interrupt": false
+   },
+   "end_service_error": {
+    "name": "end_service_error",
+    "tools": [],
+    "on_enter": {
+     "type": "silent"
+    },
+    "terminal": {
+     "type": "function",
+     "function": {
+      "name": "closed_service_error",
+      "handler": "__function__:end_call",
+      "parameters": {
+       "type": "object",
+       "properties": {
+        "message_mode": {
+         "type": "string",
+         "default": "custom"
+        },
+        "spoken_message": {
+         "type": "string",
+         "default": "I am sorry, I could not complete that. Thank you for your time, goodbye."
+        }
+       }
+      },
+      "description": ""
+     }
+    },
+    "node_type": "end_call",
+    "assertions": [],
+    "passthrough": false,
+    "pre_actions": [],
+    "transitions": [],
+    "role_message": "",
+    "task_message": "",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": true,
+    "passthrough_default_transition": null,
+    "return_to_previous_on_interrupt": false
+   },
+   "fin_service_error": {
+    "name": "fin_service_error",
+    "tools": [],
+    "on_enter": {
+     "type": "silent"
+    },
+    "node_type": "code",
+    "assertions": [],
+    "passthrough": true,
+    "pre_actions": [
+     {
+      "type": "function",
+      "function": {
+       "name": "code_exec",
+       "handler": "__function__:code_exec",
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "code": {
+          "type": "string",
+          "default": "vars['outcome'] = 'no_promise'\nvars['reason'] = 'service_error'\n"
+         },
+         "timeout_ms": {
+          "type": "number",
+          "default": 8000
+         }
+        }
+       },
+       "description": ""
+      }
+     }
+    ],
+    "transitions": [
+     {
+      "condition": {
+       "mode": "exact",
+       "operator": "always"
+      },
+      "description": "always",
+      "target_node": "end_service_error"
+     }
+    ],
+    "role_message": "",
+    "task_message": "",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": false,
+    "passthrough_default_transition": "end_service_error",
+    "return_to_previous_on_interrupt": false
+   },
+   "end_transferred_human": {
+    "name": "end_transferred_human",
+    "tools": [],
+    "on_enter": {
+     "type": "silent"
+    },
+    "terminal": {
+     "type": "function",
+     "function": {
+      "name": "closed_transferred_human",
+      "handler": "__function__:end_call",
+      "parameters": {
+       "type": "object",
+       "properties": {
+        "message_mode": {
+         "type": "string",
+         "default": "custom"
+        },
+        "spoken_message": {
+         "type": "string",
+         "default": "I am transferring you now. Thank you, goodbye."
+        }
+       }
+      },
+      "description": ""
+     }
+    },
+    "node_type": "end_call",
+    "assertions": [],
+    "passthrough": false,
+    "pre_actions": [],
+    "transitions": [],
+    "role_message": "",
+    "task_message": "",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": true,
+    "passthrough_default_transition": null,
+    "return_to_previous_on_interrupt": false
+   },
+   "fin_transferred_human": {
+    "name": "fin_transferred_human",
+    "tools": [],
+    "on_enter": {
+     "type": "silent"
+    },
+    "node_type": "code",
+    "assertions": [],
+    "passthrough": true,
+    "pre_actions": [
+     {
+      "type": "function",
+      "function": {
+       "name": "code_exec",
+       "handler": "__function__:code_exec",
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "code": {
+          "type": "string",
+          "default": "vars['outcome'] = 'transferred'\nvars['reason'] = 'human'\n"
+         },
+         "timeout_ms": {
+          "type": "number",
+          "default": 8000
+         }
+        }
+       },
+       "description": ""
+      }
+     }
+    ],
+    "transitions": [
+     {
+      "condition": {
+       "mode": "exact",
+       "operator": "always"
+      },
+      "description": "always",
+      "target_node": "end_transferred_human"
+     }
+    ],
+    "role_message": "",
+    "task_message": "",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": false,
+    "passthrough_default_transition": "end_transferred_human",
+    "return_to_previous_on_interrupt": false
+   },
+   "end_transferred_support": {
+    "name": "end_transferred_support",
+    "tools": [],
+    "on_enter": {
+     "type": "silent"
+    },
+    "terminal": {
+     "type": "function",
+     "function": {
+      "name": "closed_transferred_support",
+      "handler": "__function__:end_call",
+      "parameters": {
+       "type": "object",
+       "properties": {
+        "message_mode": {
+         "type": "string",
+         "default": "custom"
+        },
+        "spoken_message": {
+         "type": "string",
+         "default": "I am transferring you to the customer support team now. Thank you, goodbye."
+        }
+       }
+      },
+      "description": ""
+     }
+    },
+    "node_type": "end_call",
+    "assertions": [],
+    "passthrough": false,
+    "pre_actions": [],
+    "transitions": [],
+    "role_message": "",
+    "task_message": "",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": true,
+    "passthrough_default_transition": null,
+    "return_to_previous_on_interrupt": false
+   },
+   "fin_transferred_support": {
+    "name": "fin_transferred_support",
+    "tools": [],
+    "on_enter": {
+     "type": "silent"
+    },
+    "node_type": "code",
+    "assertions": [],
+    "passthrough": true,
+    "pre_actions": [
+     {
+      "type": "function",
+      "function": {
+       "name": "code_exec",
+       "handler": "__function__:code_exec",
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "code": {
+          "type": "string",
+          "default": "vars['outcome'] = 'transferred'\nvars['reason'] = 'support'\n"
+         },
+         "timeout_ms": {
+          "type": "number",
+          "default": 8000
+         }
+        }
+       },
+       "description": ""
+      }
+     }
+    ],
+    "transitions": [
+     {
+      "condition": {
+       "mode": "exact",
+       "operator": "always"
+      },
+      "description": "always",
+      "target_node": "end_transferred_support"
+     }
+    ],
+    "role_message": "",
+    "task_message": "",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": false,
+    "passthrough_default_transition": "end_transferred_support",
+    "return_to_previous_on_interrupt": false
+   },
+   "end_transferred_restructuring": {
+    "name": "end_transferred_restructuring",
+    "tools": [],
+    "on_enter": {
+     "type": "silent"
+    },
+    "terminal": {
+     "type": "function",
+     "function": {
+      "name": "closed_transferred_restructuring",
+      "handler": "__function__:end_call",
+      "parameters": {
+       "type": "object",
+       "properties": {
+        "message_mode": {
+         "type": "string",
+         "default": "custom"
+        },
+        "spoken_message": {
+         "type": "string",
+         "default": "I am transferring you now. Thank you, goodbye."
+        }
+       }
+      },
+      "description": ""
+     }
+    },
+    "node_type": "end_call",
+    "assertions": [],
+    "passthrough": false,
+    "pre_actions": [],
+    "transitions": [],
+    "role_message": "",
+    "task_message": "",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": true,
+    "passthrough_default_transition": null,
+    "return_to_previous_on_interrupt": false
+   },
+   "fin_transferred_restructuring": {
+    "name": "fin_transferred_restructuring",
+    "tools": [],
+    "on_enter": {
+     "type": "silent"
+    },
+    "node_type": "code",
+    "assertions": [],
+    "passthrough": true,
+    "pre_actions": [
+     {
+      "type": "function",
+      "function": {
+       "name": "code_exec",
+       "handler": "__function__:code_exec",
+       "parameters": {
+        "type": "object",
+        "properties": {
+         "code": {
+          "type": "string",
+          "default": "vars['outcome'] = 'transferred'\nvars['reason'] = 'restructuring'\n"
+         },
+         "timeout_ms": {
+          "type": "number",
+          "default": 8000
+         }
+        }
+       },
+       "description": ""
+      }
+     }
+    ],
+    "transitions": [
+     {
+      "condition": {
+       "mode": "exact",
+       "operator": "always"
+      },
+      "description": "always",
+      "target_node": "end_transferred_restructuring"
+     }
+    ],
+    "role_message": "",
+    "task_message": "",
+    "interruptible": true,
+    "max_node_turns": null,
+    "response_mapping": [],
+    "extraction_schema": [],
+    "max_turn_transition": null,
+    "truncation_strategy": "keep_all",
+    "suppress_tool_results": false,
+    "truncation_window_size": 10,
+    "on_enter_first_entry_only": false,
+    "disable_inactivity_monitor": false,
+    "passthrough_default_transition": "end_transferred_restructuring",
+    "return_to_previous_on_interrupt": false
+   }
+  },
+  "tools": [
+   {
+    "type": "function",
+    "config": {
+     "timeoutMs": 12000,
+     "maxRetries": 0,
+     "alwaysRunsAt": [
+      "end_of_call"
+     ]
+    },
+    "function": {
+     "name": "close_call",
+     "handler": "__function__:api_call",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "url": {
+        "type": "string",
+        "default": "https://freya-bank-mock.freyavoice.workers.dev/v1/close_call"
+       },
+       "body": {
+        "type": "object",
+        "required": [
+         "outcome"
+        ],
+        "properties": {
+         "reason": {
+          "type": "string",
+          "default": "{{reason}}",
+          "description": "Reason per the outcome; empty for promise and paid"
+         },
+         "outcome": {
+          "enum": [
+           "promise",
+           "paid",
+           "transferred",
+           "no_promise",
+           "not_verified",
+           "not_reached"
+          ],
+          "type": "string",
+          "default": "{{outcome}}",
+          "description": "How the call ended"
+         },
+         "customer_id": {
+          "type": "string",
+          "default": "{{customer_id}}"
+         }
+        }
+       },
+       "method": {
+        "type": "string",
+        "default": "POST"
+       },
+       "headers": {
+        "type": "object",
+        "properties": {
+         "Content-Type": {
+          "type": "string",
+          "default": "application/json"
+         }
+        }
+       }
+      }
+     },
+     "description": "Record how the call ended."
+    },
+    "pre_process_code": "try:\n    b = config.get('body')\n    if isinstance(b, dict) and (b.get('outcome') in ('promise', 'paid') or not b.get('reason')):\n        b.pop('reason', None)\nexcept Exception:\n    pass\n"
+   }
+  ],
+  "agent_config": {
+   "llmConfig": {
+    "model": "experimental-5",
+    "tools": [
+     {
+      "type": "function",
+      "function": {
+       "name": "end_call",
+       "handler": "__function__:end_call",
+       "parameters": {
+        "type": "object",
+        "properties": {}
+       },
+       "description": "This is used to technically terminate the call after all the customer's questions have been answered and necessary information has been provided.\n- It should only be triggered SILENTLY in the background after the customer-related workflow is complete; never mention this tool or its name to the customer."
+      }
+     }
+    ],
+    "apiKey": null,
+    "baseUrl": null,
+    "provider": "experimental-5",
+    "maxTokens": 1000,
+    "clientType": null,
+    "temperature": 0.7,
+    "firstMessage": "Selam! Sana nas\u0131l yard\u0131mc\u0131 olabilirim?",
+    "systemPrompt": "You are a helpful assistant. Your role is to help users with their tasks. Always be friendly and professional. You can use `end_call` tool after you say goodbye to customer to hang up if call about to finish.",
+    "firstMessageMode": "assistant-speaks-first",
+    "additionalSettings": {},
+    "disableInterruptionsDuringFirstMessage": true
+   },
+   "sttConfig": {
+    "model": "freya-stt",
+    "apiKey": null,
+    "baseUrl": null,
+    "language": "tr",
+    "provider": "Freya",
+    "confidenceReask": {
+     "enabled": false,
+     "reaskMode": "phrase",
+     "reduction": "min",
+     "threshold": 0.3,
+     "reaskPhrases": null,
+     "disableOnDigitNodes": true,
+     "maxConsecutiveReasks": 2
+    },
+    "additionalSettings": {
+     "diarize": false,
+     "punctuate": true,
+     "streaming": true,
+     "aicEnabled": false,
+     "krispEnabled": false,
+     "smartTurnEnabled": true
+    }
+   },
+   "ttsConfig": {
+    "model": "freya-tts",
+    "apiKey": null,
+    "baseUrl": null,
+    "voiceId": "leyla",
+    "language": "tr",
+    "provider": "Freya",
+    "stopSpeakingPlan": {
+     "voiceSeconds": 0.1,
+     "numberOfWords": 2,
+     "backOffSeconds": 0.4,
+     "interruptionPhrases": [
+      "dur",
+      "bekle",
+      "bir dakika",
+      "bir saniye",
+      "dursana",
+      "bekle bi",
+      "anlamad\u0131m",
+      "ne diyon",
+      "ne diyorsun",
+      "ne dedin",
+      "yeter"
+     ],
+     "acknowledgementPhrases": [
+      "h\u0131",
+      "evet",
+      "tamam",
+      "aynen",
+      "okey",
+      "okay",
+      "anlad\u0131m",
+      "hee",
+      "ee",
+      "eee",
+      "\u0131\u0131",
+      "\u0131\u0131\u0131",
+      "ha",
+      "h\u0131-h\u0131",
+      "ha-ha",
+      "tabi",
+      "tabii",
+      "peki",
+      "tamamd\u0131r",
+      "h\u0131 h\u0131",
+      "h\u0131m",
+      "h\u0131mm",
+      "h\u0131h\u0131",
+      "haha",
+      "he",
+      "hahaha"
+     ]
+    },
+    "startSpeakingPlan": {
+     "waitSeconds": 0.5,
+     "backgroundNoisePhrases": [
+      "arka plan sesi",
+      "klavye sesi",
+      "klavye sesleri",
+      "\u00f6ks\u00fcr\u00fck",
+      "\u00f6ks\u00fcr\u00fck sesi",
+      "video sesi",
+      "video kayd\u0131",
+      "\u00e7\u0131lg\u0131n ses",
+      "\u00e7\u0131lg\u0131n kahkaha",
+      "g\u00fcl\u00fc\u015f",
+      "ses ses ses",
+      "\u00e7\u0131k \u00e7\u0131k \u00e7\u0131k",
+      "sim",
+      "sim izle"
+     ]
+    },
+    "textSubstitutions": [
+     {
+      "pattern": "@",
+      "replacement": "at"
+     },
+     {
+      "pattern": "\\$",
+      "replacement": "dollars"
+     },
+     {
+      "pattern": "%",
+      "replacement": "percent"
+     },
+     {
+      "pattern": "&",
+      "replacement": "and"
+     },
+     {
+      "pattern": "\\+",
+      "replacement": "plus"
+     },
+     {
+      "pattern": "turkishairlines",
+      "replacement": "turkish airlines",
+      "caseInsensitive": true
+     }
+    ],
+    "additionalSettings": {
+     "speed": 1,
+     "stability": 0.5,
+     "similarity_boost": 0.75
+    },
+    "speechNormalization": {
+     "urls": true,
+     "names": false,
+     "emails": true,
+     "emojis": true,
+     "phoneNumbers": false,
+     "generalNumbers": false,
+     "identityNumbers": false
+    }
+   },
+   "dtmfConfig": {
+    "prefix": "DTMF: ",
+    "enabled": false,
+    "timeout": 2,
+    "terminationDigit": "#"
+   },
+   "syncSource": null,
+   "privacyConfig": {
+    "enableRecording": true,
+    "getRecordingConsent": false,
+    "recordingConsentText": null
+   },
+   "complianceConfig": {
+    "soc2": false,
+    "pciDss": false,
+    "euAiAct": false,
+    "mifidIi": false
+   },
+   "routingLlmConfig": null,
+   "backgroundSoundUrl": null,
+   "piiRedactionConfig": {
+    "enabled": false,
+    "maskIban": true,
+    "maskEmail": true,
+    "maskPhone": true,
+    "customRules": [],
+    "maskNationalId": true,
+    "maskPaymentCard": true
+   },
+   "voicemailDetection": {
+    "enabled": false,
+    "messageMode": "none",
+    "staticMessage": null,
+    "voicemailResponseDelay": 2
+   },
+   "callTimeoutSettings": {
+    "maxRetries": 2,
+    "dynamicWait": null,
+    "checkInMessage": null,
+    "closureMessage": null,
+    "silenceTimeout": 10,
+    "maximumDuration": 600,
+    "maxDurationEndCall": {
+     "llmPrompt": null,
+     "messageMode": "llm",
+     "interruptible": false,
+     "spokenMessage": null,
+     "triggerTimeout": null
+    },
+    "silenceTimeoutPrompt": null
+   },
+   "extractionLlmConfig": null,
+   "postConversationAnalysis": {
+    "analysisModel": null,
+    "summaryPrompt": null,
+    "autoDetectProblems": false,
+    "problemDetectionPrompt": null,
+    "problemDetectionInstructions": null
+   }
+  },
+  "global_nodes": {},
+  "initial_node": "prep",
+  "system_prompt": "You are the digital assistant of Freya Bank, speaking on a phone call in English. Keep every turn to one or two short sentences. Ask one question at a time.\nHard rules for every turn:\n- First, if the customer's last message contains a question, answer it in one short sentence, then continue. If they ask whether you are a robot or an AI, say you are Freya Bank's digital assistant. If they ask whether this is a scam, say they can verify the call by phoning Freya Bank's customer service number. If you cannot answer a question from the tools, say you do not have that information; never invent figures, dates or reasons.\n- After every tool result, follow its what_to_do_next sentence and then speak to the customer or call the next tool. One tool call per message. Never end a turn with nothing.\n- Never offer a discount, a waiver, an instalment plan or any term not given in your instructions.\n- Never say something is recorded, booked or transferred unless the tool result said ok. Say plainly if it was not done.\n- Never use the words collections, debt, payment or the product name before identity is verified.\n- The call is closed for you by the system after you say goodbye; never try to close it yourself.",
+  "test_variables": {
+   "now": "2026-10-14T11:00",
+   "title": "Mr",
+   "last_name": "Reyes",
+   "first_name": "Daniel"
+  }
+ }
+}

@@ -1,0 +1,70 @@
+{
+ "path": "main",
+ "slot": "cmp-a-f1",
+ "build_seconds": 128,
+ "model_calls": 1,
+ "trace": "C:\\Users\\ASUS\\OneDrive\\Masa\u00fcst\u00fc\\build-the-builder\\traces\\cmp-a-f1-20261011-025907.log",
+ "known_gaps": [
+  "turning the customer's words into negotiation events (and dates into YYYY-MM-DD) is done by the dialogue model; offers, counters, dates, amounts, read-back, recording, notes and the close are code",
+  "callback window validity is decided by the dialogue model from code-computed window facts (not code)",
+  "identity flow (which question, re-asks, declines) follows the dialogue model with the bank's verification results",
+  "extra rule (stateful, stage opening): Identity confirmation: only explicit confirmations count; ask at most twice (an answered customer question does not reset the count), then close not_reached/unclear. - left to the dialogue model's prompt",
+  "extra rule (computational, stage identity): Purely numeric dates of birth are read day, month, year before converting to YYYY-MM-DD. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage identity): Declining the security questions: explain once that they protect the account; a second refusal or a second 'what is this about' closes not_verified/declined. - left to the dialogue model's prompt",
+  "extra rule (computational, stage negotiate): 'Next <weekday>' is that weekday in the following calendar week; 'this <weekday>' is in the current week. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Refusing the deadline offered after a too-late date, refusing the floor, or not accepting the floor after a below-floor amount each count as a flat refusal using one persuasion attempt. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Floor is offered only once after 'too much' (attempt 2 may name it again on the deadline); count persuasion attempts per band (early 1, late 2), never repeat a refused offer, then close no_promise/refused. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Customer-proposed dates or amounts are never refusals; hardship (illness, death in the family, job loss) suppresses persuasion and takes precedence over rules 30 and 41, but a self-named date/amount is still recorded. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): A change of date or amount at readback invalidates the confirmation; re-check and read back again before create_promise. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage global): Human request: ask once whether you can help first; transfer to general only if they insist. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage global): Customer saying twice they do not want to talk closes no_promise/refused after verification, not_verified/declined before. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage closing): If a transfer follows a recorded promise, close as transferred with that transfer's reason. - left to the dialogue model's prompt"
+ ],
+ "release_checks_passed": true,
+ "policy_correctness": "not measured by the build",
+ "lint_problems": 0,
+ "workflow_id": "13da28c6-276d-482d-aaf9-490d7e6e8699",
+ "agent_id": "e36efd27-e4b1-4b0a-8c0c-ad4a3e447820",
+ "version_number": 1,
+ "version_id": "98377530-eb8a-4557-9950-0f42d25b8cde",
+ "is_published": true,
+ "tested_hash": "4e219728f8323836",
+ "checks": [
+  [
+   "opening line spoken",
+   true
+  ],
+  [
+   "identity stage entered after confirmation",
+   true
+  ],
+  [
+   "first security answer reaches verify_identity with the right field",
+   true
+  ],
+  [
+   "no account or write call before verification",
+   true
+  ],
+  [
+   "both answers sent to verify_identity",
+   true
+  ],
+  [
+   "account fetched after verification",
+   true
+  ],
+  [
+   "negotiation stage reached with account facts",
+   true
+  ],
+  [
+   "every product's past-due amount stated in the debt statement, before any offer",
+   true
+  ]
+ ],
+ "exported_hash": "4e219728f8323836",
+ "nodes": 20,
+ "global_nodes": 0,
+ "tool_functions": 23
+}

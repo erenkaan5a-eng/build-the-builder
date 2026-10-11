@@ -1,0 +1,70 @@
+{
+ "path": "main",
+ "slot": "cmp-a",
+ "build_seconds": 127,
+ "model_calls": 1,
+ "trace": "C:\\Users\\ASUS\\OneDrive\\Masa\u00fcst\u00fc\\build-the-builder\\traces\\cmp-a-20261011-023040.log",
+ "known_gaps": [
+  "turning the customer's words into negotiation events (and dates into YYYY-MM-DD) is done by the dialogue model; offers, counters, dates, amounts, read-back, recording, notes and the close are code",
+  "callback window validity is decided by the dialogue model from code-computed window facts (not code)",
+  "identity flow (which question, re-asks, declines) follows the dialogue model with the bank's verification results",
+  "extra rule (stateful, stage opening): Confirmation needs an explicit yes-type answer; ask once more, then close not_reached/unclear; answering a customer question first, the following ask is the second ask. - left to the dialogue model's prompt",
+  "extra rule (computational, stage identity): Numeric-only dates of birth are read day, month, year before converting to YYYY-MM-DD. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage identity): Wrong answers are counted across both questions; three in total end the check; a day_month_swapped retry does not count. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage identity): Explain once why questions protect the account; a second refusal or second 'what is this about' closes as not_verified/declined. - left to the dialogue model's prompt",
+  "extra rule (computational, stage negotiate): Resolve 'next <weekday>' as following calendar week and 'this <weekday>' as current week before date checks. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Floor offered only once after 'too much' or below-floor amount; refusing the floor or the deadline counts as a flat refusal using a persuasion attempt. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Count persuasion attempts per band; customer-proposed dates/amounts are never refusals; stop when attempts are used and never repeat a refused offer. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Hardship takes precedence over persuasion and restructuring; no persuasion attempts after hardship unless the customer names a date or amount. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): A change at the readback step invalidates confirmation; re-check and read back again. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage global): Ask once whether you can help before transferring to a human. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage global): Count 'do not want to talk' statements; on the second, close no_promise/refused after verification or not_verified/declined before. - left to the dialogue model's prompt"
+ ],
+ "release_checks_passed": true,
+ "policy_correctness": "not measured by the build",
+ "lint_problems": 0,
+ "workflow_id": "1fd64b44-c8bc-4d02-b609-53ad5ee9205e",
+ "agent_id": "5384dbbe-dcdc-441d-b24e-ee4f1c1d1a7a",
+ "version_number": 6,
+ "version_id": "52891051-a1a6-47b7-b1d0-13139eb0b7c2",
+ "is_published": true,
+ "tested_hash": "6523418828d04e72",
+ "checks": [
+  [
+   "opening line spoken",
+   true
+  ],
+  [
+   "identity stage entered after confirmation",
+   true
+  ],
+  [
+   "first security answer reaches verify_identity with the right field",
+   true
+  ],
+  [
+   "no account or write call before verification",
+   true
+  ],
+  [
+   "both answers sent to verify_identity",
+   true
+  ],
+  [
+   "account fetched after verification",
+   true
+  ],
+  [
+   "negotiation stage reached with account facts",
+   true
+  ],
+  [
+   "every product's past-due amount stated in the debt statement, before any offer",
+   true
+  ]
+ ],
+ "exported_hash": "6523418828d04e72",
+ "nodes": 20,
+ "global_nodes": 0,
+ "tool_functions": 23
+}

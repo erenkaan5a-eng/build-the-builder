@@ -1,0 +1,76 @@
+{
+ "path": "main",
+ "slot": "cmp-a",
+ "build_seconds": 156,
+ "model_calls": 1,
+ "trace": "C:\\Users\\ASUS\\OneDrive\\Masa\u00fcst\u00fc\\build-the-builder\\traces\\cmp-a-20261011-005425.log",
+ "known_gaps": [
+  "persuasion attempt counting and the order of offers are decided by the dialogue model from the brief's rules (not code)",
+  "amount acceptance against the floor is decided by the dialogue model from FACTS (not code)",
+  "callback window validity is decided by the dialogue model from code-computed window facts (not code)",
+  "extra rule (stateful, stage opening): Count identity confirmation asks: ask once more, and close as not_reached/unclear if still unclear after the second ask. Answering a customer question does not reset the count. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage third_party): Callback: allow one re-ask when the offered time is outside the window, then close as no_callback. - left to the dialogue model's prompt",
+  "extra rule (computational, stage identity): Convert spoken dates of birth to YYYY-MM-DD. Read numeric-only dates as day, month, year. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage identity): Decline handling: explain the purpose of the questions once. Close as declined on a second refusal or a second 'what is this about' question. - left to the dialogue model's prompt",
+  "extra rule (computational, stage negotiate): Resolve 'next <weekday>' as the weekday in the following calendar week, and 'this <weekday>' as the one in the current week. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Vague period: ask once for the exact day, then propose the deadline. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Track persuasion attempts per band (1 early, 2 late), whether the full amount was called too much, and whether the floor was already offered/refused. Never repeat a refused offer. When attempts run out, close as no_promise/refused. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Offer the floor once (rules 26, 27). Refusing the floor or the deadline counts as a flat refusal. - left to the dialogue model's prompt",
+  "extra rule (computational, stage negotiate): Accept amounts proposed by the customer from the floor up to the full past-due amount, both included. Reject amounts below the floor. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Hardship flag: after illness, a death in the family or job loss, make no persuasion attempts and offer a support transfer. This takes precedence over rules 30 and 41, but a date or amount the customer offers themselves is still recorded. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Bind confirmation to the exact product, amount and date. Any change invalidates it and needs a new read-back and 'Do you confirm?'. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): One promise per product. A recorded promise cannot be changed in this call; direct the customer to the mobile app. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Human request: offer help once first, then transfer to general if the customer insists. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Count 'do not want to talk' statements. On the second one, close as no_promise/refused after verification, or not_verified/declined before it. - left to the dialogue model's prompt",
+  "unresolved conflict: Refusing to talk before it is confirmed who is on the line: chose 'not_verified / declined only once the person has confirmed being the customer; before that, follow rule 3 (not_reached / unclear)' (Rule 45 says 'the same customer', which assumes the person has already been confirmed as the customer. Rule 3 covers an unconfirmed person.)",
+  "unresolved conflict: Third party gives no callback time at all: chose 'Ask once more (rule 7), then not_reached / no_callback' (The brief has no explicit rule for this. no_callback is the closest outcome when no valid callback can be scheduled.)",
+  "unresolved conflict: Account or date data unavailable (technical error): chose 'no_promise / service_error' (The closing table has no outcome for get_account failing. service_error is the only technical reason, and the brief defines it for failed promise writes (rule 37).)"
+ ],
+ "release_checks_passed": true,
+ "policy_correctness": "not measured by the build",
+ "lint_problems": 0,
+ "workflow_id": "1fd64b44-c8bc-4d02-b609-53ad5ee9205e",
+ "agent_id": "5384dbbe-dcdc-441d-b24e-ee4f1c1d1a7a",
+ "version_number": 2,
+ "version_id": "7c6523c1-6f79-4942-aacc-e7df5ebc874e",
+ "is_published": true,
+ "tested_hash": "c5a4cc33942dbc7d",
+ "checks": [
+  [
+   "opening line spoken",
+   true
+  ],
+  [
+   "identity stage entered after confirmation",
+   true
+  ],
+  [
+   "first security answer reaches verify_identity with the right field",
+   true
+  ],
+  [
+   "no account or write call before verification",
+   true
+  ],
+  [
+   "both answers sent to verify_identity",
+   true
+  ],
+  [
+   "account fetched after verification",
+   true
+  ],
+  [
+   "negotiation stage reached with account facts",
+   true
+  ],
+  [
+   "past-due amount stated",
+   true
+  ]
+ ],
+ "exported_hash": "c5a4cc33942dbc7d",
+ "nodes": 13,
+ "global_nodes": 0,
+ "tool_functions": 19
+}

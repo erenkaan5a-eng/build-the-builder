@@ -1,0 +1,74 @@
+{
+ "path": "main",
+ "slot": "cmp-ab",
+ "build_seconds": 164,
+ "model_calls": 1,
+ "trace": "C:\\Users\\ASUS\\OneDrive\\Masa\u00fcst\u00fc\\build-the-builder\\traces\\cmp-ab-20261011-023247.log",
+ "known_gaps": [
+  "turning the customer's words into negotiation events (and dates into YYYY-MM-DD) is done by the dialogue model; offers, counters, dates, amounts, read-back, recording, notes and the close are code",
+  "callback window validity is decided by the dialogue model from code-computed window facts (not code)",
+  "identity flow (which question, re-asks, declines) follows the dialogue model with the bank's verification results",
+  "extra rule (stateful, stage opening): Identity confirmation: only explicit confirmations count; ask at most twice (a question answered in between makes the next ask the second); still unclear closes not_reached/unclear. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage identity): Declining security questions: explain protection once; a second refusal or second 'what is it about' question closes not_verified/declined. - left to the dialogue model's prompt",
+  "extra rule (computational, stage identity): Numeric-only dates of birth are read as day, month, year before converting to YYYY-MM-DD. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage identity): Three wrong answers in total across both questions end the check (day_month_swapped and unreadable values do not count); then send to app/branch without stating debt. - left to the dialogue model's prompt",
+  "extra rule (computational, stage negotiate): 'Next <weekday>' is in the following calendar week; 'this <weekday>' in the current week. - left to the dialogue model's prompt",
+  "extra rule (computational, stage negotiate): Weekend/holiday date not after the deadline: offer the next business day. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Floor offered once after 'too much' or below-floor amount; refusing it is a flat refusal; never repeat a refused offer; attempts counted per product per band. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Refusing the deadline offered after an after-deadline request is a flat refusal (uses an attempt). - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Hardship (illness, death in family, job loss) overrides persuasion and restructuring: one sympathy sentence, offer support transfer; accept -> transfer support, decline -> hardship; customer-named date/amount is still recorded. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage global): Human request: ask once whether you can help first; transfer to general only if they insist. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage global): Saying twice they do not want to talk closes no_promise/refused after verification, not_verified/declined before. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): A correction during read-back invalidates the confirmation; re-check and read back again before create_promise. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): On a transfer, agreed but unrecorded promises are not recorded and no add_note is called before or after the transfer; close transferred with that transfer's reason even if promises were recorded. - left to the dialogue model's prompt",
+  "extra rule (computational, stage closing): No-promise close reason in multi-product calls is the note reason of the first product in get_account order whose note is not paid; paid only if every product is noted paid. - left to the dialogue model's prompt",
+  "unresolved conflict: Hardship (Brief A rule 32) declined while other products remain unhandled in Brief B: chose \"Note hardship on every product without a promise and close; promise if any was recorded, otherwise no_promise with the first non-paid note's reason\" (Rule 32 says make no persuasion attempt and close as no_promise/hardship; hardship concerns the customer, not one product, and Brief B rule 8 requires a note per unpromised product. Customer-named dates/amounts are still recorded.)"
+ ],
+ "release_checks_passed": true,
+ "policy_correctness": "not measured by the build",
+ "lint_problems": 0,
+ "workflow_id": "6979adbf-ec19-433c-8389-2777a0619d32",
+ "agent_id": "4fede9a3-f331-4b8c-9131-faa81f7c22a6",
+ "version_number": 5,
+ "version_id": "524da5d2-8319-4641-9b3f-d3733a77ecf0",
+ "is_published": true,
+ "tested_hash": "0136cdf6e023d5ef",
+ "checks": [
+  [
+   "opening line spoken",
+   true
+  ],
+  [
+   "identity stage entered after confirmation",
+   true
+  ],
+  [
+   "first security answer reaches verify_identity with the right field",
+   true
+  ],
+  [
+   "no account or write call before verification",
+   true
+  ],
+  [
+   "both answers sent to verify_identity",
+   true
+  ],
+  [
+   "account fetched after verification",
+   true
+  ],
+  [
+   "negotiation stage reached with account facts",
+   true
+  ],
+  [
+   "every product's past-due amount stated in the debt statement, before any offer",
+   true
+  ]
+ ],
+ "exported_hash": "0136cdf6e023d5ef",
+ "nodes": 21,
+ "global_nodes": 0,
+ "tool_functions": 24
+}

@@ -1,0 +1,74 @@
+{
+ "path": "main",
+ "slot": "cmp-ab",
+ "build_seconds": 137,
+ "model_calls": 1,
+ "trace": "C:\\Users\\ASUS\\OneDrive\\Masa\u00fcst\u00fc\\build-the-builder\\traces\\cmp-ab-20261011-024603.log",
+ "known_gaps": [
+  "turning the customer's words into negotiation events (and dates into YYYY-MM-DD) is done by the dialogue model; offers, counters, dates, amounts, read-back, recording, notes and the close are code",
+  "callback window validity is decided by the dialogue model from code-computed window facts (not code)",
+  "identity flow (which question, re-asks, declines) follows the dialogue model with the bank's verification results",
+  "extra rule (stateful, stage opening): Confirmation of the person may be asked twice at most; answering a customer question first does not reset the count; still unclear after the second ask closes not_reached/unclear - left to the dialogue model's prompt",
+  "extra rule (stateful, stage identity): Track declines of the security questions: explain once, a second refusal or a second 'what is this about' closes not_verified/declined - left to the dialogue model's prompt",
+  "extra rule (stateful, stage identity): Three wrong answers in total across both questions end the check; a day_month_swapped retry or an unreadable value does not count - left to the dialogue model's prompt",
+  "extra rule (computational, stage identity): A date of birth given only as numbers is read as day, then month, then year before converting to YYYY-MM-DD - left to the dialogue model's prompt",
+  "extra rule (computational, stage negotiate): 'Next <weekday>' means the weekday in the following calendar week; 'This <weekday>' means the weekday in the current week - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): The floor is offered once after 'too much' or after a below-floor amount; refusing it is a flat refusal that uses an attempt; never repeat a refused offer - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Refusing the deadline after an after-deadline request counts as a flat refusal - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Hardship takes precedence over persuasion and restructuring: no persuasion attempt, offer support transfer; a date or amount the customer names is still recorded - left to the dialogue model's prompt",
+  "extra rule (stateful, stage global): A human request is first answered by asking once whether the agent can help; transfer only if they insist - left to the dialogue model's prompt",
+  "extra rule (stateful, stage global): Saying twice that they do not want to talk closes no_promise/refused after verification, not_verified/declined before - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): On any transfer add no notes at all, before or after; promises agreed but not yet recorded are not recorded; recorded promises stay - left to the dialogue model's prompt",
+  "extra rule (computational, stage closing): Closing reason with no promise is the first non-paid note reason in get_account order; paid only if every product is noted paid - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): A change of date or amount at confirmation invalidates the confirmation; re-check and read back again - left to the dialogue model's prompt",
+  "unresolved conflict: Whether add_note is used for a customer with a single product: chose 'Brief B rule 8 (call add_note per product without a promise, except on a transfer)' (Both briefs were supplied together and Brief B says every Brief A rule applies unless a Brief B rule replaces it. Brief B covers one to three products, so its add_note rule replaces Brief A's 'never uses add_note'. The input does not say which brief governs a one-product call, so this choice is an assumption.)",
+  "unresolved conflict: How many products to name in the debt statement: chose 'Brief B rule 2' (It is the same as Brief A when there is one product.)"
+ ],
+ "release_checks_passed": true,
+ "policy_correctness": "not measured by the build",
+ "lint_problems": 0,
+ "workflow_id": "6979adbf-ec19-433c-8389-2777a0619d32",
+ "agent_id": "4fede9a3-f331-4b8c-9131-faa81f7c22a6",
+ "version_number": 7,
+ "version_id": "5416f2fe-59bc-434f-aef5-6773c8f48f46",
+ "is_published": true,
+ "tested_hash": "ef24204f232b8460",
+ "checks": [
+  [
+   "opening line spoken",
+   true
+  ],
+  [
+   "identity stage entered after confirmation",
+   true
+  ],
+  [
+   "first security answer reaches verify_identity with the right field",
+   true
+  ],
+  [
+   "no account or write call before verification",
+   true
+  ],
+  [
+   "both answers sent to verify_identity",
+   true
+  ],
+  [
+   "account fetched after verification",
+   true
+  ],
+  [
+   "negotiation stage reached with account facts",
+   true
+  ],
+  [
+   "every product's past-due amount stated in the debt statement, before any offer",
+   true
+  ]
+ ],
+ "exported_hash": "ef24204f232b8460",
+ "nodes": 21,
+ "global_nodes": 0,
+ "tool_functions": 24
+}

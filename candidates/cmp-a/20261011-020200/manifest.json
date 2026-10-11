@@ -1,0 +1,72 @@
+{
+ "path": "main",
+ "slot": "cmp-a",
+ "build_seconds": 103,
+ "model_calls": 1,
+ "trace": "C:\\Users\\ASUS\\OneDrive\\Masa\u00fcst\u00fc\\build-the-builder\\traces\\cmp-a-20261011-020200.log",
+ "known_gaps": [
+  "turning the customer's words into negotiation events (and dates into YYYY-MM-DD) is done by the dialogue model; offers, counters, dates, amounts, read-back, recording, notes and the close are code",
+  "callback window validity is decided by the dialogue model from code-computed window facts (not code)",
+  "identity flow (which question, re-asks, declines) follows the dialogue model with the bank's verification results",
+  "extra rule (stateful, stage opening): Ask for identity confirmation at most twice; non-confirming replies such as 'hello', 'go ahead' or 'who is this' trigger the second ask; if it is still unclear after the second ask, close not_reached/unclear. Answering a customer question first does not reset the count. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage identity): Track total wrong identity answers across both questions; on the third, end the check, do not state the debt, point to the mobile app or a branch, and close not_verified/failed. A day_month_swapped retry and an unreadable value are not counted. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage identity): On the first refusal to answer the security questions (or the first question about the call's purpose instead of an answer), explain once that the questions protect the account; on the second, close not_verified/declined. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage global): Count 'do not want to talk' statements; on the second, close no_promise/refused after verification or not_verified/declined before it. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage global): On a request for a human, ask once whether you can help first; transfer to general only if they insist. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage third_party): When a third party offers a callback time outside the window, ask once for another time; if that is also outside, close not_reached/no_callback without scheduling. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Count persuasion attempts per the band (1 early, 2 late). Only flat refusals, non-answers, refusal of the deadline after a later date, and refusal of an offered floor use an attempt; a customer-proposed date or amount never does. When attempts are used up, close no_promise/refused without repeating a refused offer. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Offer the floor at most once after 'too much' and at most once after a below-floor amount; remember whether the customer said the full amount is too much, so that attempt 1 uses the floor. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Hardship (illness, death in the family, job loss) takes precedence over persuasion and restructuring: one sentence of sympathy, no persuasion attempt, offer a support transfer; if declined, close no_promise/hardship. A date or amount the customer names themselves is still recorded. - left to the dialogue model's prompt",
+  "extra rule (computational, stage negotiate): Resolve the customer's 'next <weekday>' as that weekday in the following calendar week and 'this <weekday>' as the one in the current week, relative to now, before the date check. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): A confirmation is bound to the exact product, amount and date read back; any change invalidates it and requires a new check and readback. - left to the dialogue model's prompt",
+  "unresolved conflict: Date for the one-time floor offer after 'full amount is too much' (rule 26) and whether it uses a persuasion attempt: chose 'If the customer has already named or accepted a date, offer the floor on that date without using an attempt. If no date is set yet, offer the floor on the attempt-1 date. A refusal of the floor counts as a flat refusal (rule 30) and uses an attempt.' (Rule 26 says 'offer the floor, once' without a date, and rule 30 says attempt 1 is for the floor 'if the customer already said the full amount is too much', so the floor offer itself is separate from the attempts.)",
+  "unresolved conflict: Rule 45 refusal versus rule 15 decline before verification: chose 'Before verification: not_verified/declined. After verification: no_promise/refused.' (Rule 45 settles this explicitly. It is listed here only so the builder enforces it.)"
+ ],
+ "release_checks_passed": true,
+ "policy_correctness": "not measured by the build",
+ "lint_problems": 0,
+ "workflow_id": "1fd64b44-c8bc-4d02-b609-53ad5ee9205e",
+ "agent_id": "5384dbbe-dcdc-441d-b24e-ee4f1c1d1a7a",
+ "version_number": 5,
+ "version_id": "715901e7-d40f-425e-95e6-75d6632a38ad",
+ "is_published": true,
+ "tested_hash": "438a08a6f5f97b07",
+ "checks": [
+  [
+   "opening line spoken",
+   true
+  ],
+  [
+   "identity stage entered after confirmation",
+   true
+  ],
+  [
+   "first security answer reaches verify_identity with the right field",
+   true
+  ],
+  [
+   "no account or write call before verification",
+   true
+  ],
+  [
+   "both answers sent to verify_identity",
+   true
+  ],
+  [
+   "account fetched after verification",
+   true
+  ],
+  [
+   "negotiation stage reached with account facts",
+   true
+  ],
+  [
+   "every product's past-due amount stated in the debt statement, before any offer",
+   true
+  ]
+ ],
+ "exported_hash": "438a08a6f5f97b07",
+ "nodes": 20,
+ "global_nodes": 0,
+ "tool_functions": 23
+}

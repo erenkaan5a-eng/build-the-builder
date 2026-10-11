@@ -1,0 +1,75 @@
+{
+ "path": "main",
+ "slot": "cmp-ab",
+ "build_seconds": 136,
+ "model_calls": 1,
+ "trace": "C:\\Users\\ASUS\\OneDrive\\Masa\u00fcst\u00fc\\build-the-builder\\traces\\cmp-ab-20261011-010951.log",
+ "known_gaps": [
+  "persuasion attempt counting and the order of offers are decided by the dialogue model from the brief's rules (not code)",
+  "amount acceptance against the floor is decided by the dialogue model from FACTS (not code)",
+  "callback window validity is decided by the dialogue model from code-computed window facts (not code)",
+  "extra rule (stateful, stage opening): Identity confirmation: only explicit confirmations count; ask at most twice, answering customer questions first, else close not_reached/unclear. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage identity): Track total wrong identity answers across both questions (max 3); unreadable values and day_month_swapped retries do not count. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage identity): Security refusal: explain once; second refusal or second 'what is this about' closes not_verified/declined. - left to the dialogue model's prompt",
+  "extra rule (computational, stage negotiate): Resolve relative weekday expressions: 'next <weekday>' is in the following calendar week, 'this <weekday>' in the current week. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Per-product persuasion attempt counter (1 early, 2 late); attempt 2 = floor on deadline; refusal of deadline, floor or below-floor re-offer consumes an attempt; never repeat a refused offer. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Floor is offered only once after 'full amount too much' or below-floor proposal; amount accepted if floor <= amount <= past_due. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Ask about paying all products today only once, not per product. - left to the dialogue model's prompt",
+  "extra rule (computational, stage negotiate): A single shared date after one product's deadline is recorded on that product's own deadline and said in the read-back; others keep the named date. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Combined read-back with one confirmation; any correction invalidates confirmation and requires re-check and re-read. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): No add_note at all on any transfer (restructuring, support, human); unrecorded agreed promises are dropped on restructuring. - left to the dialogue model's prompt",
+  "extra rule (computational, stage closing): Close reason without promise: paid if all notes paid; else no_promise with reason of first non-paid note in get_account order. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage global): Human request: ask once whether you can help first; transfer to general only if they insist. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage global): Not wanting to talk twice closes no_promise/refused after verification, not_verified/declined before. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage third_party): Third-party callback window: ask once more if outside window, else not_reached/no_callback. - left to the dialogue model's prompt",
+  "unresolved conflict: Whether add_note is used: chose 'Brief B rule 8 (uses_notes=true)' (Brief B explicitly states Brief A applies unless a Brief B rule replaces it, and the supplied call is Brief B (up to three products); the tool API also labels add_note 'Brief B'.)",
+  "unresolved conflict: Transfer after recorded promise vs. 'promise wins': chose \"transferred with that transfer's reason\" (Brief A says a transfer after a recorded promise closes as transferred; Brief B's 'promise wins' line names rule 10 as exception and does not override Brief A's transfer row; all transfers end the call as transferred.)"
+ ],
+ "release_checks_passed": true,
+ "policy_correctness": "not measured by the build",
+ "lint_problems": 0,
+ "workflow_id": "6979adbf-ec19-433c-8389-2777a0619d32",
+ "agent_id": "4fede9a3-f331-4b8c-9131-faa81f7c22a6",
+ "version_number": 1,
+ "version_id": "9dd816f5-9a0f-4501-86c0-e888e03e5636",
+ "is_published": true,
+ "tested_hash": "26e14257230c8a17",
+ "checks": [
+  [
+   "opening line spoken",
+   true
+  ],
+  [
+   "identity stage entered after confirmation",
+   true
+  ],
+  [
+   "first security answer reaches verify_identity with the right field",
+   true
+  ],
+  [
+   "no account or write call before verification",
+   true
+  ],
+  [
+   "both answers sent to verify_identity",
+   true
+  ],
+  [
+   "account fetched after verification",
+   true
+  ],
+  [
+   "negotiation stage reached with account facts",
+   true
+  ],
+  [
+   "past-due amount stated",
+   true
+  ]
+ ],
+ "exported_hash": "26e14257230c8a17",
+ "nodes": 13,
+ "global_nodes": 0,
+ "tool_functions": 20
+}

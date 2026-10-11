@@ -1,0 +1,23 @@
+{
+ "now_var": "now",
+ "weekend_days": [5, 6],
+ "holidays": ["2026-10-26", "2026-11-11", "2026-11-26", "2026-12-25", "2027-01-01"],
+ "products_vars": ["acct_products"],
+ "product_id_field": "product_id",
+ "days_late_field": "days_late",
+ "bands": [
+  {"min": 1, "max": 7, "deadline_business_days": 12},
+  {"min": 8, "max": 45, "deadline_business_days": 7}
+ ],
+ "vague_asks_before_deadline": 1,
+ "say": {
+  "checking": "Let me check that date.",
+  "ok": "{day} works.",
+  "not_business_day": "{day} is not a business day. The next business day I can record is {next}. Would that work for you?",
+  "after_deadline": "The latest date I can record is {deadline}. Would {deadline} work for you?",
+  "past": "That date has already passed. Which day from today onward can you pay?",
+  "ask_exact": "Could you tell me the exact day you can make the payment?",
+  "vague_propose_deadline": "I need an exact day, so I can record {deadline}. Would that work for you?",
+  "error": "I could not check that date. Could you tell me the day again?"
+ }
+}
