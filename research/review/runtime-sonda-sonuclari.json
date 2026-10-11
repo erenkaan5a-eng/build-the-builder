@@ -1,0 +1,77 @@
+{
+  "partial_confirmation": {
+    "phase": "record",
+    "writes": [
+      [
+        "p1",
+        "300.00",
+        "2026-10-16"
+      ],
+      [
+        "p2",
+        "600.00",
+        "2026-10-16"
+      ]
+    ]
+  },
+  "record_without_confirmation_direct_entry": {
+    "phase_before": "readback",
+    "writes": [
+      [
+        "p1",
+        "300.00",
+        "2026-10-16"
+      ],
+      [
+        "p2",
+        "600.00",
+        "2026-10-16"
+      ]
+    ]
+  },
+  "notes_without_responses": [
+    "paid",
+    "",
+    [
+      [
+        "p1",
+        "paid"
+      ],
+      [
+        "p2",
+        "paid"
+      ]
+    ]
+  ],
+  "mixed_first_ask": {
+    "p2_offer": {
+      "amount": 600.0,
+      "date": "2026-10-14",
+      "kind": "initial"
+    },
+    "p2_attempts": 0
+  },
+  "amount_change_only": {
+    "amount": 150.0,
+    "date": "2026-10-14",
+    "kind": "amount_only"
+  },
+  "amount_across_clarification": {
+    "amount": 300.0,
+    "date": "2026-10-16"
+  },
+  "unresolved_finish_direct_entry": [
+    "no_promise",
+    "service_error",
+    [
+      [
+        "p1",
+        "service_error"
+      ],
+      [
+        "p2",
+        "refused"
+      ]
+    ]
+  ]
+}
