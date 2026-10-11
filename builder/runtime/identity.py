@@ -10,8 +10,9 @@ State (vars['id_state'], one JSON object per call; a new call starts without it)
   verified        fields the bank verified in this call
   pending         the request for the bank and the verify node's counters right before it was sent (sc, fc):
                   a result is processed only when the success counter moved past sc, and only once
-  declines        refusals / 'what is this about' instead of an answer, in a row (at most one per message; an answer in
-                  between starts the count again; the explanation is given once per call)
+  declines        refusals / 'what is this about' instead of an answer over the whole stage (at most one per message;
+                  an answer in between does NOT restart the count: A15 'a second refusal or a second such question closes
+                  the call'; the explanation is given once per call)
   stops           'do not want to talk' statements over the whole stage (A45; the policy's count closes 'declined')
   humans          requests for a person; wrong_local (only when the API has no remaining-tries field); svc (service errors)
   cand[field]     after a day/month hint: the two numbers heard, so a month said as a word completes the date
@@ -216,8 +217,6 @@ try:
             save(st)
             raise StopIteration()
     act = first_open(st)
-    if answers:
-        st['declines'] = 0              # a customer who answers is not declining: a question back earlier does not add up (A15 'still decline')
     for e in answers:
         q = qby(e['field']) if e['field'] else None
         if q is None and act is not None:

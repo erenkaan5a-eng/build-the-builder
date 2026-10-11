@@ -41,7 +41,7 @@ Bir paragraf tek etiketle kapatılmadı: örneğin A32 yedi ayrı hükme bölün
 | A15a | 15 | cevap vermek istemiyor → bir kez "sorular hesabınızı korur" | — | K: decline_explain (bir kez) | I11a | U |
 | A15b | 15 | yine reddediyor → `not_verified/declined` | close_call | K | I11b | U |
 | A15c | 15 | cevap yerine "arama ne hakkında?" = ret | — | K+M: `asks_purpose` olayı; aynı mesajda cevap varsa sayılmaz | I11b, I11c | U (Y: "cevap yerine" ifadesi böyle okundu) |
-| A15d | 15 | ikinci ret ya da ikinci böyle soru kapatır | — | K: policy.declines_to_close | I11b | U |
+| A15d | 15 | ikinci ret ya da ikinci böyle soru kapatır | — | K: policy.declines_to_close; sayım kimlik aşaması boyunca, araya giren cevap sayacı sıfırlamaz (bulut düzeltmesi; 8ccf94e'deki sıfırlama kaldırıldı) | I11b, I11f, I11h | U |
 | A16 | 16 | iki soru geçince `get_account` | get_account | K: `fetch_account` yalnız `id_result`ten, `security_verified=yes` ve `id_flag=account` ile | S2 | U |
 | A17a | 17 | tahsilat ekibinden, gecikmiş ödeme hakkında | — | K: DEAL_CODE debt_intro | practice kontrolü | U |
 | A17b | 17 | ürün kelimeyle: "credit card ending 4821" / "personal loan" / "car loan" | products[].type, card_last4 | K: naming şablonu | practice kontrolü | U |

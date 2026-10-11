@@ -121,11 +121,19 @@ for mode in ("hook", "nohook"):
     c.msg("asks_purpose", A(day=17, month=5, year=1986))
     check(f"I11c {M} a question together with an answer is not a decline", c.st().get("declines") == 0 and len(b.calls) == 1, c.st())
     b = Bank("1986-05-17", "1502"); c = IdCall(POL, b, mode)
-    c.msg("asks_purpose"); c.msg(A(day=17, month=5, year=1986)); r = c.msg("asks_purpose")
-    check(f"I11e {M} style asks_back: question, answer, question again -> not closed (the answer restarted the count), phone asked",
-          c.end is None and ASK_PHONE in r and "protect" not in r, (c.end, r))
-    c.msg("refuses")
-    check(f"I11f {M} two in a row after that -> declined", c.end == DECLINED, c.end)
+    r1 = c.msg("asks_purpose"); c.msg(A(day=17, month=5, year=1986))
+    check(f"I11e {M} a question instead of an answer, then the answer: one decline, explanation once, not closed",
+          c.end is None and "protect" in r1 and c.st().get("declines") == 1 and len(b.calls) == 1, (c.end, r1, c.st().get("declines")))
+    c.msg("asks_purpose")
+    check(f"I11f {M} A15: a second such question closes 'declined' although an answer came in between (the count is not restarted)",
+          c.end == DECLINED and len(b.calls) == 1, (c.end, b.calls))
+    b = Bank("1986-05-17", "1502"); c = IdCall(POL, b, mode)
+    c.msg("refuses"); c.msg(A(day=17, month=5, year=1986)); r = c.msg("refuses")
+    check(f"I11h {M} A15: refusal, answer, refusal -> declined; the explanation is not repeated", c.end == DECLINED and r.count("protect") == 0, (c.end, r))
+    b = Bank("1986-05-17", "1502"); c = IdCall(POL, b, mode)
+    c.msg("asks_purpose", A(day=17, month=5, year=1986)); c.msg("asks_purpose", A(digits="1502"))
+    check(f"I11i {M} questions that come with an answer never count (style asks_back as observed live): account reached",
+          c.end == ("account",) and int(c.st().get("declines") or 0) == 0, (c.end, c.st().get("declines")))
     b = Bank("1986-05-17", "1502"); c = IdCall(POL, b, mode)
     c.msg("stop"); c.msg(A(day=17, month=5, year=1986)); c.msg("stop")
     check(f"I11g {M} A45: 'I do not want to talk' twice in the identity stage -> declined, even with an answer in between", c.end == DECLINED, c.end)

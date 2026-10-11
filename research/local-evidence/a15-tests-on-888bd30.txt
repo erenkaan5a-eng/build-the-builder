@@ -1,0 +1,7 @@
+FAIL I11e [hook] a question instead of an answer, then the answer: one decline, explanation once, not closed -> (None, 'These security questions protect your account. For security, could you please te
+FAIL I11f [hook] A15: a second such question closes 'declined' although an answer came in between (the count is not restarted) -> (None, [('date_of_birth', '1986-05-17')])
+FAIL I11h [hook] A15: refusal, answer, refusal -> declined; the explanation is not repeated -> (None, 'Could you please tell me the last four digits of the phone number on file?')
+FAIL I11e [nohook] a question instead of an answer, then the answer: one decline, explanation once, not closed -> (None, 'These security questions protect your account. For security, could you please 
+FAIL I11f [nohook] A15: a second such question closes 'declined' although an answer came in between (the count is not restarted) -> (None, [('date_of_birth', '1986-05-17')])
+FAIL I11h [nohook] A15: refusal, answer, refusal -> declined; the explanation is not repeated -> (None, 'Could you please tell me the last four digits of the phone number on file?')
+FAILURES: 6
