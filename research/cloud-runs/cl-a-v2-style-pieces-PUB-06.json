@@ -1,0 +1,60 @@
+{
+ "agent_id": "91e04e98-0e9e-4bd0-b87d-efdb923d62a8",
+ "simulation_id": "a3b0179a-813e-4345-8a8c-a0d13add872f",
+ "iteration_id": "ad54455e-112b-4cfa-bd62-034a5a0fdc0c",
+ "seconds": 66,
+ "passed": 0,
+ "total": 1,
+ "runs": 1,
+ "final": [
+  {
+   "id": "PUB-06",
+   "family": "Amounts",
+   "passes": 0,
+   "runs": 1,
+   "pass": false
+  }
+ ],
+ "rows": [
+  {
+   "id": "PUB-06",
+   "level": "hard",
+   "family": "Amounts",
+   "pass": false,
+   "failed": [
+    "outcome ('not_verified', 'failed'), expected ('promise', None)",
+    "promises [], expected [('p1', 637.5, '2026-10-16')]",
+    "conversation: The agent failed to verify the customer's identity because the customer provided incomplete dates (missing either the year or the day/month) across multiple turns (Messages 2-33). Because verification was never completed, the agent ended the call (Message 34-35) without ever discussing payment options. Consequently, no minimum payment was offered and no promise for 637.50 was secured."
+   ],
+   "call_id": "4fa1be43-a0cc-49e9-ab25-437d62922a69",
+   "tools": [
+    "close_call"
+   ],
+   "customer_id": "c_bcc8b31f-001",
+   "slowest_turn_s": 3.0,
+   "ended": "assistant-ended-call"
+  }
+ ],
+ "all_rows": [
+  [
+   {
+    "id": "PUB-06",
+    "level": "hard",
+    "family": "Amounts",
+    "pass": false,
+    "failed": [
+     "outcome ('not_verified', 'failed'), expected ('promise', None)",
+     "promises [], expected [('p1', 637.5, '2026-10-16')]",
+     "conversation: The agent failed to verify the customer's identity because the customer provided incomplete dates (missing either the year or the day/month) across multiple turns (Messages 2-33). Because verification was never completed, the agent ended the call (Message 34-35) without ever discussing payment options. Consequently, no minimum payment was offered and no promise for 637.50 was secured."
+    ],
+    "call_id": "4fa1be43-a0cc-49e9-ab25-437d62922a69",
+    "tools": [
+     "close_call"
+    ],
+    "customer_id": "c_bcc8b31f-001",
+    "slowest_turn_s": 3.0,
+    "ended": "assistant-ended-call"
+   }
+  ]
+ ]
+}

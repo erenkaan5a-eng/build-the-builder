@@ -1,0 +1,62 @@
+{
+ "agent_id": "91e04e98-0e9e-4bd0-b87d-efdb923d62a8",
+ "simulation_id": "ea6d3568-7bd6-4408-b795-ce2e1eaf0713",
+ "iteration_id": "c900d724-4865-415f-a21d-78d6c993f808",
+ "seconds": 120,
+ "passed": 1,
+ "total": 1,
+ "runs": 1,
+ "final": [
+  {
+   "id": "PUB-10",
+   "family": "Tool failure",
+   "passes": 1,
+   "runs": 1,
+   "pass": true
+  }
+ ],
+ "rows": [
+  {
+   "id": "PUB-10",
+   "level": "hard",
+   "family": "Tool failure",
+   "pass": true,
+   "failed": [],
+   "call_id": "5fb175d1-c406-4ae3-b214-258260cdf226",
+   "tools": [
+    "verify_identity",
+    "verify_identity",
+    "get_account",
+    "create_promise",
+    "create_promise",
+    "close_call"
+   ],
+   "customer_id": "c_398987c6-4dd",
+   "slowest_turn_s": 20.4,
+   "ended": "assistant-ended-call"
+  }
+ ],
+ "all_rows": [
+  [
+   {
+    "id": "PUB-10",
+    "level": "hard",
+    "family": "Tool failure",
+    "pass": true,
+    "failed": [],
+    "call_id": "5fb175d1-c406-4ae3-b214-258260cdf226",
+    "tools": [
+     "verify_identity",
+     "verify_identity",
+     "get_account",
+     "create_promise",
+     "create_promise",
+     "close_call"
+    ],
+    "customer_id": "c_398987c6-4dd",
+    "slowest_turn_s": 20.4,
+    "ended": "assistant-ended-call"
+   }
+  ]
+ ]
+}

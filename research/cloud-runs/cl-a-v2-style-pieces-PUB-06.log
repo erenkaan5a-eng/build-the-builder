@@ -1,1 +1,9 @@
 cloud proxy mode: on: Freya Authorization left to the proxy; bank x-team-key left to the proxy
+FAIL PUB-06 hard   Amounts        | close_call
+       - outcome ('not_verified', 'failed'), expected ('promise', None)
+       - promises [], expected [('p1', 637.5, '2026-10-16')]
+       - conversation: The agent failed to verify the customer's identity because the customer provided incomplete dates (missing either the year or the day/month) across multiple turns (Messages 2-33). Because verification was never completed, the agent ended the call
+
+slowest agent turn per call: median 3 s, worst 3 s. Failed calls where the customer hung up: 0.
+
+0 / 1 passed (bank records and conversation checks). Last simulation a3b0179a-813e-4345-8a8c-a0d13add872f, status completed, 66 s.

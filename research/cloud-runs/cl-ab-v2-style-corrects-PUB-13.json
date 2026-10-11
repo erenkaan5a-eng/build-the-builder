@@ -1,0 +1,62 @@
+{
+ "agent_id": "f97de421-84ba-4675-b150-6569b61d9eb5",
+ "simulation_id": "7206914f-68a1-4706-bf89-ed77d6422f40",
+ "iteration_id": "f7d59483-384c-4bb1-95d2-aa1db83d4efe",
+ "seconds": 98,
+ "passed": 1,
+ "total": 1,
+ "runs": 1,
+ "final": [
+  {
+   "id": "PUB-13",
+   "family": "Multi-product",
+   "passes": 1,
+   "runs": 1,
+   "pass": true
+  }
+ ],
+ "rows": [
+  {
+   "id": "PUB-13",
+   "level": "hard",
+   "family": "Multi-product",
+   "pass": true,
+   "failed": [],
+   "call_id": "339e46c1-fec0-4b21-a05c-ef9dff8210e5",
+   "tools": [
+    "verify_identity",
+    "verify_identity",
+    "get_account",
+    "create_promise",
+    "create_promise",
+    "close_call"
+   ],
+   "customer_id": "c_426b5f26-1a1",
+   "slowest_turn_s": 15.7,
+   "ended": "assistant-ended-call"
+  }
+ ],
+ "all_rows": [
+  [
+   {
+    "id": "PUB-13",
+    "level": "hard",
+    "family": "Multi-product",
+    "pass": true,
+    "failed": [],
+    "call_id": "339e46c1-fec0-4b21-a05c-ef9dff8210e5",
+    "tools": [
+     "verify_identity",
+     "verify_identity",
+     "get_account",
+     "create_promise",
+     "create_promise",
+     "close_call"
+    ],
+    "customer_id": "c_426b5f26-1a1",
+    "slowest_turn_s": 15.7,
+    "ended": "assistant-ended-call"
+   }
+  ]
+ ]
+}

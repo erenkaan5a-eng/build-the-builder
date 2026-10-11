@@ -1,0 +1,6 @@
+cloud proxy mode: on: Freya Authorization left to the proxy; bank x-team-key left to the proxy
+PASS PUB-11 medium Multi-product  | verify > verify > get_account > promise > promise > promise > close_call
+
+slowest agent turn per call: median 8 s, worst 8 s. Failed calls where the customer hung up: 0.
+
+1 / 1 passed (bank records and conversation checks). Last simulation c291b69b-b796-4d0a-8575-cb063086b2a6, status completed, 66 s.

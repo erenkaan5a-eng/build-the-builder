@@ -1,0 +1,241 @@
+{
+ "call_id": "4fa1be43-a0cc-49e9-ab25-437d62922a69",
+ "msgs": [
+  [
+   "node",
+   "setup"
+  ],
+  [
+   "call",
+   "code_exec {\"timeout_ms\": 10000, \"code\": \"\\nimport json, datetime, re\\nCFG = json.loads(r\\\"\\\"\\\"{\\n \\\"now_var\\\": \\\"now\\\",\\n \\\"weekend_days\\\": [\\n  5,\\n  6\\n ],\\n \\\"holidays\\\": [\\n  \\\"2026-10-26\\\",\\n  \\\"2026-11-11"
+  ],
+  [
+   "node",
+   "opening"
+  ],
+  [
+   "assi",
+   "Hello, I am a digital assistant calling from Freya Bank, and we record this call. Am I speaking with Ms Nair?"
+  ],
+  [
+   "user",
+   "Yes, this is Priya."
+  ],
+  [
+   "node",
+   "identity"
+  ],
+  [
+   "assi",
+   "For security, could you please tell me your date of birth?"
+  ],
+  [
+   "user",
+   "May seventeenth."
+  ],
+  [
+   "node",
+   "identity"
+  ],
+  [
+   "assi",
+   "I'm sorry, I need the full date including the year. Could you please tell me your date of birth?"
+  ],
+  [
+   "user",
+   "May seventeenth."
+  ],
+  [
+   "node",
+   "identity"
+  ],
+  [
+   "assi",
+   "I'm sorry, but I need the full date, including the year. Could you please tell me your date of birth?"
+  ],
+  [
+   "user",
+   "May seventeenth."
+  ],
+  [
+   "node",
+   "identity"
+  ],
+  [
+   "assi",
+   "I'm sorry, but I need the full date including the year to verify your identity. Could you please provide your full date of birth?"
+  ],
+  [
+   "user",
+   "Nineteen eighty six."
+  ],
+  [
+   "node",
+   "identity"
+  ],
+  [
+   "assi",
+   "I'm sorry, I need the full date of birth in one go. Could you please tell me the day, month, and year?"
+  ],
+  [
+   "user",
+   "May seventeenth."
+  ],
+  [
+   "node",
+   "identity"
+  ],
+  [
+   "assi",
+   "I am sorry, but I need the full date including the year. Could you please provide your full date of birth?"
+  ],
+  [
+   "user",
+   "May seventeenth."
+  ],
+  [
+   "node",
+   "identity"
+  ],
+  [
+   "assi",
+   "I'm sorry, but I need the full date including the year. Could you please provide your full date of birth?"
+  ],
+  [
+   "user",
+   "May seventeenth."
+  ],
+  [
+   "node",
+   "identity"
+  ],
+  [
+   "assi",
+   "I'm sorry, but I need the full date including the year to proceed. Could you please provide your full date of birth?"
+  ],
+  [
+   "user",
+   "May seventeenth."
+  ],
+  [
+   "node",
+   "identity"
+  ],
+  [
+   "assi",
+   "I am sorry, but I cannot proceed without your full date of birth. Could you please provide the day, month, and year?"
+  ],
+  [
+   "user",
+   "Nineteen eighty six."
+  ],
+  [
+   "node",
+   "identity"
+  ],
+  [
+   "assi",
+   "I need the full date including the day and month as well. Could you please tell me your full date of birth?"
+  ],
+  [
+   "user",
+   "May seventeenth."
+  ],
+  [
+   "node",
+   "identity"
+  ],
+  [
+   "assi",
+   "I'm sorry, but I need the full date, including the year, to verify your identity. Could you please tell me your full date of birth?"
+  ],
+  [
+   "user",
+   "May seventeenth."
+  ],
+  [
+   "node",
+   "identity"
+  ],
+  [
+   "assi",
+   "I'm sorry, but I need the full date including the year. Could you please provide your full date of birth?"
+  ],
+  [
+   "user",
+   "May seventeenth."
+  ],
+  [
+   "node",
+   "identity"
+  ],
+  [
+   "assi",
+   "I'm sorry, but I need the full date including the year to verify your identity. Could you please tell me your full date of birth?"
+  ],
+  [
+   "user",
+   "Nineteen eighty six."
+  ],
+  [
+   "node",
+   "identity"
+  ],
+  [
+   "assi",
+   "I need the full date including the day and month. Could you please tell me your full date of birth?"
+  ],
+  [
+   "user",
+   "May seventeenth."
+  ],
+  [
+   "node",
+   "identity"
+  ],
+  [
+   "assi",
+   "I'm sorry, but I need the full date including the year to verify your identity. Could you please provide your full date of birth?"
+  ],
+  [
+   "user",
+   "May seventeenth."
+  ],
+  [
+   "node",
+   "identity"
+  ],
+  [
+   "assi",
+   "I'm sorry, but I need the full date including the year. Could you please provide your full date of birth?"
+  ],
+  [
+   "user",
+   "May seventeenth."
+  ],
+  [
+   "node",
+   "identity"
+  ],
+  [
+   "assi",
+   "I am sorry, but I cannot verify your identity without the full date of birth. Please use the mobile app or visit a branch. Thank you and goodbye."
+  ],
+  [
+   "assi",
+   "Thank you for your time. Goodbye."
+  ],
+  [
+   "call",
+   "close_call {\"url\": \"https://freya-bank-mock.freyavoice.workers.dev/v1/close_call\", \"method\": \"POST\", \"headers\": {\"Content-Type\": \"application/json\"}, \"body\": {\"reason\": \"failed\", \"outcome\": \"not_verified\", \"cust"
+  ],
+  [
+   "node",
+   "hangup"
+  ],
+  [
+   "call",
+   "end_call {\"message_mode\": \"none\"}"
+  ]
+ ]
+}
