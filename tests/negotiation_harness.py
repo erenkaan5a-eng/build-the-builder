@@ -15,14 +15,16 @@ SAY = {"debt_intro": "I am calling about a late payment.", "product_line": "Your
        "past": "That date has passed.", "ask_exact": "Which exact day?", "vague_deadline": "I can offer {deadline}.",
        "readback_intro": "To confirm:", "readback_item": "{name} {amount} on {date}", "readback_clamped": "(latest date for {name})",
        "confirm_question": "Do you confirm?", "recorded": "Recorded.", "not_recorded": "Not recorded for {name}.",
-       "hardship": "Sorry to hear. Support team?", "paid": "Payments take a day.", "dispute": "Understood.", "checking": "One moment.", "error": "Please repeat."}
+       "hardship": "Sorry to hear. Support team?", "paid": "Payments take a day.", "dispute": "Understood.", "checking": "One moment.", "error": "Please repeat.",
+       "no_terms": "No other terms.", "go_on": "Please go on.", "robot_answer": "I am a digital assistant."}
 BASE = {"now_var": "now", "weekend_days": [5, 6], "holidays": ["2026-10-26", "2026-11-11", "2026-11-26", "2026-12-25", "2027-01-01"],
         "ladder": [{"amount": "full_or_floor_if_too_much", "date": "this_week_last_business_day_or_next_week_if_today"}, {"amount": "floor", "date": "deadline"}],
         "vague_asks": 1, "shared_date_clamps": True, "say": SAY, "rec_node": "record_one", "note_node": "note_one", "ok": "ok", "retries": 1, "queue_field": "queue",
         "queue_reason": {"restructuring": "restructuring", "general": "human", "support": "support"}, "transferred": "transferred", "promise": "promise",
         "paid": "paid", "no_promise": "no_promise", "statuses": {"refused": "refused", "hardship": "hardship", "dispute": "dispute", "paid": "paid", "service_error": "service_error"},
         "no_reason": ["promise", "paid"], "uses_notes": True, "after_promise_sentence": "You will receive a text message.", "goodbye": "Goodbye.",
-        "technical": {"outcome": "no_promise", "reason": "service_error"}, "turn_vars": ["negotiate.total_turns", "neg_relay.total_turns"]}
+        "technical": {"outcome": "no_promise", "reason": "service_error"}, "turn_vars": ["negotiate.total_turns", "neg_relay.total_turns"],
+        "support_queue": "support", "xfer_node": "xfer_one"}
 def platform_exec(code, g):
     """Run generated code the way the platform runs it: inside a function, with vars/params as its arguments.
     Observed 11 Oct (chat C2): a 'global' statement that works under a plain exec() fails there with NameError."""
@@ -31,7 +33,7 @@ def platform_exec(code, g):
     ns["__platform_run"](g.get("vars"), g.get("params", {}))
 
 
-SNIPPETS = ("ENGINE", "REC_NEXT", "FINISH", "NOTES_NEXT", "CONFIRM", "HARDSHIP")
+SNIPPETS = ("ENGINE", "REC_NEXT", "FINISH", "NOTES_NEXT", "CONFIRM", "HARDSHIP", "SUPPORT_DECLINE", "SUPPORT_ACCEPT", "GO_ON")
 
 
 def P(pid, name, full, floor, deadline, attempts):

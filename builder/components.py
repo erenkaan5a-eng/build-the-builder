@@ -13,6 +13,7 @@ import json, os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "runtime"))
 import date_tool  # noqa: E402  (kept for its tests; the negotiation runtime supersedes it in the workflow)
 import negotiation as NG  # noqa: E402
+import identity as ID  # noqa: E402
 
 MAX_TURNS = 40
 
@@ -150,6 +151,8 @@ def num(x, what):
         raise ValueError(what + ' not a finite amount')
     return v
 try:
+    if str(vars.get('security_verified') or '') != 'yes':
+        raise ValueError('identity not verified by the bank in this call')
     if str(vars.get(CFG['ok_var']) or '').strip().lower() != 'true':
         raise ValueError('account call not successful')
     t = now_dt().date()
@@ -197,7 +200,7 @@ try:
     if not prods:
         raise ValueError('no products in the account result')
     s = CFG['say']
-    qa = s.get('answer_' + str(vars.get('pending_question') or '').strip().lower()) or ''
+    qa = str(vars.get('id_prefix') or '')
     sent = [qa, s['debt_intro']] + [s['product_line'].format(name=p['name'], amount=money(p['past_due']), days=str(p['days_late'])) for p in prods]
     sent.append(s['first_ask_one'] if len(prods) == 1 else s['first_ask_all'])
     vars['products_json'] = json.dumps(prods)
@@ -206,40 +209,13 @@ try:
     vars['hardship_done'] = 'no'
     vars['hardship_early'] = 'yes' if str(vars.get('hardship_seen') or '').strip().lower() == 'yes' else 'no'
     vars['offer_named'] = 'no'
+    vars['support_pending'] = 'no'
+    vars['go_on_count'] = '0'
     vars['acct_state'] = 'ok'
 except Exception as e:
     vars['deal_text'] = 'The account data is not available.'
     vars['acct_state'] = 'error'
     vars['acct_error'] = str(e)[:160]
-'''
-
-VERIFY_POST = r'''
-import json
-CFG = json.loads(r"""__CFG__""")
-def yes(x):
-    return str(x).strip().lower() == 'true'
-try:
-    if isinstance(result, dict):
-        result.pop('header', None)
-        d = result.get('data')
-        if isinstance(d, dict):
-            hint = d.get(CFG['hint']) if CFG.get('hint') else None
-            rem = d.get(CFG['remaining']) if CFG.get('remaining') else None
-            if hint and str(hint) in CFG['hints']:
-                msg = 'Not a wrong answer. ' + CFG['hints'][str(hint)]
-            elif not yes(d.get(CFG['ok'])):
-                msg = 'The answer was not checked (it could not be read or the service refused it). It does not count as wrong. Ask for the same answer again.'
-            elif yes(d.get(CFG['all_verified'])):
-                msg = 'All security questions are passed. Say one short thank-you sentence and nothing about the account yet. Do not call a tool now.'
-            elif yes(d.get(CFG['verified'])):
-                msg = 'This answer is correct. Ask the next security question.'
-            elif rem is not None and str(rem).strip() in ('0', '0.0'):
-                msg = 'This answer is wrong and no tries are left: the identity check has failed. Follow the brief for a failed check.'
-            else:
-                msg = 'This answer is wrong' + ((', tries left: ' + str(rem)) if rem is not None else '') + '. Follow the brief: ask the same question again.'
-            d['what_to_do_next'] = msg
-except Exception:
-    pass
 '''
 
 PROMISE_POST = r'''
@@ -275,6 +251,8 @@ try:
     if isinstance(b, dict):
         q = str(vars.get('transfer_to_agent_args.' + CFG['queue_field']) or '')
         t_ok = str(vars.get('transfer_to_agent_response.data.' + CFG['ok']) or '').lower() == 'true'
+        if str(vars.get('xfer_done') or '') == 'yes':
+            q, t_ok = str(vars.get('xfer_queue') or ''), True
         rec = int(float(vars.get('promises_recorded') or 0))
         o, r = CFG['outcome'], CFG['reason']
         if t_ok and q in CFG['queue_reason']:
@@ -314,24 +292,28 @@ def build(pol, ts):
         return {B["customer_id_param"]: {"type": "string", "default": cid}, **extra}
 
     v = B["verify"]
-    verify_cfg = {"ok": ok, "verified": v["verified"], "all_verified": v["all_verified"], "remaining": v.get("remaining"),
-                  "hint": v.get("hint"), "hints": (pol.get("identity") or {}).get("hints") or {}}
-    qs = pol["identity"]["questions"]
-    t_verify = api_tool(ts, "verify_identity", body_with_cid("verify_identity", {
-        v["field_param"]: model_field(ts, "verify_identity", v["field_param"], "Which security question this answer is for."),
-        v["answer_param"]: model_field(ts, "verify_identity", v["answer_param"], "The customer's answer, in the format the question needs: "
-                                       + "; ".join(f"{q['field']}: {q.get('answer_format', '')}" for q in qs) + ".")}),
-        "CALL it every time the customer answers a security question, once per answer. Then follow what_to_do_next in the result.",
-        post=embed(VERIFY_POST, verify_cfg))
+    idp = pol["identity"]
+    qs = idp["questions"]
     pb = B["promise"]
     retries = int((pol.get("write_retries") or {}).get("create_promise") or 0)
     c = pol["closing"]
     close_cfg = {"outcome": B["close"]["outcome"], "reason": B["close"]["reason"], "ok": ok, "queue_field": B["transfer"]["queue"],
                  "queue_reason": c["queue_reason"], "transferred": c["transferred_outcome"], "promise": c["promise_outcome"],
                  "unrecorded": c["unrecorded_promise_fallback"], "no_reason": c.get("outcomes_without_reason") or []}
+    # the dialogue model may close only where code does not own the outcome; the identity 'failed' close needs the bank's
+    # current result, so its reason is not offered to the model when no other outcome uses that reason
+    reason_leaf = model_field(ts, "close_call", B["close"]["reason"], "The reason from the brief's closing table (leave empty where the table lists none).")
+    fo, fr = (idp.get("failed") or {}).get("outcome"), (idp.get("failed") or {}).get("reason")
+    table = c.get("table") or {}
+    allowed = sorted({r for o, rs in table.items() for r in (rs or []) if not (r == fr and not [o2 for o2, rs2 in table.items() if o2 != fo and r in (rs2 or [])])})
+    if reason_leaf.get("enum"):
+        allowed = [x for x in reason_leaf["enum"] if x in allowed] if allowed else [x for x in reason_leaf["enum"] if x != fr]
+    if allowed:
+        reason_leaf["enum"] = allowed
+        reason_leaf["description"] = ("The reason from the brief's closing table (leave empty where the table lists none). One of: " + ", ".join(allowed) + ".")
     t_close = api_tool(ts, "close_call", body_with_cid("close_call", {
         B["close"]["outcome"]: model_field(ts, "close_call", B["close"]["outcome"], "The outcome from the brief's closing table."),
-        B["close"]["reason"]: model_field(ts, "close_call", B["close"]["reason"], "The reason from the brief's closing table (leave empty where the table lists none).")}),
+        B["close"]["reason"]: reason_leaf}),
         "CALL it exactly once, as the very last tool call. The goodbye line is spoken automatically when you call it; do not say goodbye yourself.",
         config={"timeoutMs": 12000, "maxRetries": 0, "preSpeech": {"mode": "static", "message": pol.get("goodbye_line") or "Thank you for your time. Goodbye.", "interruptible": False}},
         pre=embed(CLOSE_PRE, close_cfg), post=SIMPLE_POST)
@@ -388,20 +370,85 @@ def build(pol, ts):
                                 [done, {"target_node": "identity", "description": "the customer is now on the line", "condition": cond("speaker", "equals", "self")}],
                                 on_enter={"type": "llm", "prompt": "Respond as the rules for this stage require, in one or two short sentences, without saying why you are calling."},
                                 extraction=speaker)
-    nodes["identity"] = conv("identity", "Stage: identity. Ask the security questions one at a time, in this order: "
-                             + " ".join(f"({i + 1}) {q['ask']} [field {q['field']}, answer as {q.get('answer_format', '')}]" for i, q in enumerate(qs))
-                             + ". After each answer CALL verify_identity and follow what_to_do_next. You cannot see the account yet.\n"
-                             "A customer may give one answer in parts over several messages (for example the day and month, then the year; or two digits, then the "
-                             "other two). Keep the parts you already heard, ask only for the missing part, and CALL verify_identity once with the combined answer. "
-                             "Never ask for an answer 'in one go'. Only the bank's result can make an answer wrong: never end the call for a failed identity check "
-                             "unless what_to_do_next says the identity check has failed.\nFollow these rules:\n" + rules_block(pol, "identity"),
-                             [t_verify, t_transfer, t_close],
-                             [done, {"target_node": acct_node, "description": "identity verified",
-                                     "condition": cond_true(f"verify_identity_response.data.{v['all_verified']}")}],
-                             on_enter={"type": "tts", "text": first_q},
-                             extraction=[{"name": "pending_question", "type": "string", "enum_values": ["robot", "scam", "none"], "min_confidence": 0.6,
-                                          "description": "What the customer's LAST message asks, if anything: 'robot' if it asks whether they are talking to a robot, a machine or an AI; "
-                                                         "'scam' if it asks whether this call is a scam or genuine; otherwise 'none'."}, hardship_x])
+    # ---- identity: the dialogue model turns each message into events; code (identity runtime) decides, the engine asks
+    # the bank, code processes the bank's result once and owns every sentence and the close of this stage
+    hr = pol["human_request"]
+    id_cfg = {"questions": [{"field": q["field"], "ask": q["ask"], "kind": q["kind"], "digits": int(q.get("digits") or 0), "output": q.get("output") or ""} for q in qs],
+              "say": idp["say"], "hint_say": idp.get("hint_say") or {}, "declines_to_close": int(idp["declines_to_close"]),
+              "human": {"queue": hr["queue"], "asks_before_transfer": int(hr.get("asks_before_transfer") or 0), "say": hr.get("say") or ""},
+              "failed": idp["failed"], "declined": idp["declined"], "technical": c["technical_error"], "no_reason": c.get("outcomes_without_reason") or [],
+              "goodbye": pol.get("goodbye_line") or "", "robot": ng["say"].get("robot_answer") or "", "scam": ng["say"].get("scam_answer") or "",
+              "max_wrong": 0 if v.get("remaining") else int(idp.get("max_wrong_answers") or 0), "verify_node": "id_verify",
+              "f": {"ok": ok, "verified": v["verified"], "all_verified": v["all_verified"], "remaining": v.get("remaining"), "hint": v.get("hint")},
+              "verify_retries": 1, "service_errors_to_close": 2}
+    kinds = {q["kind"] for q in qs}
+    item = {"type": {"type": "string", "enum": ID.EVENT_TYPES},
+            "field": {"type": "string", "enum": [q["field"] for q in qs], "description": "the security question the answer is for (normally the one just asked)"}}
+    if "date" in kinds:
+        item["day"] = {"type": "string", "description": "day of the month as digits, only if said in THIS message"}
+        item["month"] = {"type": "string", "description": "month as a number 1-12, only if said in THIS message"}
+        item["year"] = {"type": "string", "description": "the year as the customer said it, in digits (e.g. 1986), only if said in THIS message"}
+    if "digits" in kinds:
+        item["digits"] = {"type": "string", "description": "the digits said in THIS message, in order, as digits (keep leading zeros)"}
+    if "text" in kinds:
+        item["text"] = {"type": "string", "description": "the answer said in THIS message"}
+    qdoc = " ".join(f"({i + 1}) field {q['field']}: {q['kind']}" + (f", {q['digits']} digits" if q["kind"] == "digits" else "")
+                    + (f" ({q.get('answer_format', '')})" if q.get("answer_format") else "") for i, q in enumerate(qs))
+    id_events_doc = ("EVENTS (one item per statement, in order): answer = the customer gives all or PART of an answer (send only the parts said in this message; "
+                     "never complete a part they did not say); correction = the customer corrects something they said before (send the corrected parts); "
+                     "refuses = does not want to answer; asks_purpose = asks what the call is about or why you are calling instead of answering; "
+                     "stop = does not want to talk; robot = asks whether you are a robot or an AI; scam = asks whether the call is a scam; "
+                     "human = asks for a person / a human agent; other = anything else.")
+    t_id = {"type": "function", "config": {"timeoutMs": 10000, "preSpeech": {"mode": "static", "message": ng["say"]["checking"], "interruptible": False}},
+            "function": {"name": "identity_event", "handler": "__function__:code_exec",
+                         "description": "CALL it for every customer message in this stage. The code checks the answer with the bank and decides the reply, which is read out after the call.",
+                         "parameters": {"type": "object", "properties": {
+                             "code": {"type": "string", "default": embed(ID.ID_EVENT, id_cfg)}, "timeout_ms": {"type": "number", "default": 8000},
+                             "events": {"type": "array", "description": "One item per statement of the customer's last message.",
+                                        "items": {"type": "object", "properties": item, "required": ["type"]}}},
+                                        "required": ["events"]}}}
+    nodes["identity"] = conv("identity", "Stage: identity (security questions). QUESTIONS, in order: " + qdoc + ".\n"
+                             "YOUR JOB IN THIS STAGE: turn each customer message into events and CALL identity_event. The code asks the questions, keeps the parts "
+                             "of an answer the customer gives over several messages, checks the answer with the bank, and says the reply. When you call identity_event "
+                             "say nothing yourself in that message. Never say whether an answer is right, never mention an account, a debt or a payment, never end the call.\n"
+                             + id_events_doc + "\nRules for this stage (verbatim, for understanding the customer):\n" + rules_block(pol, "identity"),
+                             [t_id],
+                             [{"target_node": "id_send", "description": "a complete answer to check with the bank", "condition": cond("id_flag", "equals", "verify")},
+                              {"target_node": "id_consume", "description": "a reply to read out", "condition": cond("id_flag", "equals", "say")},
+                              {"target_node": "finish_say", "description": "the identity stage ends the call", "condition": cond("id_flag", "equals", "close")},
+                              {"target_node": "xfer_prep", "description": "the customer insists on a person", "condition": cond("id_flag", "equals", "transfer")}],
+                             on_enter={"type": "tts", "text": first_q}, extraction=[hardship_x])
+    nodes["id_send"] = code_node("id_send", embed(ID.ID_SEND, id_cfg),
+                                 [{"target_node": "id_verify", "description": "the pending answer goes to the bank", "condition": cond("id_go", "equals", "yes")}], "id_consume")
+    fp, ap = v["field_param"], v["answer_param"]
+    id_pre = ("try:\n    b = config.get('body')\n    if isinstance(b, dict):\n        b['" + fp + "'] = str(vars.get('id_field'))\n"
+              "        b['" + ap + "'] = str(vars.get('id_answer'))\nexcept Exception:\n    pass\n")
+    nodes["id_verify"] = {"name": "id_verify", "node_type": "api_request", "passthrough": True, "passthrough_default_transition": "id_result", "on_enter": {"type": "silent"},
+                          "pre_actions": [api_tool(ts, "verify_identity", body_with_cid("verify_identity", {fp: {"type": "string", "default": "{{id_field}}"},
+                                                                                                           ap: {"type": "string", "default": "{{id_answer}}"}}),
+                                                   "Check one security answer.", config={"timeoutMs": 12000, "maxRetries": 0}, pre=id_pre,
+                                                   post=embed(ID.ID_POST, {"keys": [x for x in id_cfg["f"].values() if x]}))],
+                          "transitions": [{"target_node": "id_result", "description": "always", "condition": {"operator": "always"}}]}
+    nodes["id_result"] = code_node("id_result", embed(ID.ID_RESULT, id_cfg),
+                                   [{"target_node": "id_send", "description": "the bank call failed: one more try", "condition": cond("id_flag", "equals", "verify")},
+                                    {"target_node": acct_node, "description": "the bank verified every question in this call",
+                                     "condition": {"logic": "or", "conditions": [{"logic": "and", "conditions": [
+                                         {"variable": "id_flag", "operator": "equals", "operand": "account"},
+                                         {"variable": "security_verified", "operator": "equals", "operand": "yes"}]}]}},
+                                    {"target_node": "finish_say", "description": "the identity stage ends the call", "condition": cond("id_flag", "equals", "close")}], "id_consume")
+    nodes["id_consume"] = code_node("id_consume", ID.ID_CONSUME, [], "id_relay")
+    nodes["id_relay"] = {"name": "id_relay", "node_type": "conversation", "on_enter": {"type": "tts", "text": "{{id_say}}"},
+                         "task_message": "Do not call any tool. Do not add anything to what was just said.",
+                         "extraction_schema": [hardship_x], "max_node_turns": 5, "max_turn_transition": "identity",
+                         "transitions": [{"target_node": "identity", "description": "always", "condition": {"operator": "always"}}]}
+    xfer_cfg = {"node": "xfer_one", "ok": ok}
+    nodes["xfer_prep"] = code_node("xfer_prep", embed(ID.XFER_PREP, xfer_cfg), [], "xfer_one")
+    nodes["xfer_one"] = {"name": "xfer_one", "node_type": "api_request", "passthrough": True, "passthrough_default_transition": "xfer_check",
+                         "on_enter": {"type": "tts", "text": pol.get("transfer_line") or ng["say"]["checking"]},
+                         "pre_actions": [api_tool(ts, "transfer_to_agent", body_with_cid("transfer_to_agent", {B["transfer"]["queue"]: {"type": "string", "default": "{{xfer_queue}}"}}),
+                                                  "Transfer the call.", config={"timeoutMs": 12000, "maxRetries": 0}, post=SIMPLE_POST)],
+                         "transitions": [{"target_node": "xfer_check", "description": "always", "condition": {"operator": "always"}}]}
+    nodes["xfer_check"] = code_node("xfer_check", embed(ID.XFER_CHECK, xfer_cfg), [], "finish_prep")
     lst = B["account"]["list"]
     nodes[acct_node] = {"name": acct_node, "node_type": "api_request", "passthrough": True, "passthrough_default_transition": "build_deal", "on_enter": {"type": "silent"},
                         "pre_actions": [{"type": "function", "config": {"timeoutMs": 12000, "maxRetries": 2}, "function": {"name": "get_account", "handler": "__function__:api_call", "description": "Get the account.",
@@ -425,7 +472,31 @@ def build(pol, ts):
                "paid": c["paid_outcome"], "no_promise": c["no_promise_outcome"], "statuses": pol["statuses"],
                "no_reason": c.get("outcomes_without_reason") or [], "uses_notes": bool(pol.get("uses_notes")) and "add_note" in ts["ops"],
                "after_promise_sentence": pol.get("after_promise_sentence") or "", "goodbye": pol.get("goodbye_line") or "",
-               "technical": te, "stop_close": int(pol.get("stop_statements_to_close") or 1)}
+               "technical": te, "stop_close": int(pol.get("stop_statements_to_close") or 1),
+               "support_queue": ng["hardship_queue"], "xfer_node": "xfer_one"}
+    # A32: the answer to the support offer is routed by extraction in the relay node, so the dialogue model does not speak
+    # in that turn (PUB-05 rep 1, 11 Oct: its own text added a payment question after the hardship); a customer message
+    # that stops mid-sentence is answered with a request to go on (bounded), before any decision
+    support_x = {"name": "support_reply", "type": "string", "enum_values": ["accepts", "declines"], "min_confidence": 0.7,
+                 "description": "Only if the agent's last message offered to connect the customer with the support team: 'accepts' when the customer agrees to be connected, "
+                                "'declines' when they do not want to be connected. Empty in every other case."}
+    terms_x = {"name": "terms_asked", "type": "string", "enum_values": ["yes", "no"], "min_confidence": 0.7,
+               "description": "'yes' if the customer's LAST message asks for a discount, a waiver, a reduction or any other special term; otherwise 'no'."}
+    cut_x = {"name": "cut_off", "type": "string", "enum_values": ["yes", "no"], "min_confidence": 0.8,
+             "description": "'yes' only if the customer's LAST message clearly stops in the middle of a sentence (for example it ends with 'and', 'but', 'but I', 'so' "
+                            "or a comma), so that more was obviously coming; otherwise 'no'."}
+    go_on_max = 2
+    go_on_route = {"target_node": "go_on", "description": "the customer's message stopped mid-sentence",
+                   "condition": {"logic": "or", "conditions": [{"logic": "and", "conditions": [
+                       {"variable": "cut_off", "operator": "equals", "operand": "yes"},
+                       {"variable": "go_on_count", "operator": "less_than", "operand": go_on_max}]}]}}
+
+    def support_route(answer, target):
+        return {"target_node": target, "description": f"the customer {answer} the support offer",
+                "condition": {"logic": "or", "conditions": [{"logic": "and", "conditions": [
+                    {"variable": "support_pending", "operator": "equals", "operand": "yes"},
+                    {"variable": "support_reply", "operator": "equals", "operand": answer},
+                    {"variable": "offer_named", "operator": "not_equals", "operand": "yes"}]}]}}
     t_event = {"type": "function", "config": {"timeoutMs": 10000, "preSpeech": {"mode": "static", "message": ng["say"]["checking"], "interruptible": False}},
                "function": {"name": "negotiation_event", "handler": "__function__:code_exec",
                             "description": "CALL it for every customer message about paying (see EVENTS in your instructions). The code decides the reply, which is read out after the call.",
@@ -460,26 +531,31 @@ def build(pol, ts):
                               "TRANSFER: when the rules say to transfer (for example a request for a new plan, a customer who insists on a person, or a customer who accepts the support offer), CALL transfer_to_agent with the rules' queue.\n"
                               "Questions that are not about paying: answer only the question, in one sentence, from FACTS and the rules, without a tool; never add an offer, a date, an amount to pay or a question about paying.\nRules for this stage (verbatim):\n" + rules_block(pol, "negotiate", "closing"),
                               [t_event, t_transfer_neg],
-                              [hardship_route,
+                              [go_on_route, hardship_route,
                                {"target_node": "rec_next", "description": "confirmed read-back", "condition": cond("neg_flag", "equals", "record")},
                                {"target_node": "finish_prep", "description": "nothing left to negotiate", "condition": cond("neg_flag", "equals", "finish")},
                                {"target_node": "neg_consume", "description": "a decision to read out", "condition": cond("neg_flag", "equals", "new")},
                                {"target_node": "finish_prep", "description": "the call was transferred", "condition": cond_true(f"transfer_to_agent_response.data.{ok}")}],
                               on_enter={"type": "tts", "text": "{{debt_say}}"},
-                              extraction=[hardship_x, offer_x])
+                              extraction=[hardship_x, offer_x, cut_x])
     nodes["neg_consume"] = code_node("neg_consume", "vars['neg_flag'] = 'used'\n", [], "neg_relay")
     relay = "Do not call any tool. Do not add anything to what was just said."
     rb_extract = [hardship_x, offer_x, {"name": "rb_answer", "type": "string", "enum_values": ["yes", "no"], "min_confidence": 0.7,
                    "description": "Only if the agent's last message was a read-back ending with the confirmation question: 'yes' when the customer clearly confirms it with no change, "
-                                  "'no' when they reject or change it. Empty in every other case."}]
+                                  "'no' when they reject or change it. Empty in every other case."}, support_x, terms_x, cut_x]
     nodes["neg_relay"] = {"name": "neg_relay", "node_type": "conversation", "on_enter": {"type": "tts", "text": "{{neg_say}}"}, "task_message": relay,
                           "extraction_schema": rb_extract, "max_node_turns": 5, "max_turn_transition": "negotiate",
-                          "transitions": [hardship_route,
+                          "transitions": [go_on_route, hardship_route,
                                           {"target_node": "neg_confirm", "description": "the read-back was confirmed",
                                            "condition": {"logic": "or", "conditions": [{"logic": "and", "conditions": [
                                                {"variable": "rb_answer", "operator": "equals", "operand": "yes"},
                                                {"variable": "neg_phase", "operator": "equals", "operand": "readback"}]}]}},
+                                          support_route("accepts", "hs_accept"), support_route("declines", "hs_decline"),
                                           {"target_node": "negotiate", "description": "always", "condition": {"operator": "always"}}]}
+    nodes["go_on"] = code_node("go_on", embed(NG.GO_ON, {"say": ng["say"]}), [], "neg_relay")
+    nodes["hs_accept"] = code_node("hs_accept", embed(NG.SUPPORT_ACCEPT, neg_cfg), [], "xfer_one")
+    nodes["hs_decline"] = code_node("hs_decline", embed(NG.SUPPORT_DECLINE, neg_cfg),
+                                    [{"target_node": "finish_prep", "description": "nothing left to negotiate", "condition": cond("neg_flag", "equals", "finish")}], "neg_consume")
     nodes["neg_confirm"] = code_node("neg_confirm", embed(NG.CONFIRM, neg_cfg),
                                      [{"target_node": "rec_next", "description": "confirmation of the current read-back", "condition": cond("neg_flag", "equals", "record")}], "negotiate")
     nodes["hardship_go"] = code_node("hardship_go", embed(NG.HARDSHIP, neg_cfg), [], "neg_relay")
@@ -541,11 +617,17 @@ def support_boundary(pol):
                  "hardship: one code-owned sympathy+support offer, no persuasion afterwards, customer's own date/amount kept",
                  "stop statements before close: " + str(int(pol.get("stop_statements_to_close") or 1)),
                  "notes per product (" + ("used" if pol.get("uses_notes") else "not used by this brief") + "), none after a transfer; close outcome from recorded/transfer/product results",
-                 "goodbye -> notes -> exactly one close_call in the negotiation path"],
-        "model": ["turning the customer's words into events and dates into YYYY-MM-DD (calendar table given)",
-                  "identity question order, re-asks, declines (bank result routes to the account step)",
+                 "goodbye -> notes -> exactly one close_call in the negotiation path",
+                 "identity: question order, combining an answer given in parts, format check (" + ", ".join(sorted({q.get("kind", "?") for q in (pol.get("identity") or {}).get("questions") or []})) + "), "
+                 "one bank call per complete answer, each bank result processed once, hint / unreadable / service error never counted as wrong, "
+                 "next question only after the bank verified the current one, account only after the bank's full verification, "
+                 "failed only on the bank's result (no tries left), declines counted (" + str((pol.get("identity") or {}).get("declines_to_close")) + " close), "
+                 "a person asked for: help offered " + str((pol.get("human_request") or {}).get("asks_before_transfer")) + " time(s), then an engine-run transfer; every sentence and the close of the stage",
+                 "support offer answered (accept -> engine-run transfer, decline -> hardship close or the customer's own offer) routed by extraction, no model speech in that turn",
+                 "a message that stops mid-sentence: ask to go on (at most 2 per call)"],
+        "model": ["turning the customer's words into events (identity: answer parts, corrections, refusals, questions; negotiation: payment events, dates into YYYY-MM-DD from the calendar table)",
                   "opening confirmation and its re-ask count", "third party, callback window validity and re-ask",
-                  "transfer decision and queue (close mapping is code)", "questions outside payment (robot/scam answers come from the policy)"],
+                  "transfer decision in the negotiation stage (restructuring, a person; close mapping is code)", "questions outside payment in the negotiation stage (free answer, no digits or questions allowed in it)"],
         "unsupported_by_code": [r.get("text") for r in pol.get("extra_rules") or [] if r.get("kind") in ("computational", "structural")],
     }
 
@@ -554,7 +636,10 @@ def known_gaps(pol):
     """Rules the generator leaves to the dialogue model (honest list for the trace)."""
     gaps = ["turning the customer's words into negotiation events (and dates into YYYY-MM-DD) is done by the dialogue model; offers, counters, dates, amounts, read-back, recording, notes and the close are code",
             "callback window validity is decided by the dialogue model from code-computed window facts (not code)",
-            "identity flow (which question, re-asks, declines) follows the dialogue model with the bank's verification results"]
+            "identity: the dialogue model turns the customer's words into answer parts and events; a misheard part is sent to the bank as heard (the bank decides)"]
+    for q in (pol.get("identity") or {}).get("questions") or []:
+        if q.get("kind") not in ("date", "digits"):
+            gaps.append(f"identity question {q.get('field')}: kind {q.get('kind')!r} has no format check in code (sent as said)")
     for r in pol.get("extra_rules") or []:
         if r.get("kind") in ("computational", "stateful", "structural", "unknown"):
             gaps.append(f"extra rule ({r.get('kind')}, stage {r.get('stage')}): {r.get('text')} - left to the dialogue model's prompt")

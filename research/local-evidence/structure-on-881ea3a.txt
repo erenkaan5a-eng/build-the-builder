@@ -1,0 +1,7 @@
+generator at 881ea3a, policy candidates/cl-a/20261011-021737/policy.json
+FAIL S1 identity stage gives the dialogue model no bank tool -> ['verify_identity', 'transfer_to_agent', 'close_call']
+FAIL S2 every way into the account call needs security_verified (set by code from the bank's full verification) -> [('identity', '{"logic": "or", "conditions": [{"variable": "verify_identity_response.data.all_verified", "operator": "equals", "operand": "true"}, {"variable": "verify_identity_response.data.all_verified", "operator": "equals", "operand": "True"}]}')]
+FAIL S3 verify_identity only in an engine-run node -> ['identity']
+FAIL S4 no model close tool offers the identity 'failed' reason (bank evidence needed) -> ['setup_error', 'opening', 'third_party', 'identity', 'account_error', 'wrap_up']
+FAIL S5 the answer to the support offer is routed by code before the dialogue model speaks (A32) -> ['hardship_go', 'neg_confirm', 'negotiate']
+FAIL S6 a message cut off mid-sentence is answered with a request to go on -> ['hardship_go', 'neg_confirm', 'negotiate']

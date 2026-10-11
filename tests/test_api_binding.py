@@ -15,7 +15,7 @@ from negotiation_harness import check, FAILS
 
 NEW_API = str(ROOT / "experiments" / "api-rename" / "openapi.json")
 ts_new = toolspec.load(NEW_API)
-pol = json.load(open(ROOT / "candidates" / "cmp-a" / "20261011-024419" / "policy.json", encoding="utf-8"))
+pol = json.load(open(ROOT / "tests" / "fixtures" / "policy-a.json", encoding="utf-8"))
 
 probs = spec_extract.validate(pol, ts_new)
 check("R1 a binding to the old names is rejected against the renamed API (answer, wrong_answers_left, past_due)",
@@ -30,7 +30,7 @@ wf = components.build(fx, ts_new)
 errs = [p for p in lint.lint(wf, NEW_API) if not p.startswith("warn:")]
 check("R3 the generated workflow lints against the renamed API", not errs, errs)
 s = json.dumps(wf)
-vt = wf["nodes"]["identity"]["tools"][0]["function"]["parameters"]["properties"]["body"]["properties"]
+vt = wf["nodes"]["id_verify"]["pre_actions"][0]["function"]["parameters"]["properties"]["body"]["properties"]
 check("R4 verify_identity sends 'value', not 'answer'", "value" in vt and "answer" not in vt, list(vt))
 check("R5 the identity post-hook reads 'tries_left'; the deal code reads 'overdue_amount'",
       '"remaining": "tries_left"' in s.replace("\\n", "\n").replace('\\"', '"') and '"past_due": "overdue_amount"' in s.replace('\\"', '"'), "")

@@ -63,7 +63,7 @@ def load():
     s = vars.get('neg_state')
     if isinstance(s, str) and s:
         return json.loads(s)
-    prods = json.loads(vars.get('products_json'))
+    prods = json.loads(vars.get('products_json') or '[]')   # no account (e.g. a transfer before verification): no products
     st = dict(phase='first_ask', version=0, rb_version=-1, seen=[], rec_pending=None, rec_sc=0, rec_fc=0, products=[])
     for p in prods:
         st['products'].append(dict(id=p['id'], name=p['name'], full=p['past_due'], floor=p['floor'], deadline=p['deadline'],
@@ -77,11 +77,19 @@ def package(st):
 def can_confirm(st):
     pkg = package(st)
     return st['phase'] == 'readback' and st['rb_version'] == st['version'] and bool(pkg) and st.get('rb_pkg') == pkg
+def xfer_queue():
+    # a transfer is known only from a successful bank result: the engine-run transfer node (xfer_done, checked against
+    # its own success counter) or the transfer tool the dialogue model called
+    if str(vars.get('xfer_done') or '') == 'yes':
+        return str(vars.get('xfer_queue') or '')
+    if str(vars.get('transfer_to_agent_response.data.' + CFG['ok']) or '').strip().lower() == 'true':
+        return str(vars.get('transfer_to_agent_args.' + CFG['queue_field']) or '')
+    return None
 def transferred():
-    return str(vars.get('transfer_to_agent_response.data.' + CFG['ok']) or '').strip().lower() == 'true'
+    return xfer_queue() is not None
 '''
 
-ENGINE = HELPERS + r'''
+ENGINE_BODY = r'''
 def ladder_offer(p, k, t):
     step = CFG['ladder'][k - 1]
     if step['amount'] == 'floor' and p['floor'] is not None:
@@ -414,15 +422,68 @@ try:
     ans = re.sub(r'[{}]', '', ans)[:240]
     if hardship_turn:
         ans = ''          # the hardship reply has one owner (code): no second sympathy or extra offer from the model
+    if re.search(r'[0-9?]', ans):
+        ans = ''          # the model's answer may not carry an amount, a date or a question of its own (offers are code's)
     save(st)
     vars['neg_say'] = ' '.join(x for x in ([ans] if ans else []) + out if x)
     vars['neg_final_say'] = vars['neg_say'] if st['phase'] == 'finish' else ''
     vars['neg_flag'] = {'record': 'record', 'finish': 'finish'}.get(st['phase'], 'new')
     vars['neg_phase'] = st['phase']
+    pend = 'yes' if [p for p in st['products'] if p['status'] == 'hardship_offer'] else 'no'
+    if pend == 'yes' and str(vars.get('support_pending') or '') != 'yes':
+        vars['support_reply'] = 'consumed'   # the offer is new: a reply extracted earlier is not an answer to it
+        vars['terms_asked'] = 'consumed'
+    vars['support_pending'] = pend
 except Exception as e:
     vars['neg_error'] = str(e)[:160]
     vars['neg_say'] = say('error')
     vars['neg_flag'] = 'new'
+'''
+ENGINE = HELPERS + ENGINE_BODY
+
+# The answer to the support offer, routed by extraction in the relay node (the dialogue model does not speak in that
+# turn): the same engine code with a fixed event; a question about other terms is answered with the policy's sentence.
+SUPPORT_DECLINE = HELPERS + "params = dict(events=[dict(product_id='all', type='declines_support')], answer='')\n" + ENGINE_BODY + r'''
+try:
+    if str(vars.get('terms_asked') or '').strip().lower() == 'yes' and say('no_terms'):
+        vars['neg_say'] = (say('no_terms') + ' ' + str(vars.get('neg_say') or '')).strip()
+        if vars.get('neg_flag') == 'finish':
+            vars['neg_final_say'] = vars['neg_say']     # said with the goodbye (finish path)
+except Exception as e:
+    vars['support_error'] = str(e)[:160]
+vars['terms_asked'] = 'consumed'
+vars['support_reply'] = 'consumed'
+'''
+
+SUPPORT_ACCEPT = HELPERS + r'''
+try:
+    st = load()
+    st['support_accepted'] = True
+    save(st)
+except Exception as e:
+    vars['support_error'] = str(e)[:160]
+vars['xfer_queue'] = CFG['support_queue']
+vars['support_reply'] = 'consumed'
+vars['support_pending'] = 'no'
+try:
+    vars['xfer_sc_before'] = str(int(float(vars.get(CFG['xfer_node'] + '_success_count') or 0)))
+except Exception:
+    vars['xfer_sc_before'] = '0'
+'''
+
+# a customer message that stops mid-sentence: ask the customer to go on (bounded per call), decide nothing yet
+GO_ON = r'''
+import json
+CFG = json.loads(r"""__CFG__""")
+try:
+    n = int(float(vars.get('go_on_count') or 0)) + 1
+    vars['go_on_count'] = str(n)
+    vars['neg_say'] = str(CFG['say'].get('go_on') or '')
+except Exception as e:
+    vars['go_on_error'] = str(e)[:160]
+    vars['neg_say'] = str(CFG['say'].get('error') or '')
+vars['cut_off'] = 'consumed'
+vars['neg_flag'] = 'used'
 '''
 
 REC_NEXT = HELPERS + r'''
@@ -469,8 +530,8 @@ except Exception as e:
 FINISH = HELPERS + r'''
 try:
     st = load()
-    q = str(vars.get('transfer_to_agent_args.' + CFG['queue_field']) or '')
-    t_ok = str(vars.get('transfer_to_agent_response.data.' + CFG['ok']) or '').strip().lower() == 'true'
+    q = xfer_queue() or ''
+    t_ok = transferred()
     rec = [p for p in st['products'] if p['status'] == 'recorded']
     words = [str(vars.get('neg_final_say') or '').strip()]
     if rec:
@@ -507,6 +568,8 @@ try:
             outcome, reason = CFG['technical']['outcome'], CFG['technical']['reason']
         elif notes and all(n[1] == CFG['statuses']['paid'] for n in notes):
             outcome, reason = CFG['paid'], ''
+        elif not st['products']:
+            outcome, reason = CFG['technical']['outcome'], CFG['technical']['reason']
         else:
             first = [p for p in st['products'] if p['status'] != 'paid'][0]
             outcome, reason = CFG['no_promise'], CFG['statuses'][first['status']]
@@ -561,6 +624,10 @@ try:
         save(st)
         vars['neg_say'] = say('hardship')
         vars['neg_phase'] = st['phase']
+        if [p for p in st['products'] if p['status'] == 'hardship_offer']:
+            vars['support_pending'] = 'yes'
+            vars['support_reply'] = 'consumed'
+            vars['terms_asked'] = 'consumed'
     vars['hardship_done'] = 'yes'
     vars['neg_flag'] = 'used'
 except Exception as e:
