@@ -554,9 +554,9 @@ def build(pol, ts):
                                           support_route("accepts", "hs_accept"),
                                           support_route("declines", "hs_decline", [{"variable": "support_closes", "operator": "equals", "operand": "yes"}]),
                                           {"target_node": "negotiate", "description": "always", "condition": {"operator": "always"}}]}
-    nodes["go_on"] = code_node("go_on", embed(NG.GO_ON, {"say": ng["say"]}), [], "neg_relay")
-    nodes["hs_accept"] = code_node("hs_accept", embed(NG.SUPPORT_ACCEPT, neg_cfg), [], "xfer_one")
-    nodes["hs_decline"] = code_node("hs_decline", embed(NG.SUPPORT_DECLINE, {k: neg_cfg[k] for k in ("now_var", "say")}),
+    nodes["go_on"] = code_node("go_on", embed(NG.GO_ON, {"say": {k: ng["say"][k] for k in ("go_on", "error")}}), [], "neg_relay")
+    nodes["hs_accept"] = code_node("hs_accept", embed(NG.SUPPORT_ACCEPT, {k: neg_cfg[k] for k in ("support_queue", "xfer_node")}), [], "xfer_one")
+    nodes["hs_decline"] = code_node("hs_decline", embed(NG.SUPPORT_DECLINE, {"say": {k: ng["say"][k] for k in ("no_terms", "error")}}),
                                     [{"target_node": "finish_prep", "description": "nothing left to negotiate", "condition": cond("neg_flag", "equals", "finish")}], "neg_consume")
     nodes["neg_confirm"] = code_node("neg_confirm", embed(NG.CONFIRM, neg_cfg),
                                      [{"target_node": "rec_next", "description": "confirmation of the current read-back", "condition": cond("neg_flag", "equals", "record")}], "negotiate")

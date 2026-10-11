@@ -478,13 +478,9 @@ vars['terms_asked'] = 'consumed'
 vars['support_reply'] = 'consumed'
 '''
 
-SUPPORT_ACCEPT = HELPERS + r'''
-try:
-    st = load()
-    st['support_accepted'] = True
-    save(st)
-except Exception as e:
-    vars['support_error'] = str(e)[:160]
+SUPPORT_ACCEPT = r'''
+import json
+CFG = json.loads(r"""__CFG__""")
 vars['xfer_queue'] = CFG['support_queue']
 vars['support_reply'] = 'consumed'
 vars['support_pending'] = 'no'
