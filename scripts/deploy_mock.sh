@@ -25,6 +25,11 @@ say() { echo "$(date -u +%FT%TZ) $*" | tee -a "$log"; }
 sha16() { if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1"; else shasum -a 256 "$1"; fi | cut -c1-16; }
 
 say "START mock deploy (dry_run=$DRY) commit $(git -C "$ROOT" rev-parse HEAD)"
+# Windows: run this from Git Bash (not WSL's bash, which has no Windows node): node and npx must be on PATH
+for c in node npx git curl; do
+  command -v "$c" >/dev/null 2>&1 || { say "STOP: '$c' not found in this shell (on Windows use Git Bash with Node.js installed)"; exit 1; }
+done
+say "shell $(uname -s), node $(node --version)"
 if [ -n "$(git -C "$ROOT" status --porcelain -- workers/bank-mock)" ]; then
   say "NOTE workers/bank-mock has uncommitted changes: commit them so the deployed mock is reproducible"
 fi

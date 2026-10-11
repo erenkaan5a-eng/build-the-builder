@@ -36,4 +36,12 @@ then reads the same contract and binds the agent's tools to this mock's URL.
   (account: Workers Scripts Edit; Account Settings Read; user: Memberships Read, User Details Read), limited to
   your account. Account ID: Workers & Pages overview, right column. Option B needs no token (browser login).
 - The script runs on Linux and macOS (bash, node >= 18, npx).
+- Windows (PowerShell): the script needs Git Bash, not WSL's `bash`. Check in PowerShell:
+  `Test-Path "$env:ProgramFiles\Git\bin\bash.exe"; node --version; npx.cmd --version; git --version`.
+  Run it with Git Bash's full path from the repository root:
+  `& "$env:ProgramFiles\Git\bin\bash.exe" scripts/deploy_mock.sh --dry-run --allow-missing-handlers`.
+  Login can be done in PowerShell: `cd workers\bank-mock; npx.cmd wrangler@3.114.17 login; npx.cmd wrangler@3.114.17 whoami`
+  (`npx.cmd` avoids the execution-policy block on `npx.ps1`). `.gitattributes` keeps `*.sh` in LF. If Git Bash still
+  reports `$'\r': command not found` (a copy checked out before that file existed), rewrite the scripts from the
+  repository: `git checkout-index -f scripts/deploy_mock.sh scripts/run_final.sh`.
 - Never put a token in a file or the chat. Keep the mock deployed until the results are announced. Free plan only.
