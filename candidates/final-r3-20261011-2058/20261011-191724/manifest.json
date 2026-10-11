@@ -1,0 +1,50 @@
+{
+ "path": "fallback",
+ "slot": "final-r3-20261011-2058",
+ "build_seconds": 219,
+ "model_calls": 29,
+ "trace": "/home/user/build-the-builder/traces/final-r3-20261011-2058-20261011-191724.log",
+ "known_gaps": [
+  "coverage not fully assessed: the fallback path reports only the gaps its agent noticed"
+ ],
+ "inputs": {
+  "brief_arg": "final/package/r3-20261011-2058",
+  "tool_api_arg": "https://bank-mock-final.erenkaan5a.workers.dev",
+  "case_files": 19,
+  "contract_derived": true,
+  "mock_url": "https://bank-mock-final.erenkaan5a.workers.dev",
+  "contract": "/home/user/build-the-builder/candidates/final-r3-20261011-2058/20261011-191724/contract.derived.json",
+  "contract_sha256_16": "c7a891e402944b39"
+ },
+ "input_problems": [],
+ "argv": [
+  "final/package/r3-20261011-2058",
+  "https://bank-mock-final.erenkaan5a.workers.dev",
+  "--slot",
+  "final-r3-20261011-2058",
+  "--mode",
+  "fallback",
+  "--budget-min",
+  "20"
+ ],
+ "sessions": "/home/user/build-the-builder/traces/final-r3-20261011-2058-20261011-191724.sessions",
+ "release_checks_passed": true,
+ "policy_correctness": "not measured by the build",
+ "lint_problems": 0,
+ "workflow_id": "6d079c07-c690-40f5-9692-3e16c0389aea",
+ "agent_id": "67005014-5987-4a80-9f9b-9858b578819c",
+ "version_number": 2,
+ "version_id": "c21c8f74-40ea-44e6-bc66-a1e231990203",
+ "is_published": true,
+ "tested_hash": "eda579097190aea0",
+ "checks": [
+  [
+   "opening line spoken (fallback: structural checks need a policy)",
+   true
+  ]
+ ],
+ "exported_hash": "eda579097190aea0",
+ "nodes": 14,
+ "global_nodes": 0,
+ "tool_functions": 8
+}

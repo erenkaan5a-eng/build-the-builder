@@ -13,3 +13,16 @@ FAILED: its one behaviour check (a chat API smoke turn) got HTTP 504 four times.
 Reading: the workflow runs three bank calls and four code steps before its first sentence; the chat API's gateway
 answers 504 after ~13 s while the simulation channel completes the same flow. This is one run of one example: not a
 pass^3 claim, not a policy-correctness claim. Known rule gaps are listed by the fallback agent in the trace (GAPS lines).
+
+## Second run (B) and the choice
+Run B: traces/final-r3-20261011-2058-20261011-191724.log (source commit c07b45f: builder fixes of 22:19, `--mode fallback --budget-min 20`).
+Fallback agent finished in 135 s (19 turns); workflow 14 nodes / 8 tools, published as version 2 of the same workflow, export eda579097190aea0.
+Its release check says PASSED, but the smoke reply was the raw text `_call:cards.list{}`: the check only tests that the first reply
+is not empty (a weakness of the check, recorded as a known gap; not fixed before the deadline).
+Simulation of Example 1 on version 2 (22:23): first assistant message `_call:cards.list{}`, then "Şu anda işleminizi gerçekleştiremiyorum,
+sizi müşteri temsilcimize aktarıyorum." → `final-postrun-sim-v2.json`. Run B is worse than run A on the same example.
+
+Choice: submit run A (workflow export 16df802a3766a667, trace traces/final-r3-20261011-2058-20261011-184634.log, reported commit 8781bad,
+which holds run A's outputs with the builder of run A's source commit 0f05b94). Run A's own release check stays FAILED in its trace
+(chat API 504); its simulation of Example 1 completed and read the debt from the mock. Note: the live Freya workflow 6d079c07 now has
+version 2 (run B) published; the submitted workflow is run A's export file.

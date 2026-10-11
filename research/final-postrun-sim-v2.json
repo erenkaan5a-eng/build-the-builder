@@ -1,0 +1,30 @@
+{
+ "published_version": 2,
+ "simulation": "76de3d0b-1d4c-4819-b962-8abd808fa9e4",
+ "status": "completed",
+ "elapsed_s": 34,
+ "runs": [
+  {
+   "callId": "966646f2-80de-486a-b946-302f674d0db5",
+   "transcript": [
+    [
+     "assistant",
+     "_call:cards.list{}"
+    ],
+    [
+     "user",
+     "Merhaba, kredi kartı ekstre borcumu ve son ödeme tarihimi öğrenebilir miyim?"
+    ],
+    [
+     "assistant",
+     "Şu anda işleminizi gerçekleştiremiyorum, sizi müşteri temsilcimize aktarıyorum."
+    ]
+   ],
+   "calls": [
+    "code_exec",
+    "https://bank-mock-final.erenkaan5a.workers.dev/voice/v1/cards.balance",
+    "end_call"
+   ]
+  }
+ ]
+}
