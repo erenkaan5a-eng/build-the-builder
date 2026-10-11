@@ -244,9 +244,11 @@ except Exception as e:
 '''
 
 # right before the engine-run verify call: binds the pending request to the verify node's counters at that moment
-ID_SEND = ID_HELPERS + r'''
+ID_SEND = r'''
+import json
+CFG = json.loads(r"""__CFG__""")
 try:
-    st = load()
+    st = json.loads(str(vars.get('id_state') or '{}'))
     p = st.get('pending')
     node = CFG['verify_node']
     if p and not st.get('done'):
@@ -257,14 +259,14 @@ try:
         vars['id_req'] = p['req']
         vars['id_field'], vars['id_answer'] = p['field'], p['answer']
         vars['id_go'] = 'yes'
+        vars['id_state'] = json.dumps(st)
     else:
         vars['id_go'] = 'no'
-        vars['id_say'] = ask_text(st)
-    save(st)
+        vars['id_say'] = CFG['first_ask']
 except Exception as e:
     vars['id_error'] = str(e)[:160]
     vars['id_go'] = 'no'
-    vars['id_say'] = say('service_error')
+    vars['id_say'] = CFG['service_error']
 '''
 
 ID_RESULT = ID_HELPERS + r'''

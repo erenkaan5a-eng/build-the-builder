@@ -16,8 +16,9 @@ LOAN = P("p1", "personal loan", 780.0, 260.0, "2026-10-23", 2)
 #    the policy sentence and closes no_promise/hardship; no offer, no payment question
 c = Call([LOAN], uses_notes=False)
 c.run("HARDSHIP")
-check("H1a the support offer is open after the code's hardship sentence (support_pending), any earlier reply cleared",
-      c.v.get("support_pending") == "yes" and c.v.get("support_reply") == "consumed", (c.v.get("support_pending"), c.v.get("support_reply")))
+check("H1a the support offer is open after the code's hardship sentence (support_pending), any earlier reply cleared; a decline would end the call",
+      c.v.get("support_pending") == "yes" and c.v.get("support_reply") == "consumed" and c.v.get("support_closes") == "yes",
+      (c.v.get("support_pending"), c.v.get("support_reply"), c.v.get("support_closes")))
 c.v["support_reply"], c.v["terms_asked"] = "declines", "yes"          # what the relay node's extraction would set
 c.v["neg_relay.total_turns"] = "1"
 c.run("SUPPORT_DECLINE")
@@ -32,15 +33,15 @@ c = Call([LOAN])
 c.ev(("p1", "proposes", "2026-10-16", "300"), ("p1", "hardship", "", ""))
 check("H2a [own offer + hardship]: sympathy + support offer only, the offer is held, support_pending set",
       c.v["neg_say"] == "Sorry to hear. Support team?" and c.st().get("held") and c.v.get("support_pending") == "yes", (c.v["neg_say"], c.st().get("held")))
-c.v["support_reply"], c.v["terms_asked"] = "declines", "no"
-c.v["neg_relay.total_turns"] = "2"
-c.run("SUPPORT_DECLINE")
-check("H2b the decline (routed by code) leads to the read-back of the customer's own 300 on Friday 16 October",
+check("H2b a held proposal: the decline does NOT close the call (support_closes=no -> the relay leaves it to the engine)",
+      c.v.get("support_closes") == "no", c.v.get("support_closes"))
+c.ev(("p1", "declines_support", "", ""))
+check("H2c the decline (engine event) leads to the read-back of the customer's own 300 on Friday 16 October",
       c.st()["phase"] == "readback" and "300.00 on Friday 16 October" in c.v["neg_say"] and c.v["neg_flag"] == "new", (c.st()["phase"], c.v["neg_say"]))
 c.ev(("p1", "confirms", "", ""))
 sent = c.rec(["ok"])
 o = c.finish()
-check("H2c confirmed -> one write of the read-back package, promise, the text-message sentence", sent == [("p1", "300.00", "2026-10-16")]
+check("H2d confirmed -> one write of the read-back package, promise, the text-message sentence", sent == [("p1", "300.00", "2026-10-16")]
       and o[0] == "promise" and "text message" in c.v["fin_say"], (sent, o, c.v["fin_say"]))
 
 # H3 accept: engine-run transfer to the policy's support queue, close transferred/support, no notes (B10)

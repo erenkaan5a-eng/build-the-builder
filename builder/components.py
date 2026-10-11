@@ -19,7 +19,7 @@ MAX_TURNS = 40
 
 
 def embed(code, cfg):
-    cfg_json = json.dumps(cfg, indent=1)
+    cfg_json = json.dumps(cfg, indent=0)   # line breaks keep nested braces apart (no "}}" in code)
     out = code.replace("__CFG__", cfg_json)
     if "{{" in out or "}}" in out or '"""' in cfg_json:
         raise ValueError("generated code would contain '{{', '}}' or triple quotes")
@@ -418,7 +418,7 @@ def build(pol, ts):
                               {"target_node": "finish_say", "description": "the identity stage ends the call", "condition": cond("id_flag", "equals", "close")},
                               {"target_node": "xfer_prep", "description": "the customer insists on a person", "condition": cond("id_flag", "equals", "transfer")}],
                              on_enter={"type": "tts", "text": first_q}, extraction=[hardship_x])
-    nodes["id_send"] = code_node("id_send", embed(ID.ID_SEND, id_cfg),
+    nodes["id_send"] = code_node("id_send", embed(ID.ID_SEND, {"verify_node": "id_verify", "first_ask": first_q, "service_error": idp["say"]["service_error"]}),
                                  [{"target_node": "id_verify", "description": "the pending answer goes to the bank", "condition": cond("id_go", "equals", "yes")}], "id_consume")
     fp, ap = v["field_param"], v["answer_param"]
     id_pre = ("try:\n    b = config.get('body')\n    if isinstance(b, dict):\n        b['" + fp + "'] = str(vars.get('id_field'))\n"
@@ -491,12 +491,12 @@ def build(pol, ts):
                        {"variable": "cut_off", "operator": "equals", "operand": "yes"},
                        {"variable": "go_on_count", "operator": "less_than", "operand": go_on_max}]}]}}
 
-    def support_route(answer, target):
+    def support_route(answer, target, extra=()):
         return {"target_node": target, "description": f"the customer {answer} the support offer",
                 "condition": {"logic": "or", "conditions": [{"logic": "and", "conditions": [
                     {"variable": "support_pending", "operator": "equals", "operand": "yes"},
                     {"variable": "support_reply", "operator": "equals", "operand": answer},
-                    {"variable": "offer_named", "operator": "not_equals", "operand": "yes"}]}]}}
+                    {"variable": "offer_named", "operator": "not_equals", "operand": "yes"}] + list(extra)}]}}
     t_event = {"type": "function", "config": {"timeoutMs": 10000, "preSpeech": {"mode": "static", "message": ng["say"]["checking"], "interruptible": False}},
                "function": {"name": "negotiation_event", "handler": "__function__:code_exec",
                             "description": "CALL it for every customer message about paying (see EVENTS in your instructions). The code decides the reply, which is read out after the call.",
@@ -550,11 +550,12 @@ def build(pol, ts):
                                            "condition": {"logic": "or", "conditions": [{"logic": "and", "conditions": [
                                                {"variable": "rb_answer", "operator": "equals", "operand": "yes"},
                                                {"variable": "neg_phase", "operator": "equals", "operand": "readback"}]}]}},
-                                          support_route("accepts", "hs_accept"), support_route("declines", "hs_decline"),
+                                          support_route("accepts", "hs_accept"),
+                                          support_route("declines", "hs_decline", [{"variable": "support_closes", "operator": "equals", "operand": "yes"}]),
                                           {"target_node": "negotiate", "description": "always", "condition": {"operator": "always"}}]}
     nodes["go_on"] = code_node("go_on", embed(NG.GO_ON, {"say": ng["say"]}), [], "neg_relay")
     nodes["hs_accept"] = code_node("hs_accept", embed(NG.SUPPORT_ACCEPT, neg_cfg), [], "xfer_one")
-    nodes["hs_decline"] = code_node("hs_decline", embed(NG.SUPPORT_DECLINE, neg_cfg),
+    nodes["hs_decline"] = code_node("hs_decline", embed(NG.SUPPORT_DECLINE, {k: neg_cfg[k] for k in ("now_var", "say")}),
                                     [{"target_node": "finish_prep", "description": "nothing left to negotiate", "condition": cond("neg_flag", "equals", "finish")}], "neg_consume")
     nodes["neg_confirm"] = code_node("neg_confirm", embed(NG.CONFIRM, neg_cfg),
                                      [{"target_node": "rec_next", "description": "confirmation of the current read-back", "condition": cond("neg_flag", "equals", "record")}], "negotiate")

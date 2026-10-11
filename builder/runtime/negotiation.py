@@ -87,6 +87,10 @@ def xfer_queue():
     return None
 def transferred():
     return xfer_queue() is not None
+def support_closes(st):
+    # a decline of the open support offer ends the call: nothing else is open or agreed and no proposal is held
+    rest = [p for p in st['products'] if p['status'] in ('open', 'offered', 'agreed')]
+    return 'yes' if [p for p in st['products'] if p['status'] == 'hardship_offer'] and not rest and not st.get('held') else 'no'
 '''
 
 ENGINE_BODY = r'''
@@ -434,6 +438,7 @@ try:
         vars['support_reply'] = 'consumed'   # the offer is new: a reply extracted earlier is not an answer to it
         vars['terms_asked'] = 'consumed'
     vars['support_pending'] = pend
+    vars['support_closes'] = support_closes(st)
 except Exception as e:
     vars['neg_error'] = str(e)[:160]
     vars['neg_say'] = say('error')
@@ -442,15 +447,33 @@ except Exception as e:
 ENGINE = HELPERS + ENGINE_BODY
 
 # The answer to the support offer, routed by extraction in the relay node (the dialogue model does not speak in that
-# turn): the same engine code with a fixed event; a question about other terms is answered with the policy's sentence.
-SUPPORT_DECLINE = HELPERS + "params = dict(events=[dict(product_id='all', type='declines_support')], answer='')\n" + ENGINE_BODY + r'''
+# turn). Routed here only when the decline ends the call (support_closes: every product left is waiting for the support
+# answer, no held proposal); otherwise the dialogue model sends the event and the engine continues (read-back etc.).
+SUPPORT_DECLINE = HELPERS + r'''
 try:
-    if str(vars.get('terms_asked') or '').strip().lower() == 'yes' and say('no_terms'):
-        vars['neg_say'] = (say('no_terms') + ' ' + str(vars.get('neg_say') or '')).strip()
-        if vars.get('neg_flag') == 'finish':
-            vars['neg_final_say'] = vars['neg_say']     # said with the goodbye (finish path)
+    st = load()
+    for p in st['products']:
+        if p['status'] == 'hardship_offer':
+            p['status'] = 'hardship'
+            p['offer'] = None
+            p['hs'] = True
+    st['hardship_handled'] = True
+    if [p for p in st['products'] if p['status'] in ('open', 'offered', 'hardship_offer', 'agreed')] or st.get('held'):
+        vars['neg_say'] = say('error')        # not a closing decline after all: nothing decided, the customer is asked again
+        vars['neg_flag'] = 'used'
+    else:
+        st['phase'] = 'finish'
+        words = say('no_terms') if str(vars.get('terms_asked') or '').strip().lower() == 'yes' else ''
+        vars['neg_say'] = words
+        vars['neg_final_say'] = words
+        vars['neg_flag'] = 'finish'
+        vars['neg_phase'] = 'finish'
+    vars['support_pending'] = 'no'
+    save(st)
 except Exception as e:
     vars['support_error'] = str(e)[:160]
+    vars['neg_say'] = say('error')
+    vars['neg_flag'] = 'used'
 vars['terms_asked'] = 'consumed'
 vars['support_reply'] = 'consumed'
 '''
@@ -628,6 +651,7 @@ try:
             vars['support_pending'] = 'yes'
             vars['support_reply'] = 'consumed'
             vars['terms_asked'] = 'consumed'
+        vars['support_closes'] = support_closes(st)
     vars['hardship_done'] = 'yes'
     vars['neg_flag'] = 'used'
 except Exception as e:
@@ -676,7 +700,7 @@ except Exception as e:
 
 
 def embed(code, cfg):
-    cfg_json = json.dumps(cfg, indent=1)
+    cfg_json = json.dumps(cfg, indent=0)   # line breaks keep nested braces apart (no "}}" in code)
     out = code.replace("__CFG__", cfg_json)
     if "{{" in out or "}}" in out or '"""' in cfg_json:
         raise ValueError("generated code would contain '{{', '}}' or triple quotes")
