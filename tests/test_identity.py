@@ -167,6 +167,12 @@ for mode in ("hook", "nohook"):
     check(f"I12g {M} 'I'd rather not... fine, 17 May 1986': the active question is answered, no decline, one bank call",
           int(c.st().get("declines") or 0) == 0 and b.calls == [("date_of_birth", "1986-05-17")], (c.st().get("declines"), b.calls))
 
+    # I14 a month said as a word of the call's language (policy calendar.month_names) completes the date
+    pol_tr = json.loads(json.dumps(POL)); pol_tr.setdefault("calendar", {})["month_names"] = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]
+    b = Bank("1986-05-17", "1502"); c = IdCall(pol_tr, b, mode)
+    c.msg(A(day=17, month="Mayıs", year=1986))
+    check(f"I14 {M} 'Mayıs' as the month (policy month names): one call with 1986-05-17", b.calls == [("date_of_birth", "1986-05-17")], b.calls)
+
     # I13 the ISO date failure (release check loc-ab v2, 11 Oct; chat 8669ea77): the dialogue model split '1991-01-08' as
     # day 19 / month 91 / year '01-08', then took the next answer '6604' for date parts. Kept as a regression with the exact
     # events the model sent: no bank call, no wrong answer used, the customer is asked again.

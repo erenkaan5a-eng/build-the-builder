@@ -53,7 +53,8 @@ Return ONE JSON object, no prose, with exactly these keys:
    "failed": {"outcome": "...", "reason": "..."}, "declined": {"outcome": "...", "reason": "..."}   // closing-table rows for a failed / declined identity check
  },
  "human_request": {"queue": "<transfer queue for a customer who wants a person>", "asks_before_transfer": <how many times to offer help first>, "say": "the brief's 'can I help first' question"},
- "calendar": {"weekend_days": [Python weekday numbers that are not business days], "holidays": ["YYYY-MM-DD", ...]},
+ "calendar": {"weekend_days": [Python weekday numbers that are not business days], "holidays": ["YYYY-MM-DD", ...],
+              "day_names": [the 7 weekday names in the call's language, Monday first], "month_names": [the 12 month names in the call's language, January first]},
  "callback": {"days": [subset of "today", "next_business_day" - the days the brief allows], "window_start": "HH:MM", "window_end": "HH:MM",
               "bounds_included": true, "later_than_now": true, "reasks": <how many times to ask again when outside>} or null,
  "bands": [{"min": <days_late min>, "max": <max>, "deadline_business_days": <N for 'the Nth business day after today'>, "attempts": <persuasion attempts>}],
@@ -298,6 +299,11 @@ def validate(pol, ts):
     for q in (c.get("queue_reason") or {}):
         if qe and q not in qe:
             P.append(f"closing.queue_reason key {q!r} not in transfer queue enum")
+    cal = pol.get("calendar") or {}
+    for k, n in (("day_names", 7), ("month_names", 12)):
+        v = cal.get(k)
+        if v is not None and (not isinstance(v, list) or len(v) != n or not all(isinstance(x, str) and x.strip() for x in v)):
+            P.append(f"calendar.{k} must list {n} names")
     for h in (pol.get("calendar") or {}).get("holidays") or []:
         if not re.match(r"^\d{4}-\d{2}-\d{2}$", str(h)):
             P.append(f"holiday {h!r} is not YYYY-MM-DD")

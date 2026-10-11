@@ -77,8 +77,8 @@ def model_field(ts, op, field, desc):
 CAL_HELPERS = r'''
 import json, datetime, re
 CFG = json.loads(r"""__CFG__""")
-DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+DAYS = CFG.get('days') or ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+MONTHS = CFG.get('months') or ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 def sp(d):
     return DAYS[d.weekday()] + ' ' + str(d.day) + ' ' + MONTHS[d.month - 1] + ' ' + str(d.year)
 def isbd(d):
@@ -286,6 +286,10 @@ def build(pol, ts):
     cid = "{{" + cv["customer_id"] + "}}"
     ok = B["success_field"]
     cal_cfg = {"now_var": cv["now"], "weekend_days": pol["calendar"]["weekend_days"], "holidays": pol["calendar"]["holidays"]}
+    for k, n, key in (("day_names", 7, "days"), ("month_names", 12, "months")):      # the call's language; English when absent
+        v = (pol.get("calendar") or {}).get(k)
+        if isinstance(v, list) and len(v) == n:
+            cal_cfg[key] = [str(x) for x in v]
 
     # tools
     def body_with_cid(op, extra):
@@ -373,7 +377,7 @@ def build(pol, ts):
     # ---- identity: the dialogue model turns each message into events; code (identity runtime) decides, the engine asks
     # the bank, code processes the bank's result once and owns every sentence and the close of this stage
     hr = pol["human_request"]
-    id_cfg = {"questions": [{"field": q["field"], "ask": q["ask"], "kind": q["kind"], "digits": int(q.get("digits") or 0), "output": q.get("output") or ""} for q in qs],
+    id_cfg = {"months": cal_cfg.get("months") or [], "questions": [{"field": q["field"], "ask": q["ask"], "kind": q["kind"], "digits": int(q.get("digits") or 0), "output": q.get("output") or ""} for q in qs],
               "say": idp["say"], "hint_say": idp.get("hint_say") or {}, "declines_to_close": int(idp["declines_to_close"]),
               "stops_to_close": int(pol.get("stop_statements_to_close") or 1),
               "human": {"queue": hr["queue"], "asks_before_transfer": int(hr.get("asks_before_transfer") or 0), "say": hr.get("say") or ""},

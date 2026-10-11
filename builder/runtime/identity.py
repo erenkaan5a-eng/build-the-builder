@@ -95,6 +95,10 @@ def date_parts(e):
         if k == 'month' and v in MONTHS:
             out[k] = MONTHS.index(v) + 1
             continue
+        local = [str(m).strip().lower() for m in (CFG.get('months') or [])]     # month names of the call's language (policy)
+        if k == 'month' and v in local:
+            out[k] = local.index(v) + 1
+            continue
         dg = re.sub(r'\D', '', v)
         if not dg:
             continue                    # not given as digits: that part is asked again, the parts heard are kept

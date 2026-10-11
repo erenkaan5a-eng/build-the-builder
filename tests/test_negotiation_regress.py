@@ -163,6 +163,16 @@ c.ev(("all", "proposes", "2026-10-30", ""))
 check("G12 the deadline note of a clamped product is a separate sentence in the read-back (chat C3 showed '...23 October Friday 23 October...')",
       "900.00 on Friday 23 October. (latest date for personal loan)" in c.v["neg_say"], c.v["neg_say"])
 
+# K) the call's language: day and month names come from the policy (calendar.day_names/month_names), English otherwise
+TR_DAYS = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"]
+TR_MONTHS = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]
+c = Call([P("p1", "kredi kartı", 300.0, 90.0, "2026-11-02", 1)], days=TR_DAYS, months=TR_MONTHS)
+c.ev(("p1", "proposes", "2026-10-16", ""))
+check("K1 read-back in the policy's language: 'Cuma 16 Ekim', no English day or month name", "Cuma 16 Ekim" in c.v["neg_say"] and "Friday" not in c.v["neg_say"] and "October" not in c.v["neg_say"], c.v["neg_say"])
+c = Call([P("p1", "credit card", 300.0, 90.0, "2026-11-02", 1)])
+c.ev(("p1", "proposes", "2026-10-16", ""))
+check("K2 without names in the policy: English as before", "Friday 16 October" in c.v["neg_say"], c.v["neg_say"])
+
 # H) section 5 properties of the cloud review not covered above
 c = Call([P("p1", "credit card", 300.0, 90.0, "2026-11-02", 1), P("p2", "personal loan", 600.0, 200.0, "2026-10-23", 2)])
 c.ev(("all", "proposes", "2026-10-16", "")); c.ev(("all", "confirms", "", ""))

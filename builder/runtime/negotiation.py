@@ -28,8 +28,8 @@ import json
 HELPERS = r'''
 import json, datetime, re, math
 CFG = json.loads(r"""__CFG__""")
-DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+DAYS = CFG.get('days') or ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+MONTHS = CFG.get('months') or ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 class Safe(dict):
     def __missing__(self, k):
         return ''
