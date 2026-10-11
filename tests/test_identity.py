@@ -121,6 +121,15 @@ for mode in ("hook", "nohook"):
     c.msg("asks_purpose", A(day=17, month=5, year=1986))
     check(f"I11c {M} a question together with an answer is not a decline", c.st().get("declines") == 0 and len(b.calls) == 1, c.st())
     b = Bank("1986-05-17", "1502"); c = IdCall(POL, b, mode)
+    c.msg("asks_purpose"); c.msg(A(day=17, month=5, year=1986)); r = c.msg("asks_purpose")
+    check(f"I11e {M} style asks_back: question, answer, question again -> not closed (the answer restarted the count), phone asked",
+          c.end is None and ASK_PHONE in r and "protect" not in r, (c.end, r))
+    c.msg("refuses")
+    check(f"I11f {M} two in a row after that -> declined", c.end == DECLINED, c.end)
+    b = Bank("1986-05-17", "1502"); c = IdCall(POL, b, mode)
+    c.msg("stop"); c.msg(A(day=17, month=5, year=1986)); c.msg("stop")
+    check(f"I11g {M} A45: 'I do not want to talk' twice in the identity stage -> declined, even with an answer in between", c.end == DECLINED, c.end)
+    b = Bank("1986-05-17", "1502"); c = IdCall(POL, b, mode)
     for _ in range(6):
         c.msg("other")
     check(f"I11d {M} no event sequence without bank results reaches 'failed'", c.end is None and b.calls == [], (c.end, b.calls))

@@ -375,6 +375,7 @@ def build(pol, ts):
     hr = pol["human_request"]
     id_cfg = {"questions": [{"field": q["field"], "ask": q["ask"], "kind": q["kind"], "digits": int(q.get("digits") or 0), "output": q.get("output") or ""} for q in qs],
               "say": idp["say"], "hint_say": idp.get("hint_say") or {}, "declines_to_close": int(idp["declines_to_close"]),
+              "stops_to_close": int(pol.get("stop_statements_to_close") or 1),
               "human": {"queue": hr["queue"], "asks_before_transfer": int(hr.get("asks_before_transfer") or 0), "say": hr.get("say") or ""},
               "failed": idp["failed"], "declined": idp["declined"], "technical": c["technical_error"], "no_reason": c.get("outcomes_without_reason") or [],
               "goodbye": pol.get("goodbye_line") or "", "robot": ng["say"].get("robot_answer") or "", "scam": ng["say"].get("scam_answer") or "",

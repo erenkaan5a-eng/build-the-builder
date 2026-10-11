@@ -10,7 +10,9 @@ State (vars['id_state'], one JSON object per call; a new call starts without it)
   verified        fields the bank verified in this call
   pending         the request for the bank and the verify node's counters right before it was sent (sc, fc):
                   a result is processed only when the success counter moved past sc, and only once
-  declines        refusals / 'what is this about' instead of an answer / 'do not want to talk' (at most one per message)
+  declines        refusals / 'what is this about' instead of an answer, in a row (at most one per message; an answer in
+                  between starts the count again; the explanation is given once per call)
+  stops           'do not want to talk' statements over the whole stage (A45; the policy's count closes 'declined')
   humans          requests for a person; wrong_local (only when the API has no remaining-tries field); svc (service errors)
   cand[field]     after a day/month hint: the two numbers heard, so a month said as a word completes the date
   done            None | verified | failed | declined | transferred | technical
@@ -214,6 +216,8 @@ try:
             save(st)
             raise StopIteration()
     act = first_open(st)
+    if answers:
+        st['declines'] = 0              # a customer who answers is not declining: a question back earlier does not add up (A15 'still decline')
     for e in answers:
         q = qby(e['field']) if e['field'] else None
         if q is None and act is not None:
@@ -221,9 +225,14 @@ try:
         if q is None or q['field'] in st['verified']:
             continue                        # a question the bank already passed is not asked or sent again
         apply_answer(st, q, e, e['type'] == 'correction')
-    if not answers and [e for e in E if e['type'] in ('refuses', 'stop', 'asks_purpose')]:
+    stop_now = 'stop' in kinds
+    if stop_now:
+        st['stops'] = int(st.get('stops') or 0) + 1     # A45 'says twice': counted over the whole stage, not reset
+    dec_now = not answers and bool([e for e in E if e['type'] in ('refuses', 'asks_purpose')])
+    if dec_now:
         st['declines'] = int(st.get('declines') or 0) + 1
-        if st['declines'] >= int(CFG['declines_to_close']):
+    if (dec_now or stop_now) and not answers:
+        if st['declines'] >= int(CFG['declines_to_close']) or int(st.get('stops') or 0) >= int(CFG['stops_to_close']):
             close(st, 'declined', 'declined', words)
             save(st)
             raise StopIteration()
