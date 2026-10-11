@@ -1,0 +1,109 @@
+{
+ "agent_id": "41b6d98f-2c8e-4ea6-8139-1901d21f32a1",
+ "simulation_id": "c2fb23b8-6983-4fcd-a987-8a5492c27a57",
+ "iteration_id": "574f4bd1-33e6-4dc7-bd4c-828de15c5aec",
+ "seconds": 206,
+ "passed": 2,
+ "total": 2,
+ "runs": 1,
+ "final": [
+  {
+   "id": "PUB-13",
+   "family": "Multi-product confirmation",
+   "passes": 1,
+   "runs": 1,
+   "pass": true
+  },
+  {
+   "id": "PUB-12",
+   "family": "Multi-product mixed",
+   "passes": 1,
+   "runs": 1,
+   "pass": true
+  }
+ ],
+ "rows": [
+  {
+   "id": "PUB-13",
+   "level": "hard",
+   "family": "Multi-product confirmation",
+   "pass": true,
+   "failed": [],
+   "call_id": "f1e83169-82f8-4614-a0ad-88cae5ba1705",
+   "tools": [
+    "verify_identity",
+    "verify_identity",
+    "get_account",
+    "create_promise",
+    "create_promise",
+    "close_call"
+   ],
+   "customer_id": "c_f033a785-a48",
+   "slowest_turn_s": 13.7,
+   "ended": "assistant-ended-call"
+  },
+  {
+   "id": "PUB-12",
+   "level": "hard",
+   "family": "Multi-product mixed",
+   "pass": true,
+   "failed": [],
+   "call_id": "edf78531-882a-4f5d-a625-3323d4da205a",
+   "tools": [
+    "verify_identity",
+    "verify_identity",
+    "get_account",
+    "create_promise",
+    "add_note",
+    "add_note",
+    "close_call"
+   ],
+   "customer_id": "c_acd7de8d-603",
+   "slowest_turn_s": 3.0,
+   "ended": "assistant-ended-call"
+  }
+ ],
+ "all_rows": [
+  [
+   {
+    "id": "PUB-13",
+    "level": "hard",
+    "family": "Multi-product confirmation",
+    "pass": true,
+    "failed": [],
+    "call_id": "f1e83169-82f8-4614-a0ad-88cae5ba1705",
+    "tools": [
+     "verify_identity",
+     "verify_identity",
+     "get_account",
+     "create_promise",
+     "create_promise",
+     "close_call"
+    ],
+    "customer_id": "c_f033a785-a48",
+    "slowest_turn_s": 13.7,
+    "ended": "assistant-ended-call"
+   },
+   {
+    "id": "PUB-12",
+    "level": "hard",
+    "family": "Multi-product mixed",
+    "pass": true,
+    "failed": [],
+    "call_id": "edf78531-882a-4f5d-a625-3323d4da205a",
+    "tools": [
+     "verify_identity",
+     "verify_identity",
+     "get_account",
+     "create_promise",
+     "add_note",
+     "add_note",
+     "close_call"
+    ],
+    "customer_id": "c_acd7de8d-603",
+    "slowest_turn_s": 3.0,
+    "ended": "assistant-ended-call"
+   }
+  ]
+ ]
+}

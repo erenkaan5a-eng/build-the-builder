@@ -1,0 +1,271 @@
+{
+ "CD-1": {
+  "call_id": "7bd2ca1f-af40-47f1-911a-1a07db4a1976",
+  "customer_id": "c_7a8e4b68-084",
+  "calls": [
+   [
+    "verify_identity",
+    {
+     "field": "date_of_birth",
+     "answer": "1986-05-17"
+    }
+   ],
+   [
+    "verify_identity",
+    {
+     "field": "phone_last4",
+     "answer": "1502"
+    }
+   ],
+   [
+    "get_account",
+    {}
+   ],
+   [
+    "create_promise",
+    {
+     "product_id": "p1",
+     "amount": 637.5,
+     "date": "2026-10-16"
+    }
+   ],
+   [
+    "close_call",
+    {
+     "outcome": "promise"
+    }
+   ]
+  ],
+  "expected_tools": [
+   "verify_identity(date_of_birth, 1986-05-17) once",
+   "verify_identity(phone_last4, 1502) once",
+   "get_account",
+   "create_promise(p1, 637.5, 2026-10-16)",
+   "close_call(promise)"
+  ],
+  "forbidden": [
+   "verify_identity with a partial answer",
+   "close_call not_verified",
+   "asking how much she can pay"
+  ]
+ },
+ "CD-2": {
+  "call_id": "85c35e09-1c38-4a6b-9cec-e68134b683b8",
+  "customer_id": "c_f88120ee-c6e",
+  "calls": [
+   [
+    "verify_identity",
+    {
+     "field": "date_of_birth",
+     "answer": "1988-03-14"
+    }
+   ],
+   [
+    "verify_identity",
+    {
+     "field": "phone_last4",
+     "answer": "4471"
+    }
+   ],
+   [
+    "get_account",
+    {}
+   ],
+   [
+    "create_promise",
+    {
+     "product_id": "p1",
+     "amount": 420,
+     "date": "2026-10-14"
+    }
+   ],
+   [
+    "close_call",
+    {
+     "outcome": "promise"
+    }
+   ]
+  ],
+  "expected_tools": [
+   "verify_identity(date_of_birth, 1988-03-14) once",
+   "verify_identity(phone_last4, 4471) once",
+   "get_account",
+   "create_promise(p1, 420.0, 2026-10-14)",
+   "close_call(promise)"
+  ],
+  "forbidden": [
+   "close_call not_verified",
+   "verify_identity(phone_last4, 447)"
+  ]
+ },
+ "CD-4": {
+  "call_id": "22f95382-9a8c-41ec-8b7e-9153976503cd",
+  "customer_id": "c_7a5ed78d-db4",
+  "calls": [
+   [
+    "verify_identity",
+    {
+     "field": "date_of_birth",
+     "answer": "1990-09-09"
+    }
+   ],
+   [
+    "verify_identity",
+    {
+     "field": "phone_last4",
+     "answer": "8846"
+    }
+   ],
+   [
+    "get_account",
+    {}
+   ],
+   [
+    "create_promise",
+    {
+     "product_id": "p1",
+     "amount": 300,
+     "date": "2026-10-16"
+    }
+   ],
+   [
+    "close_call",
+    {
+     "outcome": "promise"
+    }
+   ]
+  ],
+  "expected_tools": [
+   "verify x2",
+   "get_account",
+   "create_promise(p1, 300.0, 2026-10-16)",
+   "close_call(promise)"
+  ],
+  "forbidden": [
+   "transfer_to_agent",
+   "a persuasion offer",
+   "a discount"
+  ]
+ },
+ "CD-5": {
+  "call_id": "f1e83169-82f8-4614-a0ad-88cae5ba1705",
+  "customer_id": "c_f033a785-a48",
+  "calls": [
+   [
+    "verify_identity",
+    {
+     "field": "date_of_birth",
+     "answer": "1991-01-08"
+    }
+   ],
+   [
+    "verify_identity",
+    {
+     "field": "phone_last4",
+     "answer": "6604"
+    }
+   ],
+   [
+    "get_account",
+    {}
+   ],
+   [
+    "create_promise",
+    {
+     "product_id": "p1",
+     "amount": 300,
+     "date": "2026-10-30"
+    }
+   ],
+   [
+    "create_promise",
+    {
+     "product_id": "p2",
+     "amount": 300,
+     "date": "2026-10-23"
+    }
+   ],
+   [
+    "close_call",
+    {
+     "outcome": "promise"
+    }
+   ]
+  ],
+  "expected_tools": [
+   "verify x2",
+   "get_account",
+   "create_promise(p1, 300.0, 2026-10-30)",
+   "create_promise(p2, 300.0, 2026-10-23)",
+   "close_call(promise)"
+  ],
+  "forbidden": [
+   "create_promise before the whole package is confirmed",
+   "create_promise(p2, 900.0, ...)"
+  ]
+ },
+ "CD-6": {
+  "call_id": "edf78531-882a-4f5d-a625-3323d4da205a",
+  "customer_id": "c_acd7de8d-603",
+  "calls": [
+   [
+    "verify_identity",
+    {
+     "field": "date_of_birth",
+     "answer": "1983-10-19"
+    }
+   ],
+   [
+    "verify_identity",
+    {
+     "field": "phone_last4",
+     "answer": "4410"
+    }
+   ],
+   [
+    "get_account",
+    {}
+   ],
+   [
+    "create_promise",
+    {
+     "product_id": "p1",
+     "amount": 510,
+     "date": "2026-10-15"
+    }
+   ],
+   [
+    "add_note",
+    {
+     "product_id": "p2",
+     "reason": "dispute"
+    }
+   ],
+   [
+    "add_note",
+    {
+     "product_id": "p3",
+     "reason": "paid"
+    }
+   ],
+   [
+    "close_call",
+    {
+     "outcome": "promise"
+    }
+   ]
+  ],
+  "expected_tools": [
+   "verify x2",
+   "get_account",
+   "create_promise(p1, 510.0, 2026-10-15)",
+   "add_note(p2, dispute)",
+   "add_note(p3, paid)",
+   "close_call(promise)"
+  ],
+  "forbidden": [
+   "arguing about the personal loan",
+   "a promise on p2 or p3"
+  ]
+ }
+}

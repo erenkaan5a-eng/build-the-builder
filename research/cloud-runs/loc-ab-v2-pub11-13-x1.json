@@ -1,0 +1,109 @@
+{
+ "agent_id": "41b6d98f-2c8e-4ea6-8139-1901d21f32a1",
+ "simulation_id": "73d48779-0622-4323-a3f8-a84c696e62cc",
+ "iteration_id": "19855d68-1fd9-4cfb-99d8-20914f20a6b8",
+ "seconds": 175,
+ "passed": 2,
+ "total": 2,
+ "runs": 1,
+ "final": [
+  {
+   "id": "PUB-11",
+   "family": "Multi-product",
+   "passes": 1,
+   "runs": 1,
+   "pass": true
+  },
+  {
+   "id": "PUB-13",
+   "family": "Multi-product",
+   "passes": 1,
+   "runs": 1,
+   "pass": true
+  }
+ ],
+ "rows": [
+  {
+   "id": "PUB-11",
+   "level": "medium",
+   "family": "Multi-product",
+   "pass": true,
+   "failed": [],
+   "call_id": "10609b46-9f2e-457c-a1a8-4c47554961f7",
+   "tools": [
+    "verify_identity",
+    "verify_identity",
+    "get_account",
+    "create_promise",
+    "create_promise",
+    "create_promise",
+    "close_call"
+   ],
+   "customer_id": "c_af7e9620-6b6",
+   "slowest_turn_s": 4.8,
+   "ended": "assistant-ended-call"
+  },
+  {
+   "id": "PUB-13",
+   "level": "hard",
+   "family": "Multi-product",
+   "pass": true,
+   "failed": [],
+   "call_id": "8812feef-4606-41fd-9655-2063b936fc66",
+   "tools": [
+    "verify_identity",
+    "verify_identity",
+    "get_account",
+    "create_promise",
+    "create_promise",
+    "close_call"
+   ],
+   "customer_id": "c_86a1dd58-f3d",
+   "slowest_turn_s": 17.0,
+   "ended": "assistant-ended-call"
+  }
+ ],
+ "all_rows": [
+  [
+   {
+    "id": "PUB-11",
+    "level": "medium",
+    "family": "Multi-product",
+    "pass": true,
+    "failed": [],
+    "call_id": "10609b46-9f2e-457c-a1a8-4c47554961f7",
+    "tools": [
+     "verify_identity",
+     "verify_identity",
+     "get_account",
+     "create_promise",
+     "create_promise",
+     "create_promise",
+     "close_call"
+    ],
+    "customer_id": "c_af7e9620-6b6",
+    "slowest_turn_s": 4.8,
+    "ended": "assistant-ended-call"
+   },
+   {
+    "id": "PUB-13",
+    "level": "hard",
+    "family": "Multi-product",
+    "pass": true,
+    "failed": [],
+    "call_id": "8812feef-4606-41fd-9655-2063b936fc66",
+    "tools": [
+     "verify_identity",
+     "verify_identity",
+     "get_account",
+     "create_promise",
+     "create_promise",
+     "close_call"
+    ],
+    "customer_id": "c_86a1dd58-f3d",
+    "slowest_turn_s": 17.0,
+    "ended": "assistant-ended-call"
+   }
+  ]
+ ]
+}
