@@ -166,9 +166,16 @@ def final_sequence(slot, wf_path, tool_api, cand, budget, trace, pol=None, pract
     if budget.left() < 60:
         trace.log("RELEASE", "budget exhausted before publish")
         return st
-    pub = common.publish(slot, wf, trace)
-    st.update(pub)
-    tested = common.get_workflow(pub["workflow_id"])
+    try:
+        # updating an existing slot only adds a version, so a platform 5xx is retried within the budget; creating a new
+        # slot is not retried (a lost answer could leave a second workflow)
+        exists = slot in json.loads((KIT / ".freya-agents.json").read_text()) if (KIT / ".freya-agents.json").exists() else False
+        pub = _retry_5xx(lambda: common.publish(slot, wf, trace), budget, trace) if exists else common.publish(slot, wf, trace)
+        st.update(pub)
+        tested = _retry_5xx(lambda: common.get_workflow(pub["workflow_id"]), budget, trace)
+    except Exception as e:
+        trace.log("RELEASE", f"publish failed: {e}"[:400])
+        return st
     st["tested_hash"] = common.wf_hash(tested)
     trace.log("TEST", f"testing published version {pub['version_number']} hash {st['tested_hash']}")
     checks = []
