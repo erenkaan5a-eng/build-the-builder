@@ -1,0 +1,34 @@
+{
+ "folder": "/tmp/claude-0/-home-user-build-the-builder/a05d22cc-149a-5154-a736-4f17e47e488e/scratchpad/rehearsal-tr",
+ "files": [
+  {
+   "file": "BRIEF.md",
+   "type": "md",
+   "bytes": 10174,
+   "sha256_16": "d57c049c89aec461",
+   "chars": 10174
+  },
+  {
+   "file": "README.md",
+   "type": "md",
+   "bytes": 213,
+   "sha256_16": "b03cd5877abbef27",
+   "chars": 195
+  },
+  {
+   "file": "dil-notu.docx",
+   "type": "docx",
+   "bytes": 879,
+   "sha256_16": "1ebb5dab6ee7ce74",
+   "chars": 251
+  },
+  {
+   "file": "servis-sozlesmesi.json",
+   "type": "json",
+   "bytes": 10683,
+   "sha256_16": "c073b8b86e8385ec",
+   "chars": 10683
+  }
+ ],
+ "errors": []
+}
