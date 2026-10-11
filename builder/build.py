@@ -54,6 +54,7 @@ def run_main(brief, tool_api, cand, budget, trace):
     wf = components.build(pol, ts)
     path = cand / "workflow.json"
     path.write_text(json.dumps(wf, indent=1), encoding="utf-8")
+    (cand / "support_boundary.json").write_text(json.dumps(components.support_boundary(pol), indent=1), encoding="utf-8")
     return path, pol, components.known_gaps(pol)
 
 
@@ -206,6 +207,8 @@ def main():
         trace.log("GAPS", "Known rule gap: " + g)
     manifest = {"path": path_used, "slot": slot, "build_seconds": round(budget.elapsed()), "model_calls": trace.model_calls,
                 "trace": str(trace.path), "known_gaps": gaps, **st}
+    if pol:
+        manifest["support_boundary"] = components.support_boundary(pol)
     (cand / "manifest.json").write_text(json.dumps(manifest, indent=1), encoding="utf-8")
     if a.out and st["release_checks_passed"]:
         pathlib.Path(a.out).parent.mkdir(parents=True, exist_ok=True)

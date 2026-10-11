@@ -523,6 +523,29 @@ def build(pol, ts):
     return {"initial_node": "setup", "system_prompt": sysp, "nodes": nodes, "global_nodes": {}, "test_variables": tv}
 
 
+def support_boundary(pol):
+    """What the generated agent enforces in code and what it leaves to the dialogue model (for the manifest)."""
+    ng = pol.get("negotiation") or {}
+    return {
+        "code": ["deadline per band (Nth business day after now, calendar from the policy)", "promise date validity (past / after deadline / non-business day)",
+                 "vague period: ask " + str(int(pol.get("vague_asks_before_deadline", 1))) + " time(s), then the deadline",
+                 "amount: full first, floor offer after 'too much' or a below-floor amount, accept floor..full",
+                 "persuasion ladder per product: " + ", ".join(f"{x.get('amount')}@{x.get('date')}" for x in ng.get("ladder") or []),
+                 "shared date clamped to each product's deadline" if ng.get("shared_date_clamps_to_deadline") else "shared date not clamped (policy)",
+                 "read-back of the whole package, confirmation bound to that package, writes only from the confirmed package",
+                 "create_promise retries: " + str(int((pol.get("write_retries") or {}).get("create_promise") or 0)) + " (single layer)",
+                 "hardship: one code-owned sympathy+support offer, no persuasion afterwards, customer's own date/amount kept",
+                 "stop statements before close: " + str(int(pol.get("stop_statements_to_close") or 1)),
+                 "notes per product (" + ("used" if pol.get("uses_notes") else "not used by this brief") + "), none after a transfer; close outcome from recorded/transfer/product results",
+                 "goodbye -> notes -> exactly one close_call in the negotiation path"],
+        "model": ["turning the customer's words into events and dates into YYYY-MM-DD (calendar table given)",
+                  "identity question order, re-asks, declines (bank result routes to the account step)",
+                  "opening confirmation and its re-ask count", "third party, callback window validity and re-ask",
+                  "transfer decision and queue (close mapping is code)", "questions outside payment (robot/scam answers come from the policy)"],
+        "unsupported_by_code": [r.get("text") for r in pol.get("extra_rules") or [] if r.get("kind") in ("computational", "structural")],
+    }
+
+
 def known_gaps(pol):
     """Rules the generator leaves to the dialogue model (honest list for the trace)."""
     gaps = ["turning the customer's words into negotiation events (and dates into YYYY-MM-DD) is done by the dialogue model; offers, counters, dates, amounts, read-back, recording, notes and the close are code",
