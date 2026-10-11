@@ -13,7 +13,7 @@ import argparse, asyncio, hashlib, json, os, pathlib, re, shutil, sys, time
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import common  # noqa: E402  (loads env.sh, imports freya)
 import lint as linter  # noqa: E402
-import toolspec, spec_extract, components, behavior  # noqa: E402
+import toolspec, spec_extract, components, behavior, case_input  # noqa: E402
 from common import KIT, Budget, Trace  # noqa: E402
 
 RESERVE_S = 5 * 60            # kept for validate, publish, behaviour test, export
@@ -230,18 +230,53 @@ def main():
     ap.add_argument("--budget-min", type=float, default=30); ap.add_argument("--practice")
     ap.add_argument("--reuse-policy", help="development only: policy.json of an earlier traced run of the same brief and API (no model call)")
     ap.add_argument("--local-only", action="store_true", help="extract and generate, run the local lint, write the candidate; no Freya call at all")
+    ap.add_argument("--contract", help="with a case folder and a mock URL: the service contract file (OpenAPI JSON/YAML) to bind to the mock URL, "
+                                       "when the folder has none or several")
     a = ap.parse_args()
     slot = a.slot or pathlib.Path(a.brief).stem
     budget, trace = Budget(a.budget_min), Trace(slot)
     cand = KIT / "candidates" / slot / time.strftime("%Y%m%d-%H%M%S")
+    k = 1
+    while cand.exists():                   # never reuse an earlier run's candidate folder
+        k += 1
+        cand = KIT / "candidates" / slot / (time.strftime("%Y%m%d-%H%M%S") + f"-{k}")
     cand.mkdir(parents=True)
     trace.log("START", f"slot={slot} brief={a.brief} tool_api={a.tool_api} mode={a.mode} budget_min={a.budget_min} candidate={cand}")
     trace.log("START", f"credentials: FREYA_API_KEY {'set' if os.environ.get('FREYA_API_KEY') else 'absent'}, "
                        f"FREYA_BANK_TEAM_KEY {'set' if os.environ.get('FREYA_BANK_TEAM_KEY') else 'absent'}, cloud proxy mode {common.PROXY_MODE}")
+    # inputs: a brief file + a tool API file (kit form), or a case folder + a mock URL (the service contract is found in
+    # the folder and bound to the mock URL); every file read is listed in the trace with its hash
+    brief_in, api_in, input_problems, inputs_meta = a.brief, a.tool_api, [], {"brief_arg": a.brief, "tool_api_arg": a.tool_api}
+    try:
+        if pathlib.Path(a.brief).is_dir():
+            case = case_input.load_case(a.brief)
+            (cand / "case_inventory.json").write_text(json.dumps({"folder": a.brief, "files": case["inventory"], "errors": case["errors"]},
+                                                                 indent=1, ensure_ascii=False), encoding="utf-8")
+            for it in case["inventory"]:
+                trace.log("INPUT", f"{it['file']} ({it['type']}, {it['bytes']} bytes, sha256 {it['sha256_16']}): "
+                                   + (f"NOT READ: {it['error']}" if it.get("error") else f"{it.get('chars')} chars read"))
+            for e in case["errors"]:
+                trace.log("INPUT", "PROBLEM " + e)
+            input_problems += case["errors"]
+            brief_in = str(cand / "case_brief.md")
+            pathlib.Path(brief_in).write_text(case["text"], encoding="utf-8")
+            inputs_meta["case_files"] = len(case["inventory"])
+        if re.match(r"^https?://", a.tool_api):
+            if not pathlib.Path(a.brief).is_dir():
+                raise RuntimeError("a mock URL needs a case folder as the first argument (the service contract is read from it)")
+            contract = pathlib.Path(a.contract) if a.contract else case_input.find_contract(a.brief)
+            api_in = str(cand / "tool_api.json")
+            note = case_input.bind_contract(contract, a.tool_api, api_in)
+            trace.log("INPUT", f"service contract {contract} (sha256 {case_input.sha16(contract)}); {note}")
+            inputs_meta.update({"mock_url": a.tool_api, "contract": str(contract), "contract_sha256_16": case_input.sha16(contract)})
+    except Exception as e:
+        trace.log("INPUT", f"PROBLEM {e}"[:600])
+        trace.log("END", f"inputs could not be read: nothing built. elapsed {budget.elapsed():.0f}s")
+        sys.exit(2)
     wf_path, path_used, pol, gaps = None, None, None, []
     if a.mode in ("auto", "main"):
         try:
-            wf_path, pol, gaps = run_main(a.brief, a.tool_api, cand, budget, trace, reuse_policy=a.reuse_policy)
+            wf_path, pol, gaps = run_main(brief_in, api_in, cand, budget, trace, reuse_policy=a.reuse_policy)
             path_used = "main"
         except Exception as e:
             trace.log("MAIN", f"main path failed: {e}"[:900])
@@ -250,13 +285,13 @@ def main():
                 sys.exit(2)
     if not wf_path:
         work = cand / "workflow.json"
-        wf_path, path_used = run_fallback(a.brief, a.tool_api, str(work), budget, trace, str(cand)), "fallback"
+        wf_path, path_used = run_fallback(brief_in, api_in, str(work), budget, trace, str(cand)), "fallback"
         gaps = AGENT_GAPS + ["coverage not fully assessed: the fallback path reports only the gaps its agent noticed"]
     if not wf_path:
         trace.log("END", f"no workflow produced. elapsed {budget.elapsed():.0f}s")
         sys.exit(2)
     if a.local_only:
-        probs = [p for p in linter.lint(json.load(open(wf_path, encoding="utf-8")), a.tool_api) if not p.startswith("warn:")]
+        probs = [p for p in linter.lint(json.load(open(wf_path, encoding="utf-8")), api_in) if not p.startswith("warn:")]
         for p in probs:
             trace.log("VALIDATE", "PROBLEM " + p)
         manifest = {"path": path_used, "slot": slot, "local_only": True, "lint_problems": len(probs), "build_seconds": round(budget.elapsed()),
@@ -264,11 +299,14 @@ def main():
         (cand / "manifest.json").write_text(json.dumps(manifest, indent=1), encoding="utf-8")
         trace.log("END", f"local only: lint {'OK' if not probs else str(len(probs)) + ' problem(s)'}; nothing published, nothing tested on Freya")
         return
-    st = final_sequence(slot, wf_path, a.tool_api, cand, budget, trace, pol=pol, practice=a.practice)
+    st = final_sequence(slot, wf_path, api_in, cand, budget, trace, pol=pol, practice=a.practice)
+    if input_problems:
+        st["release_checks_passed"] = False      # a document that could not be read may hold a rule: never a silent pass
+        trace.log("RELEASE", f"{len(input_problems)} input problem(s): release checks fail")
     for g in gaps:
         trace.log("GAPS", "Known rule gap: " + g)
     manifest = {"path": path_used, "slot": slot, "build_seconds": round(budget.elapsed()), "model_calls": trace.model_calls,
-                "trace": str(trace.path), "known_gaps": gaps, **st}
+                "trace": str(trace.path), "known_gaps": gaps, "inputs": inputs_meta, "input_problems": input_problems, **st}
     if pol:
         manifest["support_boundary"] = components.support_boundary(pol)
     (cand / "manifest.json").write_text(json.dumps(manifest, indent=1), encoding="utf-8")

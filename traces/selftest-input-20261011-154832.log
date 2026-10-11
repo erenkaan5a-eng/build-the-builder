@@ -1,0 +1,6 @@
+2026-10-11T15:48:32+0000 [START] slot=selftest-input brief=/tmp/claude-0/-home-user-build-the-builder/a05d22cc-149a-5154-a736-4f17e47e488e/scratchpad/case-nocontract tool_api=https://bank-mock.example.workers.dev mode=auto budget_min=30 candidate=/home/user/build-the-builder/candidates/selftest-input/20261011-154832
+2026-10-11T15:48:32+0000 [START] credentials: FREYA_API_KEY absent, FREYA_BANK_TEAM_KEY absent, cloud proxy mode on: Freya Authorization left to the proxy; bank x-team-key left to the proxy
+2026-10-11T15:48:32+0000 [INPUT] BRIEF.md (md, 23 bytes, sha256 6f181fc7093f8781): 23 chars read
+2026-10-11T15:48:32+0000 [INPUT] README.md (md, 9 bytes, sha256 9d30855a2ada5427): 9 chars read
+2026-10-11T15:48:32+0000 [INPUT] PROBLEM no machine-readable service contract (OpenAPI JSON/YAML with 'paths') in the case folder; nothing is invented: give the contract file as the second argument
+2026-10-11T15:48:32+0000 [END] inputs could not be read: nothing built. elapsed 0s

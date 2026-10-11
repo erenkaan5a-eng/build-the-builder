@@ -1,0 +1,4 @@
+2026-10-11T15:38:14+0000 [RECHECK] candidate candidates/loc-a/20261011-152836 workflow 23150a3a-fead-4c51-9ad2-2c142b0837f1 published version 4 live hash 1cd0e71546683c18 exported hash 1cd0e71546683c18
+2026-10-11T15:38:46+0000 [TEST] platform 5xx (POST /api/v2/chat/message -> 502: upstream request failed); waiting 30s, retry 1 of 3
+2026-10-11T15:39:48+0000 [TEST] platform 5xx (POST /api/v2/chat/message -> 502: upstream request failed); waiting 90s, retry 2 of 3
+2026-10-11T15:41:50+0000 [TEST] platform 5xx (POST /api/v2/chat/message -> 502: upstream request failed); waiting 180s, retry 3 of 3

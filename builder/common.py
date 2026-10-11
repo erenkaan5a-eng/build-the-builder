@@ -44,8 +44,12 @@ class Trace:
 
     def __init__(self, slot):
         (KIT / "traces").mkdir(exist_ok=True)
-        self.path = KIT / "traces" / f"{slot}-{time.strftime('%Y%m%d-%H%M%S')}.log"
-        self.f = self.path.open("w", encoding="utf-8")
+        base = f"{slot}-{time.strftime('%Y%m%d-%H%M%S')}"
+        self.path, n = KIT / "traces" / f"{base}.log", 1
+        while self.path.exists():          # a second run in the same second never overwrites an earlier trace
+            n += 1
+            self.path = KIT / "traces" / f"{base}-{n}.log"
+        self.f = self.path.open("x", encoding="utf-8")
         self.model_calls = 0
 
     def log(self, kind, msg):
