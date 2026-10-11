@@ -282,6 +282,8 @@ def main():
             for it in case["inventory"]:
                 trace.log("INPUT", f"{it['file']} ({it['type']}, {it['bytes']} bytes, sha256 {it['sha256_16']}): "
                                    + (f"NOT READ: {it['error']}" if it.get("error") else f"{it.get('chars')} chars read"))
+            for w in case.get("warnings") or []:
+                trace.log("INPUT", "NOTE " + w)
             for e in case["errors"]:
                 trace.log("INPUT", "PROBLEM " + e)
             input_problems += case["errors"]

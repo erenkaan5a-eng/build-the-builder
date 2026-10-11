@@ -1,0 +1,34 @@
+{
+ "receipt": "r2-20261011-2053",
+ "source": "chat uploads by the user",
+ "files": [
+  {
+   "path": "BRIEF.md",
+   "bytes": 4683,
+   "sha256": "9f7a9256a108ff0bddf176688633b8add3c7a05e4c407752b3a2ed208c872ef1",
+   "origin": "carried from r1-20261011-2016 (upload 92d91aac-BRIEF.md)",
+   "source_mtime_utc": "2026-10-11T17:13:48+00:00"
+  },
+  {
+   "path": "README.md",
+   "bytes": 1300,
+   "sha256": "476f99af2e66739de8ed4a192b04c003cc6ab5d31a9bce6825af4d9608852cc6",
+   "origin": "added from upload 9e9075ee-README_1.md (user's file 'README (1).md')",
+   "source_mtime_utc": "2026-10-11T17:53:04+00:00"
+  },
+  {
+   "path": "example-scenarios.md",
+   "bytes": 7005,
+   "sha256": "c7534cb5d591d6399a72c3c717f35d75c81ff2d07c1587ba5ab90245d283d989",
+   "origin": "added from upload a24e9078-example-scenarios.md",
+   "source_mtime_utc": "2026-10-11T17:53:04+00:00"
+  },
+  {
+   "path": "statement-debt-call-flow.pdf",
+   "bytes": 49629,
+   "sha256": "1092fe84329911c89477e794ed874f8216aeb31cc4c825931c4e017374eb69ca",
+   "origin": "carried from r1-20261011-2016 (upload f7cdafcf-statement-debt-call-flow.pdf)",
+   "source_mtime_utc": "2026-10-11T17:16:49+00:00"
+  }
+ ]
+}

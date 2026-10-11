@@ -1,7 +1,7 @@
 """Case folder input: read every document of a case package into one source text, and bind the service contract to
 the mock URL. Nothing here knows any brief; it only reads files.
 
-    load_case(folder)            -> {"text", "inventory", "errors"}
+    load_case(folder)            -> {"text", "inventory", "errors", "warnings"}
     find_contract(folder)        -> path of the one machine-readable service contract (OpenAPI JSON/YAML) or raises
     bind_contract(path, url, out)-> writes the contract with its server set to the mock URL; returns a log line
 
@@ -15,6 +15,7 @@ import csv, hashlib, io, json, pathlib, re, shutil, subprocess, urllib.parse, zi
 import xml.etree.ElementTree as ET
 
 TEXT_EXT = {".md", ".markdown", ".txt", ".json", ".yaml", ".yml"}
+VISUAL_ONLY = "[image: no text can be extracted from this file; open the original to see it]"
 SKIP_NAMES = {".ds_store", "thumbs.db"}
 W = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
 S = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
@@ -122,8 +123,90 @@ def read_csv(path):
     return "\n".join(_row(r) for r in csv.reader(io.StringIO(raw), dialect) if any(r))
 
 
+class _HTMLText(__import__("html.parser").parser.HTMLParser):
+    """Visible text of an HTML/XML/SVG document; block elements and <br> become line breaks; script/style skipped."""
+    BLOCK = {"p", "div", "br", "li", "tr", "h1", "h2", "h3", "h4", "h5", "h6", "table", "section", "article", "header",
+             "footer", "ul", "ol", "dt", "dd", "title", "text", "tspan"}
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.out, self.skip = [], 0
+
+    def handle_starttag(self, tag, attrs):
+        if tag in ("script", "style"):
+            self.skip += 1
+        elif tag in ("td", "th"):
+            self.out.append(" | ")
+        elif tag in self.BLOCK:
+            self.out.append("\n")
+
+    def handle_endtag(self, tag):
+        if tag in ("script", "style") and self.skip:
+            self.skip -= 1
+        elif tag in self.BLOCK:
+            self.out.append("\n")
+
+    def handle_data(self, data):
+        if not self.skip:
+            self.out.append(data)
+
+
+def read_html(path):
+    h = _HTMLText()
+    h.feed(pathlib.Path(path).read_text(encoding="utf-8-sig", errors="replace"))
+    lines = [re.sub(r"[ \t]+", " ", l).strip() for l in "".join(h.out).splitlines()]
+    return "\n".join(l for l in lines if l)
+
+
+def read_eml(path):
+    """An e-mail as received: its headers, its text body (HTML bodies as text) and the names of its attachments."""
+    import email
+    from email import policy
+    msg = email.message_from_bytes(pathlib.Path(path).read_bytes(), policy=policy.default)
+    out = [f"{h}: {msg[h]}" for h in ("Date", "From", "To", "Cc", "Subject") if msg[h]]
+    for part in msg.walk():
+        if part.is_multipart():
+            continue
+        name = part.get_filename()
+        if name:
+            out.append(f"[attachment: {name}]")
+        elif part.get_content_type() == "text/plain":
+            out.append(part.get_content())
+        elif part.get_content_type() == "text/html":
+            h = _HTMLText(); h.feed(part.get_content()); out.append("".join(h.out))
+    return "\n".join(str(x).strip() for x in out if str(x).strip())
+
+
+def read_pptx(path):
+    """Slide text of a PowerPoint file, one block per slide in slide order."""
+    with zipfile.ZipFile(path) as z:
+        slides = sorted((n for n in z.namelist() if re.match(r"ppt/slides/slide\d+\.xml$", n)), key=lambda n: int(re.findall(r"\d+", n)[-1]))
+        out = []
+        for i, n in enumerate(slides, 1):
+            root = ET.fromstring(z.read(n))
+            paras = []
+            for para in root.iter("{http://schemas.openxmlformats.org/drawingml/2006/main}p"):
+                t = "".join(x.text or "" for x in para.iter("{http://schemas.openxmlformats.org/drawingml/2006/main}t")).strip()
+                if t:
+                    paras.append(t)
+            out.append(f"[slide {i}]\n" + "\n".join(paras))
+    return "\n".join(out)
+
+
+IMAGE_EXT = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".tif", ".tiff"}
+
+
 def read_any(path):
     ext = pathlib.Path(path).suffix.lower()
+    if ext in IMAGE_EXT:
+        # not an error: an image has no text to extract; its content is only in the original (opened visually)
+        return VISUAL_ONLY
+    if ext in (".html", ".htm", ".xml", ".svg", ".xhtml"):
+        return read_html(path)
+    if ext == ".eml":
+        return read_eml(path)
+    if ext == ".pptx":
+        return read_pptx(path)
     if ext in TEXT_EXT:
         return pathlib.Path(path).read_text(encoding="utf-8-sig")
     if ext == ".docx":
@@ -151,7 +234,7 @@ def load_case(folder):
     folder = pathlib.Path(folder)
     if not folder.is_dir():
         raise RuntimeError(f"case folder {folder} not found")
-    parts, inventory, errors = [], [], []
+    parts, inventory, errors, warnings = [], [], [], []
     files = _order(folder)
     if not files or files[0].name.lower() != "brief.md":
         errors.append("BRIEF.md not found in the case folder (the package says to read it first)")
@@ -163,6 +246,9 @@ def load_case(folder):
             if not txt.strip():
                 raise RuntimeError("no text could be read")
             item["chars"] = len(txt)
+            if txt == VISUAL_ONLY:
+                item["visual_only"] = True
+                warnings.append(f"{rel}: image, no text extracted (the original is in the case folder)")
             parts.append(f"\n===== FILE: {rel} ({item['type']}, sha256 {item['sha256_16']}) =====\n{txt.strip()}\n")
         except Exception as e:
             item["error"] = str(e)[:200]
@@ -172,7 +258,7 @@ def load_case(folder):
             "A later or dated document does not automatically replace an earlier one: apply a change only within the scope it states. "
             "Test customers and example conversations illustrate the rules and serve testing; they are not rules, and their names, "
             "numbers and dates must not become fixed values of the agent.\n")
-    return {"text": head + "".join(parts), "inventory": inventory, "errors": errors}
+    return {"text": head + "".join(parts), "inventory": inventory, "errors": errors, "warnings": warnings}
 
 
 def _load_contract(p):

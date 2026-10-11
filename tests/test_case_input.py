@@ -100,4 +100,32 @@ with tempfile.TemporaryDirectory() as d:
     except RuntimeError as e:
         none = "nothing is invented" in str(e)
     check("F15 no contract in the folder: an explicit error, no endpoint invented", none, "")
+
+# e-mail, HTML, PowerPoint, images (synthetic)
+d2 = pathlib.Path(tempfile.mkdtemp())
+(d2 / "BRIEF.md").write_text("# Görev\nÖrnek.", encoding="utf-8")
+(d2 / "mails").mkdir()
+(d2 / "mails" / "thread.eml").write_bytes((
+    "From: Banka <a@example.com>\r\nTo: Ekip <b@example.com>\r\nSubject: =?utf-8?b?w5Zuc2Vt?=\r\nDate: Mon, 5 Oct 2026 10:00:00 +0300\r\n"
+    "MIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary=XX\r\n\r\n--XX\r\nContent-Type: text/plain; charset=utf-8\r\n"
+    "Content-Transfer-Encoding: 8bit\r\n\r\nKural: ikinci sürüm geçerlidir.\r\n--XX\r\nContent-Type: application/pdf\r\n"
+    "Content-Disposition: attachment; filename=analiz-v2.pdf\r\n\r\nJVBERi0=\r\n--XX--\r\n").encode("utf-8"))
+(d2 / "page.html").write_text("<html><head><style>p{}</style><script>var x=1;</script></head><body><h1>Başlık</h1>"
+                              "<p>Satır bir</p><table><tr><td>a</td><td>b</td></tr></table></body></html>", encoding="utf-8")
+with zipfile.ZipFile(d2 / "deck.pptx", "w") as z:
+    A = 'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"'
+    for i, t in ((1, "Birinci slayt"), (2, "İkinci slayt")):
+        z.writestr(f"ppt/slides/slide{i}.xml", f'<?xml version="1.0"?><p:sld xmlns:p="x" {A}><a:p><a:r><a:t>{t}</a:t></a:r></a:p></p:sld>')
+(d2 / "diagram.png").write_bytes(b"\x89PNG\r\n\x1a\n")
+(d2 / "note.msg").write_bytes(b"binary")
+r2 = CI.load_case(d2)
+inv2 = {i["file"]: i for i in r2["inventory"]}
+check("C20 e-mail: headers, decoded subject, text body and the attachment name are read",
+      all(x in r2["text"] for x in ("From: Banka", "Subject: Önsem", "Kural: ikinci sürüm geçerlidir.", "[attachment: analiz-v2.pdf]")), r2["text"][:400])
+check("C21 HTML: visible text with headings and table cells; script and style left out",
+      "Başlık" in r2["text"] and "Satır bir" in r2["text"] and "| a" in r2["text"] and "var x" not in r2["text"] and "p{}" not in r2["text"])
+check("C22 PowerPoint: slide text in slide order", r2["text"].find("[slide 1]") < r2["text"].find("Birinci slayt") < r2["text"].find("[slide 2]") < r2["text"].find("İkinci slayt"))
+check("C23 an image is a visible warning (visual only), not an error", inv2["diagram.png"].get("visual_only") is True
+      and any("diagram.png" in w for w in r2["warnings"]) and not any("diagram.png" in e for e in r2["errors"]), (r2["warnings"], r2["errors"]))
+check("C24 a type without a reader is still a visible error", any(e.startswith("note.msg: unsupported document type") for e in r2["errors"]), r2["errors"])
 print("FAILURES:", len(FAILS)); sys.exit(1 if FAILS else 0)
