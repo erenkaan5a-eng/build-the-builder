@@ -83,6 +83,19 @@ def sample_answer(field):
     return "one two three four"
 
 
+MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+
+
+def spoken(value):
+    """A practice answer the way the kit's simulated customer says it (tools/run_cases.py: a date of birth 'in words,
+    like 14 March 1988'); other answers as given. A raw '1991-01-08' is not what a caller says, and the dialogue model
+    split it as day 19 / month 91 in a release check on 11 Oct (loc-ab v2)."""
+    m = re.match(r"^(\d{4})-(\d{2})-(\d{2})$", str(value))
+    if m and 1 <= int(m.group(2)) <= 12:
+        return f"{int(m.group(3))} {MONTH_NAMES[int(m.group(2)) - 1]} {m.group(1)}"
+    return str(value)
+
+
 def calls_of(events, fn):
     return [e for e in events if e[0] == "call" and e[1] == fn]
 
@@ -115,7 +128,7 @@ def practice(workflow_id, case_id, trace):
     case = [c for c in json.load(open(ROOT / "public-test-set.json")) if c["id"] == case_id][0]
     sess = http("/v1/practice/sessions", {"case": case_id})["variables"]
     ident = case["identity"]
-    answers = [f"{ident[k]}" for k in ident]
+    answers = [spoken(ident[k]) for k in ident]
     cid, replies, ev = chat(workflow_id, sess, ["Hello?", "Yes, that's me."] + answers + ["Okay."])
     nodes = [e[1] for e in ev if e[0] == "node"]
     v = calls_of(ev, "verify_identity")

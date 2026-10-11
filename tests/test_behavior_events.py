@@ -64,4 +64,7 @@ check("E6 an engine-run get_account without a full verification is caught by 'no
       bad["no account or write call before verification"] is False, bad)
 wrong = structural_on(base + [start("verify_identity", {FP: "phone_last4", AP: "1988-03-14", "customer_id": "c"})])
 check("E7 a verify call with the wrong field still fails the check", wrong["first security answer reaches verify_identity with the right field"] is False, wrong)
+check("E8 practice answers are spoken like the kit's simulated customer: a date of birth in words, digits as given",
+      (behavior.spoken("1991-01-08"), behavior.spoken("6604"), behavior.spoken("1986-05-17")) == ("8 January 1991", "6604", "17 May 1986"),
+      (behavior.spoken("1991-01-08"), behavior.spoken("6604")))
 print("FAILURES:", len(FAILS)); sys.exit(1 if FAILS else 0)
