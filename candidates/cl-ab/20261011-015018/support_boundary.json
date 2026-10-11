@@ -1,0 +1,30 @@
+{
+ "code": [
+  "deadline per band (Nth business day after now, calendar from the policy)",
+  "promise date validity (past / after deadline / non-business day)",
+  "vague period: ask 1 time(s), then the deadline",
+  "amount: full first, floor offer after 'too much' or a below-floor amount, accept floor..full",
+  "persuasion ladder per product: full_or_floor_if_too_much@this_week_last_business_day_or_next_week_if_today, floor@deadline",
+  "shared date clamped to each product's deadline",
+  "read-back of the whole package, confirmation bound to that package, writes only from the confirmed package",
+  "create_promise retries: 1 (single layer)",
+  "hardship: one code-owned sympathy+support offer, no persuasion afterwards, customer's own date/amount kept",
+  "stop statements before close: 2",
+  "notes per product (used), none after a transfer; close outcome from recorded/transfer/product results",
+  "goodbye -> notes -> exactly one close_call in the negotiation path"
+ ],
+ "model": [
+  "turning the customer's words into events and dates into YYYY-MM-DD (calendar table given)",
+  "identity question order, re-asks, declines (bank result routes to the account step)",
+  "opening confirmation and its re-ask count",
+  "third party, callback window validity and re-ask",
+  "transfer decision and queue (close mapping is code)",
+  "questions outside payment (robot/scam answers come from the policy)"
+ ],
+ "unsupported_by_code": [
+  "Numbers-only dates of birth are read day, month, year before conversion to YYYY-MM-DD.",
+  "Interpret 'next <weekday>' as that weekday in the following calendar week and 'this <weekday>' as the current week.",
+  "Weekend/holiday date not after deadline: offer next business day; after deadline: offer deadline, refusal of deadline counts as flat refusal.",
+  "Final close reason without a recorded promise: all notes paid -> paid; else no_promise with the reason of the first non-paid note in get_account order."
+ ]
+}

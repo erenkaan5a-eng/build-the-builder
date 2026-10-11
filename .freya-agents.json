@@ -26,5 +26,13 @@
  "cmp-a-f2": {
   "workflow_id": "3b7dce9e-0965-4fb6-973f-c5136e88c525",
   "agent_id": "07d3a261-58b6-4f63-91e0-dd8999f72904"
+ },
+ "cl-a": {
+  "workflow_id": "0800b57a-585f-4324-9c6d-d66e40260a37",
+  "agent_id": "91e04e98-0e9e-4bd0-b87d-efdb923d62a8"
+ },
+ "cl-ab": {
+  "workflow_id": "06d2cae1-ed27-4d3a-8ac1-dc664cb91cca",
+  "agent_id": "f97de421-84ba-4675-b150-6569b61d9eb5"
  }
 }
