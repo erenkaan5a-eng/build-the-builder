@@ -289,6 +289,13 @@ def main():
             api_in = str(cand / "tool_api.json")
             note = case_input.bind_contract(contract, a.tool_api, api_in)
             trace.log("INPUT", f"service contract {contract} (sha256 {case_input.sha16(contract)}); {note}")
+            # the binding replaces the contract's own server on purpose; say so in the case text so the extraction does not
+            # report the two addresses as a conflict (rehearsal 11 Oct: 'unresolved conflict: Server URL')
+            bound = json.loads(pathlib.Path(api_in).read_text(encoding="utf-8"))["servers"][0]["url"]
+            run_note = (f"RUN NOTE (written by the builder, not a case document): the service contract {contract.name} is bound to this "
+                        f"run's bank mock at {bound}; its own 'servers' address is replaced on purpose. The TOOL API section is that "
+                        f"bound contract. This replacement is not a conflict.\n\n")
+            pathlib.Path(brief_in).write_text(run_note + pathlib.Path(brief_in).read_text(encoding="utf-8"), encoding="utf-8")
             inputs_meta.update({"mock_url": a.tool_api, "contract": str(contract), "contract_sha256_16": case_input.sha16(contract)})
     except Exception as e:
         trace.log("INPUT", f"PROBLEM {e}"[:600])

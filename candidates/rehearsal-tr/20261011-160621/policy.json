@@ -1,0 +1,479 @@
+{
+ "language": "Turkish",
+ "bank_name": "Freya Bank",
+ "call_variables": {
+  "customer_id": "customer_id",
+  "now": "now",
+  "first_name": "first_name",
+  "last_name": "last_name",
+  "title": "title"
+ },
+ "test_variables": {
+  "first_name": "Daniel",
+  "last_name": "Reyes",
+  "title": "Mr",
+  "now": "2026-10-14T11:00"
+ },
+ "opening_line": "Merhaba, ben Freya Bank ad\u0131na arayan dijital asistan\u0131m; bu g\u00f6r\u00fc\u015fmeyi kaydediyoruz. {{title}} {{last_name}} ile mi g\u00f6r\u00fc\u015f\u00fcyorum?",
+ "goodbye_line": "Zaman ay\u0131rd\u0131\u011f\u0131n\u0131z i\u00e7in te\u015fekk\u00fcr ederim, iyi g\u00fcnler dilerim, ho\u015f\u00e7a kal\u0131n.",
+ "rules": {
+  "global": [
+   "Operasyon notu (dil-notu.docx): Kapsam: yaln\u0131z g\u00f6r\u00fc\u015fme dili. Bu nottan itibaren m\u00fc\u015fteriyle t\u00fcm g\u00f6r\u00fc\u015fme T\u00fcrk\u00e7e yap\u0131l\u0131r; ajan T\u00fcrk\u00e7e konu\u015fur, tarihleri ve tutarlar\u0131 T\u00fcrk\u00e7e s\u00f6yler. Brief'teki di\u011fer b\u00fct\u00fcn kurallar, tutarlar, tarihler ve kapan\u0131\u015f tablosu aynen ge\u00e7erlidir.",
+   "Call variables: Every call starts with these. Nothing else is known before the tools are called. `customer_id`: Pass it to every tool call. `first_name`, `last_name`: The person to ask for. `title`: Address the customer as title plus last name. `now`: The current date and time. All date rules use this, never the real clock.",
+   "4. If the customer asks whether you are a robot or an AI, say that you are Freya Bank's digital assistant and continue.",
+   "33. Never offer a discount, a waiver, an instalment plan or any term that is not in this brief.",
+   "42. A request for a human: ask once whether you can help first. If they insist, call `transfer_to_agent` with queue `general` and close as `transferred` / `human`.",
+   "43. \"Is this a scam?\": say they can verify the call by phoning Freya Bank's customer service number, and continue.",
+   "44. A question you cannot answer from the tools: say you do not have that information. Do not invent figures, dates or reasons.",
+   "45. If the customer says twice that they do not want to talk, close as `no_promise` / `refused`. Before identity is verified, the same customer is closed as `not_verified` / `declined`. Rule 42 applies before and after verification."
+  ],
+  "opening": [
+   "1. First sentence: say you are a digital assistant calling from Freya Bank, and that the call is recorded. Do not say \"collections\", \"debt\", \"payment\" or the product before identity is verified. This applies to everyone, including relatives.",
+   "2. Ask \"Am I speaking with {title} {last_name}?\".",
+   "3. Only \"yes\", \"that's me\", \"speaking\" or the customer's own name counts as confirmation. \"Hello\", \"go ahead\" and \"who is this\" do not. Ask once more. If it is still unclear after the second ask, close as `not_reached` / `unclear`. Answer a question from the customer first (rules 4 and 43). The ask that follows is the second ask."
+  ],
+  "third_party": [
+   "5. Do not say why you are calling. Say nothing beyond the opening sentence of rule 1. Ask when the customer can be reached.",
+   "6. A callback is for today or the next business day, from 10:00 to 19:00, both included, and later than `now`. Call `schedule_callback` with the date and the time, then close as `not_reached` / `callback`.",
+   "7. If the person offers a day or a time outside that window, ask once for another time. If that is also outside it, do not schedule. Close as `not_reached` / `no_callback`.",
+   "8. If the person says the number does not belong to the customer, close as `not_reached` / `wrong_number`.",
+   "9. If the person says the customer has died, say \"I am sorry for your loss.\", ask nothing else, and close as `not_reached` / `deceased`.",
+   "10. A relative may not answer the security questions and may not be told anything about the account, even if they offer to pay."
+  ],
+  "identity": [
+   "11. Ask two security questions, one at a time: first the date of birth, then the last four digits of the phone number on file. Call `verify_identity` with the answer. Send a date of birth as `YYYY-MM-DD`, whatever way the customer said it. The service rejects anything it cannot read as a date. Read a date given only as numbers as day, then month, then year.",
+   "12. A wrong answer may be asked again. Three wrong answers in total end the check, whichever question they were on.",
+   "13. If the customer gives day and month the other way round, `verify_identity` returns `hint: \"day_month_swapped\"`. Ask them to say the month as a word. That retry does not count as a wrong answer.",
+   "14. After three wrong answers, do not state the debt. Tell the customer to use the mobile app or a branch. Close as `not_verified` / `failed`.",
+   "15. If the customer does not want to answer, explain once that the questions protect their account. If they still decline, close as `not_verified` / `declined`. Asking what the call is about instead of answering counts as declining. A second refusal or a second such question closes the call."
+  ],
+  "negotiate": [
+   "16. After both questions pass, call `get_account`.",
+   "17. Say that you are calling from the collections team about a late payment. Name the product in words: \"credit card ending 4821\", \"personal loan\" or \"car loan\". State the past-due amount and how many days late it is.",
+   "Business days are Monday to Friday, except Freya Bank holidays: 2026-10-26, 2026-11-11, 2026-11-26, 2026-12-25, 2027-01-01.",
+   "18. The **deadline** depends on how late the customer is. | `days_late` 1 to 7 | early | the 12th business day after today | 1 | `days_late` 8 to 45 | late | the 7th business day after today | 2 |",
+   "19. A promise date must be today or later, a business day, and not after the deadline.",
+   "20. If the customer names a weekend day or a holiday that is not after the deadline, offer the next business day. If the named day is after the deadline, rule 23 applies.",
+   "21. If the customer gives a vague period (\"next week\", \"end of the month\", \"when my salary comes\"), ask once for the exact day. If they still give none, propose the deadline.",
+   "22. \"Next <weekday>\" means that weekday in the following calendar week. \"This <weekday>\" means the one in the current week. So \"next Friday\" said on a Friday is the Friday of the following week.",
+   "23. If the customer asks for a date after the deadline, say the latest date you can record is the deadline and offer it. If the customer refuses the deadline, treat it as a flat refusal (rule 30).",
+   "24. Ask for the full past-due amount first. Never ask \"how much can you pay?\". The agent proposes every amount.",
+   "25. The **floor** is `minimum_payment` for a credit card and `instalment_amount` for a personal loan or a car loan.",
+   "26. If the customer says the full amount is too much, offer the floor, once. Say that the rest stays overdue. If the customer refuses the floor, treat it as a flat refusal (rule 30). Attempt 2 may name the floor again, on the deadline.",
+   "27. If the customer proposes an amount from the floor up to the full amount, both included, accept it. Below the floor, say it cannot be recorded and offer the floor once. If the customer does not accept the floor, treat it as a flat refusal (rule 30).",
+   "28. First ask: \"Can you make this payment today?\".",
+   "29. A date or an amount the customer proposes is never a refusal. Handle it with sections 7 and 8.",
+   "30. A flat refusal or a non-answer uses one persuasion attempt. A no to paying today with no date and no amount is a flat refusal. Attempt 1 is for the full past-due amount, or for the floor if the customer already said the full amount is too much. - Attempt 1: propose the last business day of this week. If today is that day, propose the last business day of next week. - Attempt 2, late band only: propose the floor amount on the deadline.",
+   "31. When the attempts are used up, stop. Do not repeat an offer the customer already refused. Close as `no_promise` / `refused`.",
+   "32. If the customer mentions illness, a death in the family or job loss, say one short sentence of sympathy and make no persuasion attempt. Offer to connect them with the customer support team. If they accept, call `transfer_to_agent` with queue `support` and close as `transferred` / `support`. If they decline, close as `no_promise` / `hardship`. This rule comes before rules 30 and 41. If the customer still names a date or an amount themselves, record the promise under sections 7 and 8.",
+   "34. Read the product, the amount and the date back and ask \"Do you confirm?\". Call `create_promise` only after a clear yes.",
+   "35. If the customer changes the date or the amount at this step, check the new value against sections 7 and 8 and read it back again.",
+   "36. One promise per product. A recorded promise cannot be changed or cancelled in the same call. If the customer asks, say they can change it in the mobile app.",
+   "37. Say the promise is recorded only after `create_promise` returns `ok: true`. If it fails, try once more. If it fails again, say you could not record it and close as `no_promise` / `service_error`.",
+   "38. After a recorded promise, say this sentence: \"You will receive a text message confirming this promise.\"",
+   "39. \"I already paid\": say that payments can take one business day to appear, take no promise, and close as `paid`.",
+   "40. \"This debt is not mine\" or \"I never had this product\": do not argue and do not take a promise. Close as `no_promise` / `dispute`. A claim that the product was closed or paid off in the past is a dispute. Rule 39 covers only a payment of this past-due amount.",
+   "41. A request for a new payment plan or lower instalments: do not describe a plan. Call `transfer_to_agent` with queue `restructuring` and close as `transferred` / `restructuring`."
+  ],
+  "closing": [
+   "46. Every call ends with exactly one `close_call`, with an outcome and, where the table lists one, a reason. It is the last tool call.",
+   "| `promise` | none | at least one promise was recorded | `paid` | none | rule 39 | `transferred` | `restructuring`, `human`, `support` | rules 41, 42, 32 | `no_promise` | `refused`, `hardship`, `dispute`, `service_error` | rules 31 and 45, 32, 40, 37 | `not_verified` | `failed`, `declined` | rules 14, 15 | `not_reached` | `callback`, `no_callback`, `wrong_number`, `deceased`, `unclear` | rules 6, 7, 8, 9, 3 |",
+   "If a transfer follows a recorded promise, close as `transferred` with that transfer's reason.",
+   "Brief A never uses `add_note`.",
+   "47. Thank the customer and say goodbye before `close_call`."
+  ]
+ },
+ "identity": {
+  "questions": [
+   {
+    "field": "date_of_birth",
+    "ask": "Do\u011fum tarihinizi s\u00f6yler misiniz?",
+    "answer_format": "YYYY-MM-DD; the customer may say the date in words, the agent converts; a date given only as numbers is read as day, then month, then year",
+    "kind": "date",
+    "output": "YYYY-MM-DD"
+   },
+   {
+    "field": "phone_last4",
+    "ask": "Kay\u0131tl\u0131 telefon numaran\u0131z\u0131n son d\u00f6rt hanesini s\u00f6yler misiniz?",
+    "answer_format": "four digits",
+    "kind": "digits",
+    "digits": 4
+   }
+  ],
+  "hints": {
+   "day_month_swapped": "Ask the customer to say the month as a word; this retry does not count as a wrong answer."
+  },
+  "hint_say": {
+   "day_month_swapped": "Do\u011fum tarihinizi ay\u0131 kelimeyle s\u00f6yleyerek tekrar eder misiniz?"
+  },
+  "say": {
+   "verified_one": "Te\u015fekk\u00fcr ederim.",
+   "verified_all": "Te\u015fekk\u00fcr ederim, kimli\u011finiz do\u011fruland\u0131.",
+   "ask_missing": "L\u00fctfen {missing} bilgisini de s\u00f6yler misiniz?",
+   "part_day": "g\u00fcn",
+   "part_month": "ay",
+   "part_year": "y\u0131l",
+   "part_digits": "kalan haneler",
+   "and_word": "ve",
+   "wrong": "Maalesef bu bilgi kay\u0131tlar\u0131m\u0131zla e\u015fle\u015fmiyor.",
+   "unreadable": "S\u00f6yledi\u011finizi anlayamad\u0131m.",
+   "service_error": "Bu bilgiyi \u015fu anda kontrol edemedim.",
+   "decline_explain": "Bu sorular hesab\u0131n\u0131z\u0131 korumak i\u00e7in soruluyor.",
+   "failed": "Kimli\u011finizi do\u011frulayamad\u0131m. L\u00fctfen mobil uygulamam\u0131z\u0131 kullan\u0131n ya da bir \u015fubemize ba\u015fvurun."
+  },
+  "declines_to_close": 2,
+  "max_wrong_answers": 3,
+  "failed": {
+   "outcome": "not_verified",
+   "reason": "failed"
+  },
+  "declined": {
+   "outcome": "not_verified",
+   "reason": "declined"
+  }
+ },
+ "human_request": {
+  "queue": "general",
+  "asks_before_transfer": 1,
+  "say": "Size \u00f6nce ben yard\u0131mc\u0131 olabilir miyim?"
+ },
+ "calendar": {
+  "weekend_days": [
+   5,
+   6
+  ],
+  "holidays": [
+   "2026-10-26",
+   "2026-11-11",
+   "2026-11-26",
+   "2026-12-25",
+   "2027-01-01"
+  ],
+  "day_names": [
+   "Pazartesi",
+   "Sal\u0131",
+   "\u00c7ar\u015famba",
+   "Per\u015fembe",
+   "Cuma",
+   "Cumartesi",
+   "Pazar"
+  ],
+  "month_names": [
+   "Ocak",
+   "\u015eubat",
+   "Mart",
+   "Nisan",
+   "May\u0131s",
+   "Haziran",
+   "Temmuz",
+   "A\u011fustos",
+   "Eyl\u00fcl",
+   "Ekim",
+   "Kas\u0131m",
+   "Aral\u0131k"
+  ]
+ },
+ "callback": {
+  "days": [
+   "today",
+   "next_business_day"
+  ],
+  "window_start": "10:00",
+  "window_end": "19:00",
+  "bounds_included": true,
+  "later_than_now": true,
+  "reasks": 1
+ },
+ "bands": [
+  {
+   "min": 1,
+   "max": 7,
+   "deadline_business_days": 12,
+   "attempts": 1
+  },
+  {
+   "min": 8,
+   "max": 45,
+   "deadline_business_days": 7,
+   "attempts": 2
+  }
+ ],
+ "computed_dates": [
+  {
+   "label": "attempt 1 date",
+   "rule": "this_week_last_business_day_or_next_week_if_today"
+  }
+ ],
+ "uses_notes": false,
+ "products": {
+  "naming": {
+   "credit_card": "{card_last4} ile biten kredi kart\u0131",
+   "personal_loan": "ihtiya\u00e7 kredisi",
+   "car_loan": "ta\u015f\u0131t kredisi"
+  },
+  "floor_field": {
+   "credit_card": "minimum_payment",
+   "personal_loan": "instalment_amount",
+   "car_loan": "instalment_amount"
+  }
+ },
+ "negotiation": {
+  "ladder": [
+   {
+    "amount": "full_or_floor_if_too_much",
+    "date": "this_week_last_business_day_or_next_week_if_today"
+   },
+   {
+    "amount": "floor",
+    "date": "deadline"
+   }
+  ],
+  "hardship_definition": "illness, a death in the family or job loss",
+  "hardship_queue": "support",
+  "shared_date_clamps_to_deadline": false,
+  "say": {
+   "debt_intro": "Tahsilat ekibinden, gecikmi\u015f bir \u00f6deme hakk\u0131nda ar\u0131yorum.",
+   "product_line": "{name} i\u00e7in {amount} gecikmi\u015f \u00f6demeniz bulunuyor; \u00f6deme {days} g\u00fcnd\u00fcr gecikmede.",
+   "first_ask_one": "Bu \u00f6demeyi bug\u00fcn yapabilir misiniz?",
+   "first_ask_all": "Bu \u00f6demeleri bug\u00fcn yapabilir misiniz?",
+   "offer": "{amount} tutar\u0131n\u0131 {date} tarihinde \u00f6deyebilir misiniz?",
+   "offer_named": "{name} i\u00e7in {amount} tutar\u0131n\u0131 {date} tarihinde \u00f6deyebilir misiniz?",
+   "floor_offer": "O halde {amount} tutar\u0131n\u0131 {date} tarihinde \u00f6deyebilir misiniz? Kalan tutar gecikmede kalmaya devam eder.",
+   "below_floor": "Bu tutar\u0131 kaydedemiyorum. {amount} tutar\u0131n\u0131 {date} tarihinde \u00f6deyebilir misiniz?",
+   "not_business_day": "{day} i\u015f g\u00fcn\u00fc de\u011fil. Bunun yerine {next} tarihini \u00f6nerebilirim.",
+   "after_deadline": "Kaydedebilece\u011fim en ge\u00e7 tarih {deadline}. Bu tarihte \u00f6deyebilir misiniz?",
+   "past": "Bu tarih ge\u00e7mi\u015f. Hangi g\u00fcn \u00f6deyebilirsiniz?",
+   "ask_exact": "Tam olarak hangi g\u00fcn \u00f6deyebilirsiniz?",
+   "vague_deadline": "O halde {deadline} tarihini \u00f6nerebilirim. Bu tarihte \u00f6deyebilir misiniz?",
+   "readback_intro": "\u00d6zetliyorum:",
+   "readback_item": "{name}: {date} tarihinde {amount}.",
+   "readback_clamped": "{name} i\u00e7in kaydedebilece\u011fim en ge\u00e7 tarih {deadline}.",
+   "confirm_question": "Onayl\u0131yor musunuz?",
+   "recorded": "\u00d6deme s\u00f6z\u00fcn\u00fcz kaydedildi.",
+   "not_recorded": "{name} i\u00e7in \u00f6deme s\u00f6z\u00fcn\u00fcz\u00fc kaydedemedim.",
+   "hardship": "Bunu duydu\u011fuma \u00e7ok \u00fcz\u00fcld\u00fcm. \u0130sterseniz sizi m\u00fc\u015fteri destek ekibimize ba\u011flayabilirim.",
+   "paid": "Te\u015fekk\u00fcr ederim. \u00d6demelerin hesaba yans\u0131mas\u0131 bir i\u015f g\u00fcn\u00fc s\u00fcrebilir.",
+   "dispute": "Anl\u0131yorum, bu konuda size \u00f6deme s\u00f6z\u00fc sormayaca\u011f\u0131m.",
+   "checking": "Bir saniye.",
+   "robot_answer": "Ben Freya Bank'\u0131n dijital asistan\u0131y\u0131m.",
+   "scam_answer": "Bu aramay\u0131 Freya Bank m\u00fc\u015fteri hizmetleri numaras\u0131n\u0131 arayarak do\u011frulayabilirsiniz.",
+   "error": "Kusura bakmay\u0131n, tekrar eder misiniz?",
+   "go_on": "Buyurun, devam edin l\u00fctfen.",
+   "no_terms": "Maalesef b\u00f6yle bir se\u00e7enek sunam\u0131yorum."
+  }
+ },
+ "statuses": {
+  "refused": "refused",
+  "hardship": "hardship",
+  "dispute": "dispute",
+  "paid": "paid",
+  "service_error": "service_error"
+ },
+ "transfer_line": "Sizi \u015fimdi bir temsilcimize aktar\u0131yorum.",
+ "vague_asks_before_deadline": 1,
+ "stop_statements_to_close": 2,
+ "write_retries": {
+  "create_promise": 1
+ },
+ "after_promise_sentence": "Bu s\u00f6z\u00fc onaylayan bir k\u0131sa mesaj alacaks\u0131n\u0131z.",
+ "closing": {
+  "table": {
+   "promise": [],
+   "paid": [],
+   "transferred": [
+    "restructuring",
+    "human",
+    "support"
+   ],
+   "no_promise": [
+    "refused",
+    "hardship",
+    "dispute",
+    "service_error"
+   ],
+   "not_verified": [
+    "failed",
+    "declined"
+   ],
+   "not_reached": [
+    "callback",
+    "no_callback",
+    "wrong_number",
+    "deceased",
+    "unclear"
+   ]
+  },
+  "promise_outcome": "promise",
+  "transferred_outcome": "transferred",
+  "queue_reason": {
+   "restructuring": "restructuring",
+   "general": "human",
+   "support": "support"
+  },
+  "outcomes_without_reason": [
+   "promise",
+   "paid"
+  ],
+  "unrecorded_promise_fallback": {
+   "outcome": "no_promise",
+   "reason": "service_error"
+  },
+  "technical_error": {
+   "outcome": "no_promise",
+   "reason": "service_error"
+  },
+  "paid_outcome": "paid",
+  "no_promise_outcome": "no_promise"
+ },
+ "operations": {
+  "verify_identity": "musteri/kimlik-dogrula",
+  "get_account": "musteri/hesap-ozeti",
+  "create_promise": "odeme/soz-kaydet",
+  "add_note": "gorusme/not-ekle",
+  "schedule_callback": "gorusme/geri-arama",
+  "transfer_to_agent": "gorusme/temsilciye-aktar",
+  "close_call": "gorusme/kapat"
+ },
+ "api_binding": {
+  "customer_id_param": "customer_id",
+  "success_field": "ok",
+  "verify": {
+   "field_param": "field",
+   "answer_param": "answer",
+   "verified": "verified",
+   "all_verified": "all_verified",
+   "remaining": "wrong_answers_left",
+   "hint": "hint"
+  },
+  "account": {
+   "list": "products",
+   "id": "product_id",
+   "type": "type",
+   "past_due": "past_due",
+   "days_late": "days_late"
+  },
+  "promise": {
+   "product": "product_id",
+   "amount": "amount",
+   "date": "date"
+  },
+  "note": {
+   "product": "product_id",
+   "reason": "reason"
+  },
+  "callback": {
+   "date": "date",
+   "time": "time"
+  },
+  "transfer": {
+   "queue": "queue"
+  },
+  "close": {
+   "outcome": "outcome",
+   "reason": "reason"
+  }
+ },
+ "multi_product": false,
+ "amendments": [
+  {
+   "change": "The whole conversation with the customer is held in Turkish; the agent speaks Turkish and says dates and amounts in Turkish.",
+   "scope": "Conversation language only",
+   "replaces": "The English wording of spoken phrases in BRIEF.md (e.g. the quoted questions and sentences in rules 2, 9, 28, 34, 38); every other rule, amount, date and the closing table stay unchanged",
+   "source": "Kapsam: yaln\u0131z g\u00f6r\u00fc\u015fme dili. Bu nottan itibaren m\u00fc\u015fteriyle t\u00fcm g\u00f6r\u00fc\u015fme T\u00fcrk\u00e7e yap\u0131l\u0131r; ajan T\u00fcrk\u00e7e konu\u015fur, tarihleri ve tutarlar\u0131 T\u00fcrk\u00e7e s\u00f6yler. Brief'teki di\u011fer b\u00fct\u00fcn kurallar, tutarlar, tarihler ve kapan\u0131\u015f tablosu aynen ge\u00e7erlidir."
+  }
+ ],
+ "unresolved_conflicts": [
+  {
+   "topic": "Server URL",
+   "candidates": [
+    "https://rehearsal-mock.example.workers.dev/v2 (supplied tool API)",
+    "https://banka.example/v2 (servis-sozlesmesi.json servers)"
+   ],
+   "chosen": "https://rehearsal-mock.example.workers.dev/v2",
+   "why": "The supplied tool API is the one the phone agent may call in practice; the contract file's server is a draft placeholder. Flagged for the deployment step."
+  },
+  {
+   "topic": "Tool names",
+   "candidates": [
+    "Brief role names (verify_identity, get_account, create_promise, add_note, schedule_callback, transfer_to_agent, close_call)",
+    "API paths (musteri/kimlik-dogrula, ...)"
+   ],
+   "chosen": "API paths bound by role",
+   "why": "The schemas line up one to one (VerifyIdentityIstek, GetAccountIstek, etc.), so the brief's names map to the API operations by role."
+  },
+  {
+   "topic": "Form of address under the Turkish amendment",
+   "candidates": [
+    "Use the title variable value as given (Mr/Ms)",
+    "Translate it to a Turkish honorific (Bay/Bayan)"
+   ],
+   "chosen": "Use {{title}} {{last_name}} as given",
+   "why": "Rule 2 fixes title plus last name. The language note does not say whether the variable's value should be translated, so it stays untranslated."
+  }
+ ],
+ "extra_rules": [
+  {
+   "text": "Confirmation of identity on the line: only explicit confirmation counts. Ask a second time; if it is still unclear after the second ask, close not_reached/unclear. Answering a customer's question (robot or scam) comes first, and the ask after that answer counts as the second ask.",
+   "quote": "Ask once more. If it is still unclear after the second ask, close as `not_reached` / `unclear`. Answer a question from the customer first (rules 4 and 43). The ask that follows is the second ask.",
+   "stage": "opening",
+   "kind": "stateful"
+  },
+  {
+   "text": "Before identity is verified, never mention collections, debt, payment or the product, not even to relatives. To a third party, say nothing beyond the opening sentence.",
+   "quote": "Do not say \"collections\", \"debt\", \"payment\" or the product before identity is verified. This applies to everyone, including relatives.",
+   "stage": "opening",
+   "kind": "conversational"
+  },
+  {
+   "text": "Deceased: say only the condolence sentence (in Turkish), ask nothing else, then close not_reached/deceased.",
+   "quote": "If the person says the customer has died, say \"I am sorry for your loss.\", ask nothing else, and close as `not_reached` / `deceased`.",
+   "stage": "third_party",
+   "kind": "conversational"
+  },
+  {
+   "text": "A relative may not answer security questions and gets no account information, even if they offer to pay.",
+   "quote": "A relative may not answer the security questions and may not be told anything about the account, even if they offer to pay.",
+   "stage": "third_party",
+   "kind": "conversational"
+  },
+  {
+   "text": "Interpret 'next <weekday>' as that weekday in the following calendar week and 'this <weekday>' as the one in the current week, both relative to now. Convert the result into an exact date before the code check.",
+   "quote": "\"Next <weekday>\" means that weekday in the following calendar week. \"This <weekday>\" means the one in the current week. So \"next Friday\" said on a Friday is the Friday of the following week.",
+   "stage": "negotiate",
+   "kind": "computational"
+  },
+  {
+   "text": "A request to change or cancel a recorded promise: say they can change it in the mobile app. Make no second write.",
+   "quote": "A recorded promise cannot be changed or cancelled in the same call. If the customer asks, say they can change it in the mobile app.",
+   "stage": "negotiate",
+   "kind": "conversational"
+  },
+  {
+   "text": "A claim that the product was closed or paid off in the past is a dispute, not 'already paid'. Rule 39 covers only a payment of this past-due amount.",
+   "quote": "A claim that the product was closed or paid off in the past is a dispute. Rule 39 covers only a payment of this past-due amount.",
+   "stage": "negotiate",
+   "kind": "conversational"
+  },
+  {
+   "text": "Never ask the customer how much they can pay; the agent proposes every amount.",
+   "quote": "Never ask \"how much can you pay?\". The agent proposes every amount.",
+   "stage": "negotiate",
+   "kind": "conversational"
+  },
+  {
+   "text": "Refusing the deadline offered after a too-late date, refusing the floor, or refusing the floor after a below-floor amount each counts as a flat refusal and uses one persuasion attempt.",
+   "quote": "If the customer refuses the deadline, treat it as a flat refusal (rule 30).",
+   "stage": "negotiate",
+   "kind": "stateful"
+  }
+ ],
+ "operation_urls": {
+  "verify_identity": "https://rehearsal-mock.example.workers.dev/v2/musteri/kimlik-dogrula",
+  "get_account": "https://rehearsal-mock.example.workers.dev/v2/musteri/hesap-ozeti",
+  "create_promise": "https://rehearsal-mock.example.workers.dev/v2/odeme/soz-kaydet",
+  "schedule_callback": "https://rehearsal-mock.example.workers.dev/v2/gorusme/geri-arama",
+  "transfer_to_agent": "https://rehearsal-mock.example.workers.dev/v2/gorusme/temsilciye-aktar",
+  "close_call": "https://rehearsal-mock.example.workers.dev/v2/gorusme/kapat",
+  "add_note": "https://rehearsal-mock.example.workers.dev/v2/gorusme/not-ekle"
+ }
+}

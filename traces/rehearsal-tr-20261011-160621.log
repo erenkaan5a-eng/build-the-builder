@@ -6,3 +6,13 @@
 2026-10-11T16:06:21+0000 [INPUT] dil-notu.docx (docx, 879 bytes, sha256 1ebb5dab6ee7ce74): 251 chars read
 2026-10-11T16:06:21+0000 [INPUT] servis-sozlesmesi.json (json, 10683 bytes, sha256 c073b8b86e8385ec): 10683 chars read
 2026-10-11T16:06:21+0000 [INPUT] service contract /tmp/claude-0/-home-user-build-the-builder/a05d22cc-149a-5154-a736-4f17e47e488e/scratchpad/rehearsal-tr/servis-sozlesmesi.json (sha256 c073b8b86e8385ec); contract server 'https://banka.example/v2' -> 'https://rehearsal-mock.example.workers.dev/v2' (the contract's path '/v2' kept on the mock host)
+2026-10-11T16:07:56+0000 [MODEL] #1 model=claude-opus-5-5 purpose=extract policy.json from the brief and tool API usage={"in": 2, "cache_create": 32872, "cache_read": 0, "out": 11324, "s": 86}
+2026-10-11T16:07:56+0000 [MAIN] operation for verify_identity: musteri/kimlik-dogrula (https://rehearsal-mock.example.workers.dev/v2/musteri/kimlik-dogrula)
+2026-10-11T16:07:56+0000 [MAIN] operation for get_account: musteri/hesap-ozeti (https://rehearsal-mock.example.workers.dev/v2/musteri/hesap-ozeti)
+2026-10-11T16:07:56+0000 [MAIN] operation for create_promise: odeme/soz-kaydet (https://rehearsal-mock.example.workers.dev/v2/odeme/soz-kaydet)
+2026-10-11T16:07:56+0000 [MAIN] operation for schedule_callback: gorusme/geri-arama (https://rehearsal-mock.example.workers.dev/v2/gorusme/geri-arama)
+2026-10-11T16:07:56+0000 [MAIN] operation for transfer_to_agent: gorusme/temsilciye-aktar (https://rehearsal-mock.example.workers.dev/v2/gorusme/temsilciye-aktar)
+2026-10-11T16:07:56+0000 [MAIN] operation for close_call: gorusme/kapat (https://rehearsal-mock.example.workers.dev/v2/gorusme/kapat)
+2026-10-11T16:07:56+0000 [MAIN] operation for add_note: gorusme/not-ekle (https://rehearsal-mock.example.workers.dev/v2/gorusme/not-ekle)
+2026-10-11T16:07:56+0000 [POLICY] amendment: The whole conversation with the customer is held in Turkish; the agent speaks Turkish and says dates and amounts in Turkish. | scope Conversation language only | replaces The English wording of spoken phrases in BRIEF.md (e.g. the quoted questions and sentences in rules 2, 9, 28, 34, 38); every other rule, amount, date and the closing table stay unchanged
+2026-10-11T16:07:56+0000 [END] local only: lint OK; nothing published, nothing tested on Freya

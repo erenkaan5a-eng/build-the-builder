@@ -1,0 +1,10 @@
+2026-10-11T16:08:45+0000 [START] slot=rehearsal-tr-note brief=/tmp/claude-0/-home-user-build-the-builder/a05d22cc-149a-5154-a736-4f17e47e488e/scratchpad/rehearsal-tr tool_api=https://rehearsal-mock.example.workers.dev mode=main budget_min=30 candidate=/home/user/build-the-builder/candidates/rehearsal-tr-note/20261011-160845
+2026-10-11T16:08:45+0000 [START] source commit b88230d2e78b37671181477dda915cc68a93b958 builder tree 8b30c3098906c5fbbe9a559d85957dce886598bc uncommitted builder changes: yes
+2026-10-11T16:08:45+0000 [START] credentials: FREYA_API_KEY absent, FREYA_BANK_TEAM_KEY absent, cloud proxy mode off
+2026-10-11T16:08:45+0000 [INPUT] BRIEF.md (md, 10174 bytes, sha256 d57c049c89aec461): 10174 chars read
+2026-10-11T16:08:45+0000 [INPUT] README.md (md, 213 bytes, sha256 b03cd5877abbef27): 195 chars read
+2026-10-11T16:08:45+0000 [INPUT] dil-notu.docx (docx, 879 bytes, sha256 1ebb5dab6ee7ce74): 251 chars read
+2026-10-11T16:08:45+0000 [INPUT] servis-sozlesmesi.json (json, 10683 bytes, sha256 c073b8b86e8385ec): 10683 chars read
+2026-10-11T16:08:45+0000 [INPUT] service contract /tmp/claude-0/-home-user-build-the-builder/a05d22cc-149a-5154-a736-4f17e47e488e/scratchpad/rehearsal-tr/servis-sozlesmesi.json (sha256 c073b8b86e8385ec); contract server 'https://banka.example/v2' -> 'https://rehearsal-mock.example.workers.dev/v2' (the contract's path '/v2' kept on the mock host)
+2026-10-11T16:08:45+0000 [MAIN] main path failed: reused policy candidates/rehearsal-tr/20261011-160621/policy.json was extracted from other inputs
+2026-10-11T16:08:45+0000 [END] main only: no workflow. elapsed 0s

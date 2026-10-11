@@ -1,0 +1,20 @@
+{
+ "path": "main",
+ "slot": "rehearsal-tr",
+ "local_only": true,
+ "lint_problems": 0,
+ "build_seconds": 95,
+ "model_calls": 1,
+ "trace": "/home/user/build-the-builder/traces/rehearsal-tr-20261011-160621.log",
+ "known_gaps": [
+  "turning the customer's words into negotiation events (and dates into YYYY-MM-DD) is done by the dialogue model; offers, counters, dates, amounts, read-back, recording, notes and the close are code",
+  "callback window validity is decided by the dialogue model from code-computed window facts (not code)",
+  "identity: the dialogue model turns the customer's words into answer parts and events; a misheard part is sent to the bank as heard (the bank decides)",
+  "extra rule (stateful, stage opening): Confirmation of identity on the line: only explicit confirmation counts. Ask a second time; if it is still unclear after the second ask, close not_reached/unclear. Answering a customer's question (robot or scam) comes first, and the ask after that answer counts as the second ask. - left to the dialogue model's prompt",
+  "extra rule (computational, stage negotiate): Interpret 'next <weekday>' as that weekday in the following calendar week and 'this <weekday>' as the one in the current week, both relative to now. Convert the result into an exact date before the code check. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Refusing the deadline offered after a too-late date, refusing the floor, or refusing the floor after a below-floor amount each counts as a flat refusal and uses one persuasion attempt. - left to the dialogue model's prompt",
+  "unresolved conflict: Server URL: chose 'https://rehearsal-mock.example.workers.dev/v2' (The supplied tool API is the one the phone agent may call in practice; the contract file's server is a draft placeholder. Flagged for the deployment step.)",
+  "unresolved conflict: Tool names: chose 'API paths bound by role' (The schemas line up one to one (VerifyIdentityIstek, GetAccountIstek, etc.), so the brief's names map to the API operations by role.)",
+  "unresolved conflict: Form of address under the Turkish amendment: chose 'Use {{title}} {{last_name}} as given' (Rule 2 fixes title plus last name. The language note does not say whether the variable's value should be translated, so it stays untranslated.)"
+ ]
+}

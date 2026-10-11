@@ -117,7 +117,7 @@ Return ONE JSON object, no prose, with exactly these keys:
 }
 Rules for filling it:
 - Every value comes from THIS brief and THIS tool API. Field names in api_binding must exist in the tool API summary.
-- operations: the fixed parts and the keys below use these role names. For each role give the tool API operation that does that job, spelled exactly as the summary lists it (the same name when it already matches; null when the API has none). api_binding fields of a role are fields of the operation you bound to it.
+- operations: the fixed parts and the keys below use these role names. For each role give the tool API operation that does that job, spelled exactly as the summary lists it (the same name when it already matches; null when the API has none). api_binding fields of a role are fields of the operation you bound to it. A role bound to a differently named operation is expected, not a conflict.
 - Copy rule text verbatim; do not summarize away exceptions.
 - A memo or note that changes a rule applies only within its stated scope; record it in amendments. Do not assume the newest document overrides everything. If two sources conflict and the text does not settle it, record it in unresolved_conflicts.
 - Every rule of the brief goes verbatim into rules.<stage>; the dialogue model follows those. extra_rules lists ONLY rules the generator's fixed parts cannot carry, classified as:
