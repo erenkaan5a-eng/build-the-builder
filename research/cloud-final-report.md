@@ -18,6 +18,7 @@ Yerel test geçişi canlı başarı, public başarı gizli brief başarısı de�
 | c1d0646 | release davranış kontrolüne yalnız platform 5xx için bütçe içinde sınırlı tekrar; recheck aracı | 01:49–01:53 UTC chat 503/502 release'i düşürdü; finalde elle adım gerekmesin |
 | 23f0227 | zorluk tüm açık ürünleri kapsar; anlaşılmış ürün tarihini korur | çıkarımın kaydettiği yorum ("hardship tüm çağrı") ile motor uyumu |
 | c8de7c9 | **platform çökmesi düzeltmesi**: üretilen kodda `global` yok; test düzeneği kodu platform gibi fonksiyon içinde çalıştırır; lint `global/nonlocal` ve fonksiyon içinde derlenmeyen kodu reddeder; kırpılan ürünün deadline notu ayrı cümle | chat C2 (cl-a v1): motorun zorluk yolu her turda hata cümlesine düştü (NameError). Yerel düz `exec()` bunu gizliyordu |
+| 503d996 | **ÖLÇÜLMEDİ**: kimlik aşaması istemi — parçalı verilen cevabı birleştir, "tek seferde" isteme; "failed" kapanışı yalnız bankanın sonucuyla | PUB-06 `--style pieces` (cl-a v2) bir koşuda: model doğum tarihi parçalarını birleştirmedi, verify_identity hiç çağrılmadan `not_verified/failed` kapattı; tekrar koşusu geçti. Build bütçesi bittiği için canlı ölçülmedi; bir sonraki build'de ölçülmeli, gerilerse bu commit geri alınmalı |
 
 ## 3. A/B notları
 Tam tablo: research/ab-kural-tablosu.md. Uygulanan / reddedilen / ertelenen özeti:
@@ -42,8 +43,13 @@ Motor testleri artık kodu platform gibi bir fonksiyon içinde çalıştırır. 
 | cl-ab v1 (3390a84c8ad3f3ee) | 59e0ba2 | chat C3 | kısmi onay kayıt açmadı; tam onay → doğru 2 kayıt (kanıt geçerli, aday aynı hata nedeniyle emekli) |
 | **cl-a v2** (233c8dfe1a7d9d91) | c8de7c9 | PUB-05, PUB-06, PUB-10 × 3; PUB-04, PUB-08 × 1 | **11/11 koşu**; PUB-05/06/10 pass^3 3/3 (bu alt kümede) |
 | **cl-ab v2** (8abfb3c856c81f25) | c8de7c9 | PUB-11, PUB-12, PUB-13 × 3 | **9/9 koşu**; pass^3 3/3 |
-| cl-a v2 varyasyon: zorluk + "Cuma 300" | c8de7c9 | × 3 | 2/3 (aşağıda) |
-| konuşma tarzları (tek tekrar) | c8de7c9 | 5 | (aşağıda) |
+| cl-a v2 varyasyon: zorluk + "Cuma 300" | c8de7c9 | × 3 | 2/3 (bölüm 6) |
+| cl-a v2 tarz: PUB-06 pieces | c8de7c9 | 1 + 1 tekrar | 1/2 — ilk koşu kimlikte kaldı (bölüm 6b), tekrar geçti → değişken sonuç |
+| cl-a v2 tarz: PUB-10 in_words | c8de7c9 | 1 | 1/1 |
+| cl-ab v2 tarz: PUB-13 corrects | c8de7c9 | 1 | 1/1 |
+| cl-ab v2 tarz: PUB-12 asks_back | c8de7c9 | 1 | 1/1 |
+| cl-ab v2 tarz: PUB-11 talkative | c8de7c9 | 1 | 1/1 |
+Toplam simüle koşu: 29 (ilk paket 20/20; varyasyon 2/3; tarzlar 5/6). Tek tekrarlık tarz sonuçları pass^3 değildir.
 - Simülasyon kimlikleri ve ham çıktılar: research/cloud-runs/*.json|log (call id'ler dahil).
 - Gecikme: en yavaş tur medyanı 3–17 s; 17 s ve 24 s'lik koşularda run_cases "yavaş model" uyarısı; kapatan müşteri 0.
 - n6 skorları (A 29/30, B 9/9) eski koda aittir; burada birleştirilmedi. Bu oturumda A'nın 10 vakasının yalnız 5'i ölçüldü (PUB-01/02/03/07/09 yeni kodla ölçülmedi).
@@ -53,6 +59,12 @@ Motor testleri artık kodu platform gibi bir fonksiyon içinde çalıştırır. 
 - Kalan risk (judge'a bağlı): destek reddi + "indirim?" turunda diyalog modeli olay aracını çağırırken kendi metnini de söyledi: 1. tekrarda "I cannot offer a discount. Would you like to make a payment for your personal loan?" (zorluk sonrası ödeme sorusu), 2–3. tekrarda kendi vedası. Judge kabul etti. Yapısal öneri: destek teklifine cevabı neg_relay'de çıkarımla deterministik yönlendirmek (model o turda konuşmaz). Build bütçesi bittiği için uygulanmadı/ölçülmedi.
 - Zorluk + "Cuma 300" varyasyonu (experiments/variations/hardship-own-offer.json; beklenen değer brief'ten bağımsız türetildi): 2/3. Başarılı iki koşu tam tasarlandığı gibi: [proposes, hardship] → empati+destek teklifi → ret → "personal loan: 300.00 on Friday 16 October. Do you confirm?" → kayıt + SMS cümlesi. Başarısız koşuda simüle müşteri üç mesajı yarım gönderdi ("…but I", "…transferred,"); tutar/tarih hiç söylenmedi; ajan aldığı girdiyle A32'ye uygun kapattı. Sınıf: persona kesilmesi / değişken sonuç; dayanıklılık açığı: ajan yarım kalan cümlenin devamını istemiyor.
 - Chat C2 (cl-a v1) bu yolu platformda kırık gösterdi; v2 düzeltmesi chat ile değil, bu varyasyonla platformda doğrulandı.
+
+## 6b. Parçalı konuşma: kimlik aşaması (PUB-06, --style pieces)
+- Başarısız koşu (call 4fa1be43…): müşteri "May seventeenth", sonra "Nineteen eighty six" dedi; model "full date in one go" diye ısrar etti, parçaları birleştirmedi, 33 mesaj sonra banka çağrısı olmadan `not_verified/failed` kapattı (A11 parçalı cevap; A14 üç yanlış banka cevabı şartı ihlal).
+- Tekrar koşusu (geçti): doğum tarihi parçaları ikinci denemede birleşti; telefon "One five" + "Zero two" birleştirilmedi, müşteri dördünü tekrar edince ilerledi.
+- Sınıf: değişken sonuç; mekanizma: kimlik akışı modelde (bilinen açık). İlk nedensel hata: politika uygulaması (model), platform/judge değil.
+- Builder düzeltmesi 503d996 (istem); canlı ölçülmedi.
 
 ## 7. Yeni onay ve kapanış yollarının kanıtı
 - Kısmi onay: chat C3 (cl-ab v1, onay kodu v2 ile aynı) — "Yes, for the credit card" → yalnız "Do you confirm?", kayıt yok; "Yes, I confirm both" → kart 300/30 Eki, kredi 900/23 Eki; ledger close promise.
@@ -68,6 +80,7 @@ Motor testleri artık kodu platform gibi bir fonksiyon içinde çalıştırır. 
 
 ## 9. En güvenilir mevcut aday ve doğrulanmamış kapsam
 - A: cl-a v2 (workflow 0800b57a…, v2, hash 233c8dfe1a7d9d91). B: cl-ab v2 (workflow 06d2cae1…, v2, hash 8abfb3c856c81f25). Export'lar: candidates/cl-a/20261011-021737/export.json, candidates/cl-ab/20261011-021934/export.json.
+- Mevcut builder kodu (503d996) bu adaylardan bir istem değişikliğiyle ayrılır (kimlik parçaları); o değişiklik ölçülmedi.
 - Doğrulanmamış: A'nın PUB-01/02/03/07/09'u yeni kodla; üçüncü kişi/callback, kimlik reddi, insan isteği, A45 iki kez ret, transfer kesintisi; memo ve API çıkarımı; gizli brief biçimleri.
 
 ## 10. Teslim

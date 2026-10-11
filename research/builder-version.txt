@@ -1,2 +1,4 @@
 1a5910570bcf9fe0  measured: n6 candidates (cmp-a v8, cmp-ab v7) and F builds
-84894192a420329c  current: local fixes of 11 Oct, NOT measured live
+84894192a420329c  local fixes of 11 Oct (arrived in the cloud as commit a5de722), NOT measured live; id method not documented
+c2d52b8ce679151c  git tree of builder/ at c8de7c9: measured in the cloud session (cl-a v2, cl-ab v2), see research/cloud-progress.md
+e426c5630ba6940b  git tree of builder/ at 503d996: current; identity-stage prompt change NOT measured live

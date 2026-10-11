@@ -1,6 +1,6 @@
 # Bulut oturumu ilerleme kaydı
 
-Son güncelleme: 2026-10-11 ~02:25 UTC
+Son güncelleme: 2026-10-11 ~03:00 UTC (oturum sonu)
 
 ## Kaynak sürümü
 - Depo: erenkaan5a-eng/build-the-builder, dal `claude/lucid-fermat-vxp9u7`. Başlangıç commit `a5de722` (builder ağacı `a4c98a04ab393525`), çalışma ağacı temizdi.
@@ -28,6 +28,10 @@ Son güncelleme: 2026-10-11 ~02:25 UTC
 5. Release davranış kontrolüne yalnız platform 5xx için bütçe içinde sınırlı tekrar (30/90/180 s). `eval/recheck_release.py`: aynı yayınlanmış sürümde (hash eşitliği şartıyla) kontrolleri yeniden koşar.
 6. API yeniden adlandırma deneyinin deterministik yarısı: tests/test_api_binding.py 6/6 (çıkarım adımı DEĞİL).
 7. Memo deneyi beklenen tarihi bağımsız hesaplandı: 2026-10-21.
+8. Platform çökmesi (chat C2 ile bulundu): `global` üretilen kodda platformda NameError → düzeltildi (c8de7c9); test düzeneği kodu platform gibi fonksiyon içinde çalıştırıyor; lint `global/nonlocal` reddediyor.
+9. Hardship tüm açık ürünleri kapsıyor, anlaşılmış ürün korunuyor (23f0227); read-back'te kırpılan ürün notu ayrı cümle (C3'te görüldü).
+10. Kimlik aşaması istemi: parçalı cevap birleştirme, banka kanıtı olmadan "failed" yok (503d996) — ÖLÇÜLMEDİ.
+11. Teslim düzeni ve yerel aktarma: research/teslim-duzeni.md; ayrıntılı kanıt: research/cloud-final-report.md.
 
 ## Adaylar
 | slot / sürüm | aday klasörü | workflow / agent | içerik hash | kaynak (builder ağacı) | build | release | durum |
@@ -51,23 +55,45 @@ Son güncelleme: 2026-10-11 ~02:25 UTC
 - C2'nin düzeltilmiş sürümde platformda yeniden denenmesi chat bütçesi bittiği için chat ile yapılamadı; yerel platform-benzeri testler (R G1–G2) ve simülasyon varyasyonu (experiments/variations/) ile ölçülecek.
 - Platform durumu: 01:49–01:53 UTC chat 503/502 (eski cmp-a v8 dahil) → şüpheli platform hatası; 02:09'dan itibaren çalışıyor, aralıklı 502/504 devam ediyor.
 
-## Ölçümler
-(çalışıyor: cl-a v2 PUB-05/06/10 × 3)
+## Ölçümler (simüle müşteri; run_cases skorlayıcısı: ledger + judge)
+| aday | vaka | koşu | geçen | not |
+|---|---|---|---|---|
+| cl-a v2 | PUB-05 × 3 | 3 | 3 | zorluk yönlendirmesi doğru zamanda; 1 koşuda model kendi metniyle "Would you like to make a payment…?" ekledi (judge kabul etti — risk) |
+| cl-a v2 | PUB-06 × 3 | 3 | 3 | |
+| cl-a v2 | PUB-10 × 3 | 3 | 3 | ilk create_promise hatası + tek tekrar, tek promise |
+| cl-a v2 | PUB-04 × 1 | 1 | 1 | robot cevabı + deadline 23 Eki |
+| cl-a v2 | PUB-08 × 1 | 1 | 1 | |
+| cl-ab v2 | PUB-11 × 3 | 3 | 3 | |
+| cl-ab v2 | PUB-12 × 3 | 3 | 3 | 1 promise + 2 refused not |
+| cl-ab v2 | PUB-13 × 3 | 3 | 3 | kart 30 Eki, kredi 23 Eki |
+| cl-a v2 | varyasyon zorluk + "Cuma 300" × 3 | 3 | 2 | kalan koşuda simüle müşteri 3 mesajı yarım gönderdi, teklifi hiç söylemedi |
+| cl-a v2 | PUB-06 pieces | 2 | 1 | ilk koşu: kimlikte parçalar birleştirilmedi, banka kanıtsız `failed` (model) |
+| cl-a v2 | PUB-10 in_words | 1 | 1 | |
+| cl-ab v2 | PUB-13 corrects | 1 | 1 | |
+| cl-ab v2 | PUB-12 asks_back | 1 | 1 | |
+| cl-ab v2 | PUB-11 talkative | 1 | 1 | |
+- İlk paket (planlanan 20 koşu): 20/20. Toplam 29 koşu, 26 geçti. pass^3 yalnız 3 tekrarlı satırlarda: A'da 3/3 vaka (PUB-05/06/10), B'de 3/3 vaka.
+- Simülasyon kimlikleri: research/cloud-runs/*.json (`simulation_id`, `call_id`, `customer_id`).
+- Gecikme: en yavaş tur medyanı 3–24 s; birkaç koşuda "yavaş model" uyarısı; kapatan müşteri 0.
 
 ## Kullanım sayacı (üst sınırlar: build 4, simüle koşu 30, platform chat 4)
 | tür | kullanılan | not |
 |---|---|---|
 | builder run (uçtan uca) | 4 / 4 | cl-a v1, cl-ab v1, cl-a v2, cl-ab v2 (her biri 1 Opus çağrısı) |
-| simüle müşteri koşusu | 0 (+9 çalışıyor) | |
+| simüle müşteri koşusu | 29 / 30 | 13 simülasyon çalıştırması; 1 koşu yedekte bırakıldı |
 | platform chat oturumu | 4 / 4 | yoklama 02:09, C2 1. deneme (502), C3, C2 |
 | release kontrol chat'leri | build içi 2 başarısız (503/502) + recheck 4 + v2 build içi 4 | release sürecinin parçası |
 | chat yoklaması (5xx, oturum kurulamadı) | 2 | 01:50 cmp-a 503, 01:53 cl-a 502 |
-| ek model çağrısı | 1 | SDK erişim kontrolü (toplam Opus: 5) |
-| Freya dry-run | 2 | |
+| Opus çağrısı | 5 | 4 çıkarım + 1 SDK erişim kontrolü |
+| Freya dry-run (kayıtsız doğrulama) | 4 | |
+| Freya workflow | 2 yeni (cl-a, cl-ab), her biri 2 sürüm | eski slotlar dokunulmadı |
+- Ölçülemeyen: Claude abonelik kotası yüzdesi; Freya kredi/bakiye değişimi (bakiye uç noktası kullanılmadı). "0" değil, "ölçülmedi".
 
 ## Açıklar
-- Kaynak kimliği 84894192a420329c yeniden üretilemiyor.
-- Yeni adayların davranış kontrolleri ve canlı ölçümü platform chat/model hatası nedeniyle bekliyor.
+- Kaynak kimliği 84894192a420329c yeniden üretilemiyor (içerikle doğrulandı).
+- Memo deneyi ve API çıkarım deneyi çalıştırılmadı (build bütçesi; ayrıntı cloud-final-report.md §8).
+- Kimlik istemi düzeltmesi (503d996) ölçülmedi.
+- Kalan riskler: destek teklifine cevap turunda modelin kendi metni; yarım kalan müşteri cümlesi; kimlik/üçüncü kişi/callback/insan isteği sayaçları modelde.
 
-## Sonraki adım
-Chat yeniden çalışınca: recheck (cl-a, cl-ab) → 3 betikli chat kontrolü → 20 koşuluk hedefli ölçüm.
+## Sonraki adım (tek en değerli)
+Mevcut kodla (503d996) A için bir build + `--style pieces` ile kimlik ağırlıklı kısa ölçüm (PUB-06, PUB-12, PUB-03 × 3): kimlik istemi düzeltmesini doğrula ya da geri al. Ardından memo deneyi.

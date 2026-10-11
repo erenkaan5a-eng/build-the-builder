@@ -153,3 +153,12 @@
 - Hazırlanan (çalıştırılmadı): experiments/memo-late-deadline, experiments/api-rename; README_SUBMISSION.md; research/submission-checklist.md; build.py --local-only.
 - Temiz kopya provası (183 dosya, gizli değer 0): 4 test seti 0 hata, --help OK.
 - n6 canlı skorları bu koda AİT DEĞİL; yeni kod canlıda ölçülmedi.
+
+## 11 Ekim — bulut oturumu (claude/lucid-fermat-vxp9u7; ayrıntı: research/cloud-final-report.md, cloud-progress.md)
+- Erişim: Freya/banka anahtarları proxy'de; opt-in `FREYA_AUTH_VIA_PROXY=1` (kit dosyaları değişmedi). SDK erişimi 1 çağrıyla doğrulandı.
+- Motor: A32 zorluk + gönüllü öneri (öneri bekletme, tek empati sahibi), zorluk sonrası ikna yok, `all` kapsam düzeltmesi, rec_next blocked bayrağı, A45 sayacı policy'den.
+- Platform kontrolü chat C2 (cl-a v1): motorun zorluk yolu platformda çöktü — `global` fonksiyon içinde NameError; yerel düz exec() gizliyordu. Düzeltme c8de7c9; test düzeneği artık platform gibi fonksiyon içinde çalıştırıyor; lint reddediyor. cl-a v1/cl-ab v1 geçersiz.
+- Chat C3 (cl-ab v1): kısmi onay kayıt açmadı; tam onay → doğru iki kayıt.
+- cl-a v2 (233c8dfe1a7d9d91): PUB-05/06/10 × 3 = 9/9, PUB-04/08 × 1 = 2/2. cl-ab v2 (8abfb3c856c81f25): PUB-11/12/13 × 3 = 9/9.
+- Varyasyon zorluk + "Cuma 300" × 3: 2/3 (kalan: simüle müşteri mesajları yarım). Tarzlar: in_words, corrects, asks_back, talkative 1/1; pieces PUB-06 1/2 (kimlikte parçalar birleştirilmedi, banka kanıtsız failed). Kimlik istemi düzeltmesi 503d996 ölçülmedi.
+- Kullanım: 4/4 build, 29/30 koşu, 4/4 chat, 5 Opus çağrısı. Memo ve API çıkarım deneyi çalıştırılmadı.

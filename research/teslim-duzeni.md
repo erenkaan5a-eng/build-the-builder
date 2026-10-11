@@ -27,8 +27,9 @@ kimlik: commit SHA + `git rev-parse <commit>:builder` (builder ağacının git h
 | Kaynak | builder ağacı | Ne ölçüldü |
 |---|---|---|
 | a5de722 (yerel 11 Ekim düzeltmeleri, buluta gelen hâl) | a4c98a04ab393525 | yalnız yerel testler (bu oturumda yeniden koşuldu) |
-| 59e0ba2 (bulut düzeltmeleri) | fc7d2e3618ca86c4 | cl-a / cl-ab adayları bu kodla üretildi; canlı sonuçlar cloud-progress.md'de |
-| sonraki commit'ler | `git rev-parse <sha>:builder` | cloud-progress.md "Adaylar" tablosu |
+| 59e0ba2 | fc7d2e3618ca86c4 | cl-a v1 / cl-ab v1 — platformda çöken motor; geçersiz (yalnız chat C2/C3 kanıtı) |
+| c8de7c9 | c2d52b8ce679151c | **cl-a v2 / cl-ab v2 — ölçülen adaylar** (29 simüle koşu, cloud-progress.md) |
+| 503d996 (güncel) | e426c5630ba6940b | c8de7c9 + kimlik istemi değişikliği; ÖLÇÜLMEDİ |
 
 n6 canlı skorları (A 29/30, B 9/9) `1a5910570bcf9fe0` etiketli eski koda aittir; bu oturumun adaylarına taşınmaz.
 
