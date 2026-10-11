@@ -341,7 +341,8 @@ def main():
     for g in gaps:
         trace.log("GAPS", "Known rule gap: " + g)
     manifest = {"path": path_used, "slot": slot, "build_seconds": round(budget.elapsed()), "model_calls": trace.model_calls,
-                "trace": str(trace.path), "known_gaps": gaps, "inputs": inputs_meta, "input_problems": input_problems, **st}
+                "trace": str(trace.path), "known_gaps": gaps, "inputs": inputs_meta, "input_problems": input_problems,
+                "argv": sys.argv[1:], "sessions": str(trace.path.with_suffix(".sessions")) if trace.session_store else None, **st}
     if pol:
         manifest["support_boundary"] = components.support_boundary(pol)
     (cand / "manifest.json").write_text(json.dumps(manifest, indent=1), encoding="utf-8")
