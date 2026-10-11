@@ -1,0 +1,8 @@
+commit 692df55bd37bf1eec06054d6a47d3e2a13e32bfd (builder tree 9be291629f496ca1be38157366cecdda9b72321f), dirty files: 3
+2026-10-11T15:50:29+0000 [START] slot=final-case-nocontract brief=/tmp/claude-0/-home-user-build-the-builder/a05d22cc-149a-5154-a736-4f17e47e488e/scratchpad/case-nocontract tool_api=https://bank-mock.example.workers.dev mode=auto budget_min=30 candidate=/home/user/build-the-builder/candidates/final-case-nocontract/20261011-155029
+2026-10-11T15:50:29+0000 [START] source commit 692df55bd37bf1eec06054d6a47d3e2a13e32bfd builder tree 9be291629f496ca1be38157366cecdda9b72321f uncommitted builder changes: yes
+2026-10-11T15:50:29+0000 [START] credentials: FREYA_API_KEY absent, FREYA_BANK_TEAM_KEY absent, cloud proxy mode on: Freya Authorization left to the proxy; bank x-team-key left to the proxy
+2026-10-11T15:50:29+0000 [INPUT] BRIEF.md (md, 23 bytes, sha256 6f181fc7093f8781): 23 chars read
+2026-10-11T15:50:29+0000 [INPUT] README.md (md, 9 bytes, sha256 9d30855a2ada5427): 9 chars read
+2026-10-11T15:50:29+0000 [INPUT] PROBLEM no machine-readable service contract (OpenAPI JSON/YAML with 'paths') in the case folder; nothing is invented: name the contract file with --contract
+2026-10-11T15:50:29+0000 [END] inputs could not be read: nothing built. elapsed 0s

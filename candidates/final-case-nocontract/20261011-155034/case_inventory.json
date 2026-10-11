@@ -1,0 +1,20 @@
+{
+ "folder": "/tmp/claude-0/-home-user-build-the-builder/a05d22cc-149a-5154-a736-4f17e47e488e/scratchpad/case-nocontract",
+ "files": [
+  {
+   "file": "BRIEF.md",
+   "type": "md",
+   "bytes": 23,
+   "sha256_16": "6f181fc7093f8781",
+   "chars": 23
+  },
+  {
+   "file": "README.md",
+   "type": "md",
+   "bytes": 9,
+   "sha256_16": "9d30855a2ada5427",
+   "chars": 9
+  }
+ ],
+ "errors": []
+}

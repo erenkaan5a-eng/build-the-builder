@@ -242,6 +242,13 @@ def main():
         cand = KIT / "candidates" / slot / (time.strftime("%Y%m%d-%H%M%S") + f"-{k}")
     cand.mkdir(parents=True)
     trace.log("START", f"slot={slot} brief={a.brief} tool_api={a.tool_api} mode={a.mode} budget_min={a.budget_min} candidate={cand}")
+    try:
+        import subprocess
+        g = lambda *x: subprocess.check_output(["git"] + list(x), cwd=KIT, stderr=subprocess.DEVNULL).decode().strip()
+        trace.log("START", f"source commit {g('rev-parse', 'HEAD')} builder tree {g('rev-parse', 'HEAD:builder')} "
+                           f"uncommitted builder changes: {'yes' if g('status', '--porcelain', '--', 'builder') else 'no'}")
+    except Exception:
+        trace.log("START", "source commit: not a git checkout")
     trace.log("START", f"credentials: FREYA_API_KEY {'set' if os.environ.get('FREYA_API_KEY') else 'absent'}, "
                        f"FREYA_BANK_TEAM_KEY {'set' if os.environ.get('FREYA_BANK_TEAM_KEY') else 'absent'}, cloud proxy mode {common.PROXY_MODE}")
     # inputs: a brief file + a tool API file (kit form), or a case folder + a mock URL (the service contract is found in
@@ -316,6 +323,10 @@ def main():
         trace.log("OUT", f"release checks passed: candidate copied to {a.out}")
     elif a.out:
         trace.log("OUT", f"release checks did NOT pass: {a.out} left unchanged; candidate kept in {cand}")
+    trace.log("SUMMARY", f"workflow {st.get('workflow_id')} agent {st.get('agent_id')} published version {st.get('version_number')} "
+                         f"nodes {st.get('nodes')} global nodes {st.get('global_nodes')} tool functions {st.get('tool_functions')} "
+                         f"checks {sum(1 for _, ok in st.get('checks') or [] if ok)}/{len(st.get('checks') or [])} passed, "
+                         f"export {cand / 'export.json'} hash {st.get('exported_hash')}, manifest {cand / 'manifest.json'}")
     trace.log("RESULT", json.dumps(manifest)[:3000])
     trace.log("END", f"build time {budget.elapsed():.0f}s, path {path_used}, model calls {trace.model_calls}, release checks "
                      f"{'PASSED' if st['release_checks_passed'] else 'FAILED'} (validation, behaviour checks on the published version, tested==exported hash; not policy correctness)")
