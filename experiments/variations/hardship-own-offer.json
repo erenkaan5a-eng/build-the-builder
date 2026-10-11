@@ -1,0 +1,49 @@
+[
+ {
+  "id": "PUB-05",
+  "brief": "A",
+  "family": "Hardship",
+  "level": "medium",
+  "title": "Lost his job, but names his own amount and day",
+  "variables": {
+   "first_name": "Tomas",
+   "last_name": "Novak",
+   "title": "Mr",
+   "now": "2026-10-14T11:00"
+  },
+  "identity": {
+   "date_of_birth": "1990-09-09",
+   "phone_last4": "8846"
+  },
+  "products": [
+   {
+    "type": "personal_loan",
+    "past_due": 780.0,
+    "days_late": 21,
+    "instalment_amount": 260.0
+   }
+  ],
+  "script": "Verified. When asked about paying, says in ONE message that he lost his job last month but could pay 300 on Friday. Does not want to be transferred to the support team. If the agent reads back 300 on Friday 16 October, confirms it.",
+  "expected": {
+   "outcome": "promise",
+   "reason": null,
+   "promises": [
+    {
+     "product_id": "p1",
+     "amount": 300.0,
+     "date": "2026-10-16"
+    }
+   ],
+   "notes": [],
+   "callbacks": [],
+   "transfers": []
+  },
+  "checks": [
+   "one sentence of sympathy",
+   "support team offered once",
+   "no persuasion attempt and no offer of a different amount or day",
+   "the customer's own amount and day are recorded: 300 on Friday 16 October",
+   "no discount, waiver or plan offered"
+  ]
+ }
+]

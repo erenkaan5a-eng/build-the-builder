@@ -1,0 +1,99 @@
+{
+ "path": "main",
+ "slot": "cl-a",
+ "build_seconds": 113,
+ "model_calls": 1,
+ "trace": "/home/user/build-the-builder/traces/cl-a-20261011-021737.log",
+ "known_gaps": [
+  "turning the customer's words into negotiation events (and dates into YYYY-MM-DD) is done by the dialogue model; offers, counters, dates, amounts, read-back, recording, notes and the close are code",
+  "callback window validity is decided by the dialogue model from code-computed window facts (not code)",
+  "identity flow (which question, re-asks, declines) follows the dialogue model with the bank's verification results",
+  "extra rule (stateful, stage opening): Confirmation of the person on the line: ask up to twice; only explicit confirmations count; answering a customer question (robot/scam) comes first and the following ask is the second ask; close not_reached/unclear after the second unclear ask. - left to the dialogue model's prompt",
+  "extra rule (computational, stage identity): Convert spoken dates of birth to YYYY-MM-DD; numeric-only dates are read day, month, year. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage identity): Track total wrong identity answers across both questions (three ends the check); a day_month_swapped retry is not counted. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage identity): Declining identity: explain once that the questions protect the account; a second refusal or a second 'what is this about' closes not_verified/declined. - left to the dialogue model's prompt",
+  "extra rule (computational, stage negotiate): Resolve 'next <weekday>' as that weekday in the following calendar week and 'this <weekday>' as the one in the current week. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Floor offered once after 'too much', and below-floor amount answered with one floor offer; refusal of the floor or of the deadline counts as a flat refusal. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Count persuasion attempts per band; customer-proposed dates/amounts are never refusals; do not repeat a refused offer; close no_promise/refused when attempts are used up. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): Hardship takes precedence over persuasion and restructuring: one sympathy sentence, no persuasion, offer support transfer; but a self-named date or amount is still recorded. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): A change of date or amount at read-back invalidates the confirmation; re-check and read back again before create_promise. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage negotiate): One promise per product; a recorded promise cannot be changed in the call; direct change requests to the mobile app. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage global): Human request: ask once whether you can help first; transfer to general only if they insist; applies before and after verification. - left to the dialogue model's prompt",
+  "extra rule (stateful, stage closing): If a transfer follows a recorded promise, close as transferred with that transfer's reason (not promise). - left to the dialogue model's prompt"
+ ],
+ "release_checks_passed": true,
+ "policy_correctness": "not measured by the build",
+ "lint_problems": 0,
+ "workflow_id": "0800b57a-585f-4324-9c6d-d66e40260a37",
+ "agent_id": "91e04e98-0e9e-4bd0-b87d-efdb923d62a8",
+ "version_number": 2,
+ "version_id": "62eaa526-267c-4cdc-a53b-98fe333cb30d",
+ "is_published": true,
+ "tested_hash": "233c8dfe1a7d9d91",
+ "checks": [
+  [
+   "opening line spoken",
+   true
+  ],
+  [
+   "identity stage entered after confirmation",
+   true
+  ],
+  [
+   "first security answer reaches verify_identity with the right field",
+   true
+  ],
+  [
+   "no account or write call before verification",
+   true
+  ],
+  [
+   "both answers sent to verify_identity",
+   true
+  ],
+  [
+   "account fetched after verification",
+   true
+  ],
+  [
+   "negotiation stage reached with account facts",
+   true
+  ],
+  [
+   "every product's past-due amount stated in the debt statement, before any offer",
+   true
+  ]
+ ],
+ "exported_hash": "233c8dfe1a7d9d91",
+ "nodes": 22,
+ "global_nodes": 0,
+ "tool_functions": 25,
+ "support_boundary": {
+  "code": [
+   "deadline per band (Nth business day after now, calendar from the policy)",
+   "promise date validity (past / after deadline / non-business day)",
+   "vague period: ask 1 time(s), then the deadline",
+   "amount: full first, floor offer after 'too much' or a below-floor amount, accept floor..full",
+   "persuasion ladder per product: full_or_floor_if_too_much@this_week_last_business_day_or_next_week_if_today, floor@deadline",
+   "shared date not clamped (policy)",
+   "read-back of the whole package, confirmation bound to that package, writes only from the confirmed package",
+   "create_promise retries: 1 (single layer)",
+   "hardship: one code-owned sympathy+support offer, no persuasion afterwards, customer's own date/amount kept",
+   "stop statements before close: 2",
+   "notes per product (not used by this brief), none after a transfer; close outcome from recorded/transfer/product results",
+   "goodbye -> notes -> exactly one close_call in the negotiation path"
+  ],
+  "model": [
+   "turning the customer's words into events and dates into YYYY-MM-DD (calendar table given)",
+   "identity question order, re-asks, declines (bank result routes to the account step)",
+   "opening confirmation and its re-ask count",
+   "third party, callback window validity and re-ask",
+   "transfer decision and queue (close mapping is code)",
+   "questions outside payment (robot/scam answers come from the policy)"
+  ],
+  "unsupported_by_code": [
+   "Convert spoken dates of birth to YYYY-MM-DD; numeric-only dates are read day, month, year.",
+   "Resolve 'next <weekday>' as that weekday in the following calendar week and 'this <weekday>' as the one in the current week."
+  ]
+ }
+}
