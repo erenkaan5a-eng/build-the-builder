@@ -108,13 +108,17 @@ def run_main(brief, tool_api, cand, budget, trace, reuse_policy=None):
 
 
 # ------------------------------------------------------------------ fallback path
-async def _fallback_agent(brief, tool_api, out, seconds, trace, workdir, repair=None):
+async def _fallback_agent(brief, tool_api, out, seconds, trace, workdir, repair=None, case_folder=None):
     from claude_agent_sdk import AssistantMessage, ClaudeAgentOptions, ResultMessage, TextBlock, ToolUseBlock, query
     minutes = max(1, int(seconds // 60))
     prompt = (f"Use the build-phone-agent-final skill. Brief: {brief}. Tool API file: {tool_api}. "
               f"Your work dir for this run is {workdir}: write every file there and nowhere else; do not read or reuse files from other folders under out/ or candidates/. "
               f"Write the workflow to {out}. Check it with: python builder/lint.py {out} {tool_api} --dry-run . "
               f"You have {minutes} minutes in total; stop before that with the best lint-clean version on disk.")
+    if case_folder:
+        # the brief file is the text extraction of the case folder; drawings, page layout and tables are only in the originals
+        prompt += (f" The brief file is the text extraction of the case folder {case_folder}; open its original files too "
+                   f"(read only, do not change them): PDF pages, drawings and tables keep structure the text lost.")
     if repair:
         prompt += " REPAIR TASK: the workflow at " + out + " already exists. " + repair + " Change only what this needs, re-run the linter, keep everything else."
     so = session_log.options(trace)   # own session id + full session log of this agent run (incl. tool calls and results)
@@ -122,6 +126,7 @@ async def _fallback_agent(brief, tool_api, out, seconds, trace, workdir, repair=
         cwd=str(KIT), model=FALLBACK_MODEL, skills=["build-phone-agent-final"], setting_sources=["project"],
         allowed_tools=["Read", "Write", "Edit", "Glob", "Grep", "Bash"], disallowed_tools=["Read(./env.sh)", "Read(**/env.sh)"],
         permission_mode="dontAsk", max_turns=80, session_id=so["session_id"], session_store=so["session_store"],
+        add_dirs=[str(case_folder)] if case_folder else [],
         env={"BASH_DEFAULT_TIMEOUT_MS": "120000", "BASH_MAX_TIMEOUT_MS": "300000", "CLAUDE_CODE_DISABLE_BACKGROUND_TASKS": "1", **so["env"]})
     async for m in query(prompt=prompt, options=options):
         if isinstance(m, AssistantMessage):
@@ -138,14 +143,14 @@ async def _fallback_agent(brief, tool_api, out, seconds, trace, workdir, repair=
                                f"cache_read={u.get('cache_read_input_tokens')} tokens_out={u.get('output_tokens')}")
 
 
-def run_fallback(brief, tool_api, out, budget, trace, workdir, repair=None):
+def run_fallback(brief, tool_api, out, budget, trace, workdir, repair=None, case_folder=None):
     seconds = budget.left() - RESERVE_S
     if seconds < 120:
         trace.log("FALLBACK", "not enough budget left to run the fallback agent")
         return None
     trace.log("FALLBACK", f"starting fallback agent, model {FALLBACK_MODEL}, {seconds/60:.1f} min")
     try:
-        asyncio.run(asyncio.wait_for(_fallback_agent(brief, tool_api, out, seconds, trace, workdir, repair), timeout=seconds))
+        asyncio.run(asyncio.wait_for(_fallback_agent(brief, tool_api, out, seconds, trace, workdir, repair, case_folder), timeout=seconds))
     except (asyncio.TimeoutError, TimeoutError):
         trace.log("FALLBACK", "fallback agent stopped at its time limit")
     except Exception as e:
@@ -314,7 +319,8 @@ def main():
                 sys.exit(2)
     if not wf_path:
         work = cand / "workflow.json"
-        wf_path, path_used = run_fallback(brief_in, api_in, str(work), budget, trace, str(cand)), "fallback"
+        wf_path, path_used = run_fallback(brief_in, api_in, str(work), budget, trace, str(cand),
+                                          case_folder=a.brief if pathlib.Path(a.brief).is_dir() else None), "fallback"
         gaps = AGENT_GAPS + ["coverage not fully assessed: the fallback path reports only the gaps its agent noticed"]
     if not wf_path:
         trace.log("END", f"no workflow produced. elapsed {budget.elapsed():.0f}s")
