@@ -1,0 +1,490 @@
+{
+ "slot": "cl-a",
+ "workflow_id": "0800b57a-585f-4324-9c6d-d66e40260a37",
+ "published_version": 1,
+ "live_hash": "b2601999470a02c7",
+ "case": "PUB-05",
+ "name": "c2-hardship-own-offer",
+ "call_id": "c503dc56-d9aa-40e4-a6b4-d0d718372242",
+ "platform_error": null,
+ "seconds": 47,
+ "turns": [
+  [
+   "Hello?",
+   "Hello, I am a digital assistant calling from Freya Bank, and we record this call. Am I speaking with Mr Novak?"
+  ],
+  [
+   "Yes, that's me.",
+   "For security, could you please tell me your date of birth?"
+  ],
+  [
+   "The ninth of September, nineteen ninety.",
+   "Thank you. Could you please tell me the last four digits of the phone number on file?"
+  ],
+  [
+   "Eight eight four six.",
+   "Thank you for verifying your identity."
+  ],
+  [
+   "Okay.",
+   "I am calling from the collections team about a late payment. Your personal loan has 780.00 past due and is 21 days late. Can you make this payment today?"
+  ],
+  [
+   "I lost my job last month, but I could pay 300 on Friday.",
+   "One moment.\n\nSorry, could you please repeat that?"
+  ],
+  [
+   "No thanks, I don't want to be transferred.",
+   "One moment.\n\nSorry, could you please repeat that?"
+  ],
+  [
+   "Yes, I confirm.",
+   "One moment.\n\nSorry, could you please repeat that?"
+  ],
+  [
+   "Thank you, goodbye.",
+   "Thank you, goodbye."
+  ]
+ ],
+ "events": [
+  [
+   "user",
+   "Hello?"
+  ],
+  [
+   "assistant",
+   "Hello, I am a digital assistant calling from Freya Bank, and we record this call. Am I speaking with Mr Novak?"
+  ],
+  [
+   "node",
+   "opening"
+  ],
+  [
+   "user",
+   "Yes, that's me."
+  ],
+  [
+   "node",
+   "identity"
+  ],
+  [
+   "assistant",
+   "For security, could you please tell me your date of birth?"
+  ],
+  [
+   "user",
+   "The ninth of September, nineteen ninety."
+  ],
+  [
+   "node",
+   "identity"
+  ],
+  [
+   "call",
+   "verify_identity",
+   {
+    "field": "date_of_birth",
+    "answer": "1990-09-09",
+    "customer_id": "c_484de9be-033"
+   }
+  ],
+  [
+   "result",
+   "verify_identity",
+   {
+    "status": "success",
+    "data": {
+     "ok": true,
+     "verified": true,
+     "wrong_answers_left": 3,
+     "all_verified": false,
+     "what_to_do_next": "This answer is correct. Ask the next security question."
+    },
+    "message": "Successfully executed POST request",
+    "status_code": 200
+   }
+  ],
+  [
+   "assistant",
+   "Thank you. Could you please tell me the last four digits of the phone number on file?"
+  ],
+  [
+   "user",
+   "Eight eight four six."
+  ],
+  [
+   "node",
+   "identity"
+  ],
+  [
+   "call",
+   "verify_identity",
+   {
+    "field": "phone_last4",
+    "answer": "8846",
+    "customer_id": "c_484de9be-033"
+   }
+  ],
+  [
+   "result",
+   "verify_identity",
+   {
+    "status": "success",
+    "data": {
+     "ok": true,
+     "verified": true,
+     "wrong_answers_left": 3,
+     "all_verified": true,
+     "what_to_do_next": "All security questions are passed. Say one short thank-you sentence and nothing about the account yet. Do not call a tool now."
+    },
+    "message": "Successfully executed POST request",
+    "status_code": 200
+   }
+  ],
+  [
+   "assistant",
+   "Thank you for verifying your identity."
+  ],
+  [
+   "user",
+   "Okay."
+  ],
+  [
+   "node",
+   "fetch_account"
+  ],
+  [
+   "call",
+   "api_call",
+   {
+    "customer_id": "c_484de9be-033"
+   }
+  ],
+  [
+   "result",
+   "api_call",
+   {
+    "status": "success",
+    "data": {
+     "ok": true,
+     "products": [
+      {
+       "product_id": "p1",
+       "type": "personal_loan",
+       "past_due": 780,
+       "days_late": 21,
+       "instalment_amount": 260
+      }
+     ]
+    },
+    "message": "Successfully executed POST request",
+    "status_code": 200,
+    "header": {
+     "Date": "Sun, 11 Oct 2026 02:14:06 GMT",
+     "Content-Type": "application/json",
+     "Transfer-Encoding": "chunked",
+     "Connection": "keep-alive",
+     "Report-To": "{\"group\":\"cf-nel\",\"max_age\":604800,\"endpoints\":[{\"url\":\"https://a.nel.cloudflare.com/report/v4?s=lXvijoDVKnUnuylqlSl08xd90HAzQfB%2FshQPwRxYMOf7UGoSrKFDBJ1bPr429CWXfDLAMK54N17lDP%2B8S01Rs6rAscSiSA4sVsQgUa7UWcVT9JAm7lBpZ6tJh1fNpzXP2Luzu1S29%2F%2Bal%2Bz4eXTkYCjcBbv2EQAl%2Fw%3D%3D\"}]}",
+     "Nel": "{\"report_to\":\"cf-nel\",\"success_fraction\":0.0,\"max_age\":604800}",
+     "Content-Encoding": "gzip",
+     "Server": "cloudflare",
+     "CF-RAY": "a48a59725c291941-FRA",
+     "alt-svc": "h3=\":443\"; ma=86400"
+    }
+   }
+  ],
+  [
+   "node",
+   "build_deal"
+  ],
+  [
+   "call",
+   "code_exec",
+   {
+    "timeout_ms": 10000,
+    "code": "\nimport json, datetime, re\nCFG = json.loads(r\"\"\"{\n \"now_var\": \"now\",\n \"weekend_days\": [\n  5,\n  6\n ],\n \"holidays\": [\n  \"2026-10-26\",\n  \"2026-11-11\",\n  \"2026-11-26\",\n  \"2026-12-25\",\n  \"2027-01-01\"\n ],\n \"prefix\": \"fetch_account_response.data.products\",\n \"ok_var\": \"fetch_account_response.data.ok\",\n \"type\": \"type\",\n \"id\": \"product_id\",\n \"days_late\": \"days_late\",\n \"past_due\": \"past_due\",\n \"floor_field\": {\n  \"credit_card\": \"minimum_payment\",\n  \"personal_loan\": \"instalment_amount\",\n  \"car_loan\": \"instalment_amount\"\n },\n \"naming\": {\n  \"credit_card\": \"credit card ending {card_last4}\",\n  \"personal_loan\": \"personal loan\",\n  \"car_loan\": \"car loan\"\n },\n \"bands\": [\n  {\n   \"min\": 1,\n   \"max\": 7,\n   \"deadline_business_days\": 12,\n   \"attempts\": 1\n  },\n  {\n   \"min\": 8,\n   \"max\": 45,\n   \"deadline_business_days\": 7,\n   \"attempts\": 2\n  }\n ],\n \"say\": {\n  \"debt_intro\": \"I am calling from the collections team about a late payment.\",\n  \"product_line\": \"Your {name} has {amount} past due and is {days} days late.\",\n  \"first_ask_one\": \"Can you make this payment today?\",\n  \"first_ask_all\": \"Can you make this payment today?\",\n  \"answer_robot\": \"I am Freya Bank's digital assistant.\",\n  \"answer_scam\": \"You can verify this call by phoning Freya Bank's customer service number.\"\n }\n}\"\"\")\nDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']\nMONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']\ndef sp(d):\n    return DAYS[d.weekday()] + ' ' + str(d.day) + ' ' + MONTHS[d.month - 1] + ' ' + str(d.year)\ndef isbd(d):\n    return d.weekday() not in CFG['weekend_days'] and d.isoformat() not in CFG['holidays']\ndef nbd(d):\n    d = d + datetime.timedelta(days=1)\n    while not isbd(d):\n        d = d + datetime.timedelta(days=1)\n    return d\ndef add_bd(d, n):\n    for i in range(int(n)):\n        d = nbd(d)\n    return d\ndef last_bd(monday):\n    best = None\n    for i in range(7):\n        x = monday + datetime.timedelta(days=i)\n        if isbd(x):\n            best = x\n    return best\ndef now_dt():\n    raw = str(vars.get(CFG['now_var']) or '')\n    return datetime.datetime.strptime(raw[:16].replace(' ', 'T'), '%Y-%m-%dT%H:%M')\n\nimport math\nclass Strict(dict):\n    def __missing__(self, k):\n        raise ValueError('naming field missing: ' + k)\ndef money(x):\n    return '%.2f' % float(x)\ndef num(x, what):\n    v = float(str(x))\n    if not math.isfinite(v) or v < 0:\n        raise ValueError(what + ' not a finite amount')\n    return v\ntry:\n    if str(vars.get(CFG['ok_var']) or '').strip().lower() != 'true':\n        raise ValueError('account call not successful')\n    t = now_dt().date()\n    rx = re.compile('^' + re.escape(CFG['prefix']) + r'\\.(\\d+)\\.(\\w+)$')\n    items = dict()\n    for k in list(vars.keys()):\n        m = rx.match(str(k))\n        if m:\n            items.setdefault(int(m.group(1)), dict())[m.group(2)] = vars.get(k)\n    prods, lines, seen = [], [], set()\n    for i in sorted(items):\n        it = dict((k, ('' if v is None else str(v))) for k, v in items[i].items())\n        pid = it.get(CFG['id'], '').strip()\n        if not pid or pid in seen:\n            raise ValueError('empty or repeated product id')\n        seen.add(pid)\n        typ = it.get(CFG['type'], '').strip()\n        lr = float(it.get(CFG['days_late']))\n        if not lr.is_integer():\n            raise ValueError('days_late not a whole number')\n        late = int(lr)\n        due = num(it.get(CFG['past_due']), 'past_due')\n        ff = CFG['floor_field'].get(typ)\n        floor = num(it.get(ff), 'floor') if ff and it.get(ff, '') != '' else None\n        if ff and floor is None:\n            raise ValueError('floor field empty for ' + typ)\n        for k in list(it.keys()):\n            if 'last4' in k.lower() and it[k].isdigit() and len(it[k]) < 4:\n                it[k] = it[k].zfill(4)\n        band = [b for b in CFG['bands'] if b['min'] <= late <= b['max']]\n        if not band:\n            raise ValueError('no band for days_late ' + str(late))\n        band = band[0]\n        deadline = add_bd(t, band['deadline_business_days'])\n        tmpl = CFG['naming'].get(typ)\n        if not tmpl:\n            raise ValueError('no spoken name for product type ' + typ)\n        name = tmpl.format_map(Strict(it))\n        p = dict(id=pid, type=typ, name=name, past_due=due, days_late=late, floor=floor, deadline=deadline.isoformat(), attempts=band.get('attempts'))\n        line = ('- product_id ' + pid + ': ' + name + '; past-due amount ' + money(due) + '; days late ' + str(late)\n                + ('; floor (lowest amount that can be recorded) ' + money(floor) if floor is not None else '')\n                + '; deadline (latest promise date) ' + sp(deadline) + ' = ' + deadline.isoformat())\n        prods.append(p)\n        lines.append(line)\n    if not prods:\n        raise ValueError('no products in the account result')\n    s = CFG['say']\n    qa = s.get('answer_' + str(vars.get('pending_question') or '').strip().lower()) or ''\n    sent = [qa, s['debt_intro']] + [s['product_line'].format(name=p['name'], amount=money(p['past_due']), days=str(p['days_late'])) for p in prods]\n    sent.append(s['first_ask_one'] if len(prods) == 1 else s['first_ask_all'])\n    vars['products_json'] = json.dumps(prods)\n    vars['deal_text'] = '\\n'.join(lines)\n    vars['debt_say'] = ' '.join(x.strip() for x in sent if x and x.strip())\n    vars['hardship_done'] = 'no'\n    vars['hardship_early'] = 'yes' if str(vars.get('hardship_seen') or '').strip().lower() == 'yes' else 'no'\n    vars['offer_named'] = 'no'\n    vars['acct_state'] = 'ok'\nexcept Exception as e:\n    vars['deal_text'] = 'The account data is not available.'\n    vars['acct_state'] = 'error'\n    vars['acct_error'] = str(e)[:160]\n"
+   }
+  ],
+  [
+   "result",
+   "code_exec",
+   {
+    "status": "success",
+    "data": null,
+    "message": "Code executed successfully",
+    "status_code": 200
+   }
+  ],
+  [
+   "node",
+   "negotiate"
+  ],
+  [
+   "assistant",
+   "I am calling from the collections team about a late payment. Your personal loan has 780.00 past due and is 21 days late. Can you make this payment today?"
+  ],
+  [
+   "user",
+   "I lost my job last month, but I could pay 300 on Friday."
+  ],
+  [
+   "node",
+   "negotiate"
+  ],
+  [
+   "assistant",
+   "One moment."
+  ],
+  [
+   "call",
+   "negotiation_event",
+   {
+    "params": {
+     "events": [
+      {
+       "amount": "300",
+       "date": "2026-10-16",
+       "product_id": "p1",
+       "type": "hardship"
+      },
+      {
+       "amount": "300",
+       "date": "2026-10-16",
+       "product_id": "p1",
+       "type": "proposes"
+      }
+     ]
+    },
+    "timeout_ms": 8000,
+    "code": "\nimport json, datetime, re, math\nCFG = json.loads(r\"\"\"{\n \"now_var\": \"now\",\n \"weekend_days\": [\n  5,\n  6\n ],\n \"holidays\": [\n  \"2026-10-26\",\n  \"2026-11-11\",\n  \"2026-11-26\",\n  \"2026-12-25\",\n  \"2027-01-01\"\n ],\n \"turn_vars\": [\n  \"negotiate.total_turns\",\n  \"neg_relay.total_turns\"\n ],\n \"ladder\": [\n  {\n   \"amount\": \"full_or_floor_if_too_much\",\n   \"date\": \"this_week_last_business_day_or_next_week_if_today\"\n  },\n  {\n   \"amount\": \"floor\",\n   \"date\": \"deadline\"\n  }\n ],\n \"vague_asks\": 1,\n \"shared_date_clamps\": false,\n \"say\": {\n  \"debt_intro\": \"I am calling from the collections team about a late payment.\",\n  \"product_line\": \"Your {name} has {amount} past due and is {days} days late.\",\n  \"first_ask_one\": \"Can you make this payment today?\",\n  \"first_ask_all\": \"Can you make this payment today?\",\n  \"offer\": \"Could you pay {amount} on {date}?\",\n  \"offer_named\": \"For your {name}, could you pay {amount} on {date}?\",\n  \"floor_offer\": \"I can record a payment of {amount} on {date}. The rest stays overdue.\",\n  \"below_floor\": \"That amount cannot be recorded. I can record {amount} on {date}.\",\n  \"not_business_day\": \"{day} is not a business day. I can offer {next}.\",\n  \"after_deadline\": \"The latest date I can record is {deadline}. Can you pay on {deadline}?\",\n  \"past\": \"That date has already passed. Which day would you like to pay?\",\n  \"ask_exact\": \"Which exact day would that be?\",\n  \"vague_deadline\": \"I can record the payment for {deadline}. Does that work for you?\",\n  \"readback_intro\": \"Let me read that back.\",\n  \"readback_item\": \"{name}: {amount} on {date}.\",\n  \"readback_clamped\": \"Please note that {deadline} is the latest date I can record for your {name}.\",\n  \"confirm_question\": \"Do you confirm?\",\n  \"recorded\": \"Your promise is recorded. You will receive a text message confirming this promise.\",\n  \"not_recorded\": \"I am sorry, I could not record the promise for your {name}.\",\n  \"hardship\": \"I am sorry to hear that. Would you like me to connect you with our customer support team?\",\n  \"paid\": \"Thank you. Payments can take one business day to appear.\",\n  \"dispute\": \"I understand. I will not take a promise today.\",\n  \"checking\": \"One moment.\",\n  \"robot_answer\": \"I am Freya Bank's digital assistant.\",\n  \"scam_answer\": \"You can verify this call by phoning Freya Bank's customer service number.\",\n  \"error\": \"Sorry, could you please repeat that?\"\n },\n \"rec_node\": \"record_one\",\n \"note_node\": \"note_one\",\n \"ok\": \"ok\",\n \"retries\": 1,\n \"queue_field\": \"queue\",\n \"queue_reason\": {\n  \"restructuring\": \"restructuring\",\n  \"general\": \"human\",\n  \"support\": \"support\"\n },\n \"transferred\": \"transferred\",\n \"promise\": \"promise\",\n \"paid\": \"paid\",\n \"no_promise\": \"no_promise\",\n \"statuses\": {\n  \"refused\": \"refused\",\n  \"hardship\": \"hardship\",\n  \"dispute\": \"dispute\",\n  \"paid\": \"paid\",\n  \"service_error\": \"service_error\"\n },\n \"no_reason\": [\n  \"promise\",\n  \"paid\"\n ],\n \"uses_notes\": false,\n \"after_promise_sentence\": \"You will receive a text message confirming this promise.\",\n \"goodbye\": \"Thank you for your time. Goodbye.\",\n \"technical\": {\n  \"outcome\": \"no_promise\",\n  \"reason\": \"service_error\"\n },\n \"stop_close\": 2\n}\"\"\")\nDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']\nMONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']\nclass Safe(dict):\n    def __missing__(self, k):\n        return ''\ndef say(key, **kw):\n    t = CFG['say'].get(key) or ''\n    return t.format_map(Safe(kw)).strip()\ndef sp(d):\n    return DAYS[d.weekday()] + ' ' + str(d.day) + ' ' + MONTHS[d.month - 1]\ndef money(x):\n    return '%.2f' % float(x)\ndef isbd(d):\n    return d.weekday() not in CFG['weekend_days'] and d.isoformat() not in CFG['holidays']\ndef nbd(d):\n    d = d + datetime.timedelta(days=1)\n    while not isbd(d):\n        d = d + datetime.timedelta(days=1)\n    return d\ndef last_bd(monday):\n    best = None\n    for i in range(7):\n        x = monday + datetime.timedelta(days=i)\n        if isbd(x):\n            best = x\n    return best\ndef today():\n    raw = str(vars.get(CFG['now_var']) or '')\n    return datetime.datetime.strptime(raw[:10], '%Y-%m-%d').date()\ndef D(s):\n    return datetime.date.fromisoformat(str(s)[:10])\ndef load():\n    s = vars.get('neg_state')\n    if isinstance(s, str) and s:\n        return json.loads(s)\n    prods = json.loads(vars.get('products_json'))\n    st = dict(phase='first_ask', version=0, rb_version=-1, seen=[], rec_pending=None, rec_sc=0, rec_fc=0, products=[])\n    for p in prods:\n        st['products'].append(dict(id=p['id'], name=p['name'], full=p['past_due'], floor=p['floor'], deadline=p['deadline'],\n                                   allowed=int(p.get('attempts') or 0), used=0, too_much=False, floor_offered=False, below_offered=False,\n                                   initial_refused=False, status='open', offer=None, agreed=None, refused=[], vague=0, clamped=False, rec_attempts=0))\n    return st\ndef save(st):\n    vars['neg_state'] = json.dumps(st)\ndef package(st):\n    return [[p['id'], money(p['agreed']['amount']), p['agreed']['date']] for p in st['products'] if p['status'] == 'agreed' and p.get('agreed')]\ndef can_confirm(st):\n    pkg = package(st)\n    return st['phase'] == 'readback' and st['rb_version'] == st['version'] and bool(pkg) and st.get('rb_pkg') == pkg\ndef transferred():\n    return str(vars.get('transfer_to_agent_response.data.' + CFG['ok']) or '').strip().lower() == 'true'\n\ndef ladder_offer(p, k, t):\n    step = CFG['ladder'][k - 1]\n    if step['amount'] == 'floor' and p['floor'] is not None:\n        amt = p['floor']\n    elif step['amount'] == 'full_or_floor_if_too_much' and p['too_much'] and p['floor'] is not None:\n        amt = p['floor']\n    else:\n        amt = p['full']\n    if step['date'] == 'deadline':\n        d = D(p['deadline'])\n    elif step['date'] == 'this_week_last_business_day_or_next_week_if_today':\n        mon = t - datetime.timedelta(days=t.weekday())\n        d = last_bd(mon)\n        if d is None or d <= t:\n            d = last_bd(mon + datetime.timedelta(days=7))\n    elif step['date'] == 'next_business_day':\n        d = nbd(t)\n    else:\n        d = t\n    return amt, d\ndef offer(p, amt, d, kind, out, named):\n    p['offer'] = dict(amount=float(amt), date=d.isoformat(), kind=kind)\n    p['status'] = 'offered'\n    key = {'floor_too_much': 'floor_offer', 'below_floor': 'below_floor'}.get(kind, 'offer')\n    txt = say(key, amount=money(amt), date=sp(d), name=p['name'])\n    if named and key == 'offer':\n        txt = say('offer_named', amount=money(amt), date=sp(d), name=p['name'])\n    out.append(txt)\ndef next_attempt(p, t, out, named):\n    if p.get('hs'):\n        # A32: after a hardship no persuasion attempt is made; a refusal closes the product as hardship\n        p['status'] = 'hardship'\n        p['offer'] = None\n        return\n    while p['used'] < min(p['allowed'], len(CFG['ladder'])):\n        p['used'] += 1\n        amt, d = ladder_offer(p, p['used'], t)\n        if [round(float(amt), 2), d.isoformat()] in p['refused']:\n            continue\n        offer(p, amt, d, 'attempt', out, named)\n        return\n    p['status'] = 'refused'\n    p['offer'] = None\ndef refuse(p, t, out, named):\n    if p['offer']:\n        p['refused'].append([round(p['offer']['amount'], 2), p['offer']['date']])\n    p['offer'] = None\n    next_attempt(p, t, out, named)\ndef judge_date(p, d, t):\n    dl = D(p['deadline'])\n    if d < t:\n        return 'past', None\n    if d > dl:\n        return 'after', dl\n    if not isbd(d):\n        return 'not_bd', nbd(d)\n    return 'ok', d\ndef current_amount(p):\n    if p.get('pending_amount') is not None:\n        return p['pending_amount']\n    if p['offer']:\n        return p['offer']['amount']\n    return p['full']\ndef propose(p, date_s, amt_s, t, out, named, shared):\n    amt = None\n    if amt_s not in (None, ''):\n        amt = float(amt_s)\n        if not math.isfinite(amt):\n            raise ValueError('amount not finite')\n        if p['floor'] is not None and amt < p['floor'] - 0.005:\n            if not p['below_offered']:\n                p['below_offered'] = True\n                d0 = t if isbd(t) else nbd(t)\n                if date_s not in (None, '', 'vague') and re.match(r'^\\d{4}-\\d{2}-\\d{2}$', str(date_s)):\n                    v, dd = judge_date(p, D(date_s), t)\n                    if v == 'ok':\n                        d0 = dd\n                offer(p, p['floor'], d0, 'below_floor', out, named)\n            else:\n                refuse(p, t, out, named)\n            return\n        amt = min(amt, p['full'])\n    ds = str(date_s or '').strip().lower()\n    if ds == '':\n        if amt is None:\n            out.append(say('error'))\n            return\n        d0 = D(p['offer']['date']) if p['offer'] else (t if isbd(t) else nbd(t))\n        offer(p, amt, d0, 'amount_only', out, named)\n        return\n    if ds == 'vague' or not re.match(r'^\\d{4}-\\d{2}-\\d{2}$', ds):\n        if amt is not None:\n            p['pending_amount'] = float(amt)\n        p['vague'] += 1\n        if p['vague'] <= int(CFG['vague_asks']):\n            out.append(say('ask_exact'))\n        else:\n            offer(p, amt if amt is not None else current_amount(p), D(p['deadline']), 'vague_deadline', out, named)\n            out[-1] = say('vague_deadline', deadline=sp(D(p['deadline'])), amount=money(p['offer']['amount']), name=p['name'])\n        return\n    v, dd = judge_date(p, D(ds), t)\n    a = amt if amt is not None else current_amount(p)\n    if v == 'ok':\n        p['agreed'] = dict(amount=float(a), date=dd.isoformat())\n        p['status'] = 'agreed'\n        p['offer'] = None\n        p['pending_amount'] = None\n    elif v == 'past':\n        out.append(say('past', day=sp(D(ds))))\n    elif v == 'not_bd':\n        offer(p, a, dd, 'next_bd', out, named)\n        out[-1] = say('not_business_day', day=sp(D(ds)), next=sp(dd), amount=money(a), name=p['name'])\n    else:\n        if shared and CFG['shared_date_clamps']:\n            p['agreed'] = dict(amount=float(a), date=dd.isoformat())\n            p['status'] = 'agreed'\n            p['clamped'] = True\n            p['offer'] = None\n            p['pending_amount'] = None\n        else:\n            offer(p, a, dd, 'after_deadline', out, named)\n            out[-1] = say('after_deadline', deadline=sp(dd), amount=money(a), name=p['name'])\nout, phase_note = [], ''\ntry:\n    st = load()\n    t = today()\n    named = len(st['products']) > 1\n    evs = params.get('events') if isinstance(params, dict) else None\n    if isinstance(evs, dict):\n        evs = [evs]\n    if not isinstance(evs, list) or not evs:\n        raise ValueError('no events')\n    turn = str(sum(int(float(vars.get(k) or 0)) for k in CFG['turn_vars']))\n    # one customer message is judged as a whole: a proposal is never a refusal (A29); 'not today' + 'too much' is one\n    # floor offer (A26/A30); a confirmation given together with any change is not a confirmation (A35, B7)\n    E = [dict(e, type=str(e.get('type') or '').strip().lower(), product_id=str(e.get('product_id') or '').strip()) for e in evs if isinstance(e, dict)]\n    def touches(a, b):\n        return a in ('all', '*') or b in ('all', '*') or a == b\n    keep = []\n    for e in E:\n        kinds = set(x['type'] for x in E if x is not e and touches(x['product_id'], e['product_id']))\n        if e['type'] in ('refuses', 'too_much') and kinds & set(['proposes', 'changes', 'pays_today', 'accepts']):\n            continue\n        if e['type'] == 'refuses' and 'too_much' in kinds:\n            continue\n        if e['type'] == 'confirms' and [x for x in E if x['type'] != 'confirms']:\n            continue\n        keep.append(e)\n    evs = keep\n    # A32: a hardship (named in this message, or mentioned anywhere earlier in the call = extracted flag) is answered once,\n    # before any persuasion: the brief's sympathy + support offer is the only reply of that turn (code owns the sentence).\n    # The customer's own date/amount said together with it is kept and handled under the date/amount rules after the\n    # support offer is answered (one question per turn); 'no' in that turn answered the payment question, not the offer.\n    hs_flag = 'yes' in (str(vars.get('hardship_seen') or '').strip().lower(), str(vars.get('hardship_early') or '').strip().lower())\n    kinds = [e['type'] for e in evs]\n    if not st.get('hardship_handled') and 'declines_support' not in kinds and ('hardship' in kinds or (hs_flag and not set(kinds) & set(['accepts', 'confirms']))):\n        props = [e for e in evs if e['type'] in ('proposes', 'pays_today', 'changes')]\n        if props:\n            st['held'] = props\n        evs = ([e for e in evs if e['type'] == 'hardship'] or [dict(product_id='all' if len(st['products']) > 1 else st['products'][0]['id'], type='hardship')]) \\\n            + [e for e in evs if e['type'] in ('dispute', 'paid')]\n    hardship_said = bool(st.get('hardship_handled')) or str(vars.get('hardship_done') or '') == 'yes'\n    hardship_turn = bool([e for e in evs if e['type'] in ('hardship', 'declines_support')]) or bool([p for p in st['products'] if p['status'] == 'hardship_offer'])\n    if hardship_turn:\n        st['hardship_handled'] = True\n        vars['hardship_done'] = 'yes'\n    ids = [p['id'] for p in st['products']]\n\n    def handle(e, dedupe=True):\n        global hardship_said\n        typ = e['type']\n        pid = e['product_id']\n        key = '|'.join([turn, pid, typ, str(e.get('date') or ''), str(e.get('amount') or '')])\n        if dedupe:\n            if key in st['seen']:\n                return\n            st['seen'].append(key)\n        if pid in ('all', '*', ''):\n            # a date/amount the customer names after a hardship is still handled (A32 last sentence)\n            # and an answer to the open support offer reaches the products it was made for\n            ok_st = ('open', 'offered', 'agreed') + (('hardship', 'hardship_offer') if typ in ('proposes', 'changes', 'pays_today') else\n                                                     ('hardship_offer',) if typ in ('declines_support', 'refuses', 'stop', 'too_much') else ())\n            scope = [p for p in st['products'] if p['status'] in ok_st]\n            if pid == '' and len(st['products']) > 1:\n                raise ValueError('product not named')\n        elif pid in ids:\n            scope = [p for p in st['products'] if p['id'] == pid]\n        else:\n            raise ValueError('unknown product ' + pid)\n        shared = len(scope) > 1\n        if typ == 'stop':\n            # A45 counts the statements ('says twice'); an earlier one is a non-answer to the offer (A30), not a close\n            st['stops'] = int(st.get('stops') or 0) + 1\n            if st['stops'] < int(CFG.get('stop_close') or 1):\n                typ = 'refuses'\n        if typ in ('proposes', 'changes', 'accepts', 'refuses', 'too_much', 'pays_today') and st['phase'] == 'readback':\n            st['phase'] = 'negotiate'\n            st['version'] += 1\n        if typ == 'confirms':\n            if st['phase'] == 'readback':\n                whole = pid in ('all', '*') or [x[0] for x in package(st)] == [pid]\n                if whole and can_confirm(st):\n                    st['phase'] = 'record'\n                    st['confirmed_pkg'] = package(st)\n                else:\n                    out.append(say('confirm_question'))\n                return\n            typ = 'accepts'\n        for p in scope:\n            if typ in ('pays_today', 'proposes', 'changes') and p['status'] in ('hardship', 'hardship_offer'):\n                p['status'] = 'open'\n                p['hs'] = True\n            if typ == 'pays_today':\n                propose(p, t.isoformat(), None, t, out, named, shared)\n            elif typ in ('proposes', 'changes'):\n                d_in, a_in = e.get('date'), e.get('amount')\n                if p['status'] == 'agreed' and p.get('agreed'):\n                    prev = p['agreed']\n                    d_in = d_in if d_in not in (None, '') else prev['date']\n                    a_in = a_in if a_in not in (None, '') else prev['amount']\n                    p['status'] = 'open'\n                    p['agreed'] = None\n                    p['clamped'] = False\n                propose(p, d_in, a_in, t, out, named, shared)\n            elif typ == 'accepts':\n                if p['offer'] and p['status'] == 'offered':\n                    p['agreed'] = dict(amount=p['offer']['amount'], date=p['offer']['date'])\n                    p['status'] = 'agreed'\n                    p['offer'] = None\n                    p['pending_amount'] = None\n            elif typ == 'refuses':\n                if p['status'] == 'hardship_offer':\n                    p['status'] = 'hardship'\n                    continue\n                if st['phase'] == 'first_ask' and not p['offer']:\n                    p['initial_refused'] = True\n                    continue\n                if p['status'] in ('open', 'offered'):\n                    refuse(p, t, out, named)\n            elif typ == 'too_much':\n                p['too_much'] = True\n                if p.get('hs'):\n                    next_attempt(p, t, out, named)\n                elif not p['floor_offered'] and p['floor'] is not None:\n                    p['floor_offered'] = True\n                    if p['used'] == 0 and len(CFG['ladder']) > 0 and p['allowed'] > 0:\n                        p['used'] = 1\n                        amt, d0 = ladder_offer(p, 1, t)\n                    else:\n                        d0 = D(p['offer']['date']) if p['offer'] else (t if isbd(t) else nbd(t))\n                    offer(p, p['floor'], d0, 'floor_too_much', out, named)\n                else:\n                    refuse(p, t, out, named)\n            elif typ == 'hardship':\n                p['status'] = 'hardship_offer'\n                p['offer'] = None\n                p['hs'] = True\n            elif typ == 'declines_support':\n                if p['status'] in ('hardship_offer', 'open', 'offered'):\n                    p['status'] = 'hardship'\n                    p['offer'] = None\n                    p['hs'] = True\n            elif typ in ('dispute', 'paid'):\n                p['status'] = typ\n                p['offer'] = None\n            elif typ == 'stop':\n                if p['status'] in ('open', 'offered', 'hardship_offer'):\n                    p['status'] = 'hardship' if p['status'] == 'hardship_offer' else 'refused'\n            else:\n                raise ValueError('unknown event type ' + typ)\n        if typ == 'hardship' and not hardship_said:\n            out.append(say('hardship'))\n            hardship_said = True\n        elif typ == 'paid':\n            out.append(say('paid'))\n        elif typ == 'dispute':\n            out.append(say('dispute'))\n\n    for e in evs:\n        handle(e)\n    # the support offer is answered (declined or passed over): the customer's own date/amount from the hardship turn\n    # is now handled under the date and amount rules (A32 last sentence); a held proposal never records by itself\n    if st.get('held') and not [p for p in st['products'] if p['status'] == 'hardship_offer']:\n        held, st['held'] = st['held'], None\n        if not [e for e in evs if e['type'] in ('proposes', 'pays_today', 'changes')]:\n            for e in held:\n                handle(e, dedupe=False)\n    if st['phase'] == 'first_ask':\n        st['phase'] = 'negotiate'\n    if st['phase'] == 'negotiate':\n        active = [p for p in st['products'] if p['status'] in ('open', 'offered', 'hardship_offer')]\n        if active and not out:\n            p = active[0]\n            if p['status'] == 'open':\n                if p['initial_refused'] or p['used'] > 0 or named:\n                    next_attempt(p, t, out, named)\n                else:\n                    out.append(say('first_ask_one') if not named else say('offer_named', amount=money(p['full']), date=sp(t) if isbd(t) else sp(nbd(t)), name=p['name']))\n                    if p['status'] == 'open':\n                        d0 = t if isbd(t) else nbd(t)\n                        p['offer'] = dict(amount=float(p['full']), date=d0.isoformat(), kind='initial')\n                        p['status'] = 'offered'\n        active = [p for p in st['products'] if p['status'] in ('open', 'offered', 'hardship_offer')]\n        if not active:\n            agreed = [p for p in st['products'] if p['status'] == 'agreed']\n            if agreed:\n                st['phase'] = 'readback'\n                st['version'] += 1\n                st['rb_version'] = st['version']\n                items = []\n                for p in agreed:\n                    it = say('readback_item', name=p['name'], amount=money(p['agreed']['amount']), date=sp(D(p['agreed']['date'])))\n                    if p['clamped']:\n                        it += ' ' + say('readback_clamped', name=p['name'], deadline=sp(D(p['agreed']['date'])))\n                    items.append(it)\n                out.append((say('readback_intro') + ' ' + '; '.join(i.rstrip(' .;') for i in items) + '. ' + say('confirm_question')).strip())\n                st['rb_pkg'] = package(st)\n            else:\n                st['phase'] = 'finish'\n    if not [x for x in out if x] and st['phase'] == 'negotiate':\n        pend = [p for p in st['products'] if p['status'] == 'offered' and p['offer']]\n        if pend:\n            p = pend[0]\n            out.append(say('offer_named' if named else 'offer', amount=money(p['offer']['amount']), date=sp(D(p['offer']['date'])), name=p['name']))\n        else:\n            out.append(say('error'))\n    ans = str(params.get('answer') or '').strip() if isinstance(params, dict) else ''\n    ans = re.sub(r'[{}]', '', ans)[:240]\n    if hardship_turn:\n        ans = ''          # the hardship reply has one owner (code): no second sympathy or extra offer from the model\n    save(st)\n    vars['neg_say'] = ' '.join(x for x in ([ans] if ans else []) + out if x)\n    vars['neg_final_say'] = vars['neg_say'] if st['phase'] == 'finish' else ''\n    vars['neg_flag'] = {'record': 'record', 'finish': 'finish'}.get(st['phase'], 'new')\n    vars['neg_phase'] = st['phase']\nexcept Exception as e:\n    vars['neg_error'] = str(e)[:160]\n    vars['neg_say'] = say('error')\n    vars['neg_flag'] = 'new'\n"
+   }
+  ],
+  [
+   "result",
+   "negotiation_event",
+   {
+    "status": "success",
+    "data": null,
+    "message": "Code executed successfully",
+    "status_code": 200
+   }
+  ],
+  [
+   "node",
+   "neg_consume"
+  ],
+  [
+   "call",
+   "code_exec",
+   {
+    "timeout_ms": 10000,
+    "code": "vars['neg_flag'] = 'used'\n"
+   }
+  ],
+  [
+   "result",
+   "code_exec",
+   {
+    "status": "success",
+    "data": null,
+    "message": "Code executed successfully",
+    "status_code": 200
+   }
+  ],
+  [
+   "node",
+   "neg_relay"
+  ],
+  [
+   "assistant",
+   "Sorry, could you please repeat that?"
+  ],
+  [
+   "user",
+   "No thanks, I don't want to be transferred."
+  ],
+  [
+   "node",
+   "negotiate"
+  ],
+  [
+   "assistant",
+   "One moment."
+  ],
+  [
+   "call",
+   "negotiation_event",
+   {
+    "params": {
+     "events": [
+      {
+       "amount": "300",
+       "date": "2026-10-16",
+       "product_id": "p1",
+       "type": "hardship"
+      },
+      {
+       "product_id": "p1",
+       "type": "declines_support"
+      }
+     ]
+    },
+    "timeout_ms": 8000,
+    "code": "\nimport json, datetime, re, math\nCFG = json.loads(r\"\"\"{\n \"now_var\": \"now\",\n \"weekend_days\": [\n  5,\n  6\n ],\n \"holidays\": [\n  \"2026-10-26\",\n  \"2026-11-11\",\n  \"2026-11-26\",\n  \"2026-12-25\",\n  \"2027-01-01\"\n ],\n \"turn_vars\": [\n  \"negotiate.total_turns\",\n  \"neg_relay.total_turns\"\n ],\n \"ladder\": [\n  {\n   \"amount\": \"full_or_floor_if_too_much\",\n   \"date\": \"this_week_last_business_day_or_next_week_if_today\"\n  },\n  {\n   \"amount\": \"floor\",\n   \"date\": \"deadline\"\n  }\n ],\n \"vague_asks\": 1,\n \"shared_date_clamps\": false,\n \"say\": {\n  \"debt_intro\": \"I am calling from the collections team about a late payment.\",\n  \"product_line\": \"Your {name} has {amount} past due and is {days} days late.\",\n  \"first_ask_one\": \"Can you make this payment today?\",\n  \"first_ask_all\": \"Can you make this payment today?\",\n  \"offer\": \"Could you pay {amount} on {date}?\",\n  \"offer_named\": \"For your {name}, could you pay {amount} on {date}?\",\n  \"floor_offer\": \"I can record a payment of {amount} on {date}. The rest stays overdue.\",\n  \"below_floor\": \"That amount cannot be recorded. I can record {amount} on {date}.\",\n  \"not_business_day\": \"{day} is not a business day. I can offer {next}.\",\n  \"after_deadline\": \"The latest date I can record is {deadline}. Can you pay on {deadline}?\",\n  \"past\": \"That date has already passed. Which day would you like to pay?\",\n  \"ask_exact\": \"Which exact day would that be?\",\n  \"vague_deadline\": \"I can record the payment for {deadline}. Does that work for you?\",\n  \"readback_intro\": \"Let me read that back.\",\n  \"readback_item\": \"{name}: {amount} on {date}.\",\n  \"readback_clamped\": \"Please note that {deadline} is the latest date I can record for your {name}.\",\n  \"confirm_question\": \"Do you confirm?\",\n  \"recorded\": \"Your promise is recorded. You will receive a text message confirming this promise.\",\n  \"not_recorded\": \"I am sorry, I could not record the promise for your {name}.\",\n  \"hardship\": \"I am sorry to hear that. Would you like me to connect you with our customer support team?\",\n  \"paid\": \"Thank you. Payments can take one business day to appear.\",\n  \"dispute\": \"I understand. I will not take a promise today.\",\n  \"checking\": \"One moment.\",\n  \"robot_answer\": \"I am Freya Bank's digital assistant.\",\n  \"scam_answer\": \"You can verify this call by phoning Freya Bank's customer service number.\",\n  \"error\": \"Sorry, could you please repeat that?\"\n },\n \"rec_node\": \"record_one\",\n \"note_node\": \"note_one\",\n \"ok\": \"ok\",\n \"retries\": 1,\n \"queue_field\": \"queue\",\n \"queue_reason\": {\n  \"restructuring\": \"restructuring\",\n  \"general\": \"human\",\n  \"support\": \"support\"\n },\n \"transferred\": \"transferred\",\n \"promise\": \"promise\",\n \"paid\": \"paid\",\n \"no_promise\": \"no_promise\",\n \"statuses\": {\n  \"refused\": \"refused\",\n  \"hardship\": \"hardship\",\n  \"dispute\": \"dispute\",\n  \"paid\": \"paid\",\n  \"service_error\": \"service_error\"\n },\n \"no_reason\": [\n  \"promise\",\n  \"paid\"\n ],\n \"uses_notes\": false,\n \"after_promise_sentence\": \"You will receive a text message confirming this promise.\",\n \"goodbye\": \"Thank you for your time. Goodbye.\",\n \"technical\": {\n  \"outcome\": \"no_promise\",\n  \"reason\": \"service_error\"\n },\n \"stop_close\": 2\n}\"\"\")\nDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']\nMONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']\nclass Safe(dict):\n    def __missing__(self, k):\n        return ''\ndef say(key, **kw):\n    t = CFG['say'].get(key) or ''\n    return t.format_map(Safe(kw)).strip()\ndef sp(d):\n    return DAYS[d.weekday()] + ' ' + str(d.day) + ' ' + MONTHS[d.month - 1]\ndef money(x):\n    return '%.2f' % float(x)\ndef isbd(d):\n    return d.weekday() not in CFG['weekend_days'] and d.isoformat() not in CFG['holidays']\ndef nbd(d):\n    d = d + datetime.timedelta(days=1)\n    while not isbd(d):\n        d = d + datetime.timedelta(days=1)\n    return d\ndef last_bd(monday):\n    best = None\n    for i in range(7):\n        x = monday + datetime.timedelta(days=i)\n        if isbd(x):\n            best = x\n    return best\ndef today():\n    raw = str(vars.get(CFG['now_var']) or '')\n    return datetime.datetime.strptime(raw[:10], '%Y-%m-%d').date()\ndef D(s):\n    return datetime.date.fromisoformat(str(s)[:10])\ndef load():\n    s = vars.get('neg_state')\n    if isinstance(s, str) and s:\n        return json.loads(s)\n    prods = json.loads(vars.get('products_json'))\n    st = dict(phase='first_ask', version=0, rb_version=-1, seen=[], rec_pending=None, rec_sc=0, rec_fc=0, products=[])\n    for p in prods:\n        st['products'].append(dict(id=p['id'], name=p['name'], full=p['past_due'], floor=p['floor'], deadline=p['deadline'],\n                                   allowed=int(p.get('attempts') or 0), used=0, too_much=False, floor_offered=False, below_offered=False,\n                                   initial_refused=False, status='open', offer=None, agreed=None, refused=[], vague=0, clamped=False, rec_attempts=0))\n    return st\ndef save(st):\n    vars['neg_state'] = json.dumps(st)\ndef package(st):\n    return [[p['id'], money(p['agreed']['amount']), p['agreed']['date']] for p in st['products'] if p['status'] == 'agreed' and p.get('agreed')]\ndef can_confirm(st):\n    pkg = package(st)\n    return st['phase'] == 'readback' and st['rb_version'] == st['version'] and bool(pkg) and st.get('rb_pkg') == pkg\ndef transferred():\n    return str(vars.get('transfer_to_agent_response.data.' + CFG['ok']) or '').strip().lower() == 'true'\n\ndef ladder_offer(p, k, t):\n    step = CFG['ladder'][k - 1]\n    if step['amount'] == 'floor' and p['floor'] is not None:\n        amt = p['floor']\n    elif step['amount'] == 'full_or_floor_if_too_much' and p['too_much'] and p['floor'] is not None:\n        amt = p['floor']\n    else:\n        amt = p['full']\n    if step['date'] == 'deadline':\n        d = D(p['deadline'])\n    elif step['date'] == 'this_week_last_business_day_or_next_week_if_today':\n        mon = t - datetime.timedelta(days=t.weekday())\n        d = last_bd(mon)\n        if d is None or d <= t:\n            d = last_bd(mon + datetime.timedelta(days=7))\n    elif step['date'] == 'next_business_day':\n        d = nbd(t)\n    else:\n        d = t\n    return amt, d\ndef offer(p, amt, d, kind, out, named):\n    p['offer'] = dict(amount=float(amt), date=d.isoformat(), kind=kind)\n    p['status'] = 'offered'\n    key = {'floor_too_much': 'floor_offer', 'below_floor': 'below_floor'}.get(kind, 'offer')\n    txt = say(key, amount=money(amt), date=sp(d), name=p['name'])\n    if named and key == 'offer':\n        txt = say('offer_named', amount=money(amt), date=sp(d), name=p['name'])\n    out.append(txt)\ndef next_attempt(p, t, out, named):\n    if p.get('hs'):\n        # A32: after a hardship no persuasion attempt is made; a refusal closes the product as hardship\n        p['status'] = 'hardship'\n        p['offer'] = None\n        return\n    while p['used'] < min(p['allowed'], len(CFG['ladder'])):\n        p['used'] += 1\n        amt, d = ladder_offer(p, p['used'], t)\n        if [round(float(amt), 2), d.isoformat()] in p['refused']:\n            continue\n        offer(p, amt, d, 'attempt', out, named)\n        return\n    p['status'] = 'refused'\n    p['offer'] = None\ndef refuse(p, t, out, named):\n    if p['offer']:\n        p['refused'].append([round(p['offer']['amount'], 2), p['offer']['date']])\n    p['offer'] = None\n    next_attempt(p, t, out, named)\ndef judge_date(p, d, t):\n    dl = D(p['deadline'])\n    if d < t:\n        return 'past', None\n    if d > dl:\n        return 'after', dl\n    if not isbd(d):\n        return 'not_bd', nbd(d)\n    return 'ok', d\ndef current_amount(p):\n    if p.get('pending_amount') is not None:\n        return p['pending_amount']\n    if p['offer']:\n        return p['offer']['amount']\n    return p['full']\ndef propose(p, date_s, amt_s, t, out, named, shared):\n    amt = None\n    if amt_s not in (None, ''):\n        amt = float(amt_s)\n        if not math.isfinite(amt):\n            raise ValueError('amount not finite')\n        if p['floor'] is not None and amt < p['floor'] - 0.005:\n            if not p['below_offered']:\n                p['below_offered'] = True\n                d0 = t if isbd(t) else nbd(t)\n                if date_s not in (None, '', 'vague') and re.match(r'^\\d{4}-\\d{2}-\\d{2}$', str(date_s)):\n                    v, dd = judge_date(p, D(date_s), t)\n                    if v == 'ok':\n                        d0 = dd\n                offer(p, p['floor'], d0, 'below_floor', out, named)\n            else:\n                refuse(p, t, out, named)\n            return\n        amt = min(amt, p['full'])\n    ds = str(date_s or '').strip().lower()\n    if ds == '':\n        if amt is None:\n            out.append(say('error'))\n            return\n        d0 = D(p['offer']['date']) if p['offer'] else (t if isbd(t) else nbd(t))\n        offer(p, amt, d0, 'amount_only', out, named)\n        return\n    if ds == 'vague' or not re.match(r'^\\d{4}-\\d{2}-\\d{2}$', ds):\n        if amt is not None:\n            p['pending_amount'] = float(amt)\n        p['vague'] += 1\n        if p['vague'] <= int(CFG['vague_asks']):\n            out.append(say('ask_exact'))\n        else:\n            offer(p, amt if amt is not None else current_amount(p), D(p['deadline']), 'vague_deadline', out, named)\n            out[-1] = say('vague_deadline', deadline=sp(D(p['deadline'])), amount=money(p['offer']['amount']), name=p['name'])\n        return\n    v, dd = judge_date(p, D(ds), t)\n    a = amt if amt is not None else current_amount(p)\n    if v == 'ok':\n        p['agreed'] = dict(amount=float(a), date=dd.isoformat())\n        p['status'] = 'agreed'\n        p['offer'] = None\n        p['pending_amount'] = None\n    elif v == 'past':\n        out.append(say('past', day=sp(D(ds))))\n    elif v == 'not_bd':\n        offer(p, a, dd, 'next_bd', out, named)\n        out[-1] = say('not_business_day', day=sp(D(ds)), next=sp(dd), amount=money(a), name=p['name'])\n    else:\n        if shared and CFG['shared_date_clamps']:\n            p['agreed'] = dict(amount=float(a), date=dd.isoformat())\n            p['status'] = 'agreed'\n            p['clamped'] = True\n            p['offer'] = None\n            p['pending_amount'] = None\n        else:\n            offer(p, a, dd, 'after_deadline', out, named)\n            out[-1] = say('after_deadline', deadline=sp(dd), amount=money(a), name=p['name'])\nout, phase_note = [], ''\ntry:\n    st = load()\n    t = today()\n    named = len(st['products']) > 1\n    evs = params.get('events') if isinstance(params, dict) else None\n    if isinstance(evs, dict):\n        evs = [evs]\n    if not isinstance(evs, list) or not evs:\n        raise ValueError('no events')\n    turn = str(sum(int(float(vars.get(k) or 0)) for k in CFG['turn_vars']))\n    # one customer message is judged as a whole: a proposal is never a refusal (A29); 'not today' + 'too much' is one\n    # floor offer (A26/A30); a confirmation given together with any change is not a confirmation (A35, B7)\n    E = [dict(e, type=str(e.get('type') or '').strip().lower(), product_id=str(e.get('product_id') or '').strip()) for e in evs if isinstance(e, dict)]\n    def touches(a, b):\n        return a in ('all', '*') or b in ('all', '*') or a == b\n    keep = []\n    for e in E:\n        kinds = set(x['type'] for x in E if x is not e and touches(x['product_id'], e['product_id']))\n        if e['type'] in ('refuses', 'too_much') and kinds & set(['proposes', 'changes', 'pays_today', 'accepts']):\n            continue\n        if e['type'] == 'refuses' and 'too_much' in kinds:\n            continue\n        if e['type'] == 'confirms' and [x for x in E if x['type'] != 'confirms']:\n            continue\n        keep.append(e)\n    evs = keep\n    # A32: a hardship (named in this message, or mentioned anywhere earlier in the call = extracted flag) is answered once,\n    # before any persuasion: the brief's sympathy + support offer is the only reply of that turn (code owns the sentence).\n    # The customer's own date/amount said together with it is kept and handled under the date/amount rules after the\n    # support offer is answered (one question per turn); 'no' in that turn answered the payment question, not the offer.\n    hs_flag = 'yes' in (str(vars.get('hardship_seen') or '').strip().lower(), str(vars.get('hardship_early') or '').strip().lower())\n    kinds = [e['type'] for e in evs]\n    if not st.get('hardship_handled') and 'declines_support' not in kinds and ('hardship' in kinds or (hs_flag and not set(kinds) & set(['accepts', 'confirms']))):\n        props = [e for e in evs if e['type'] in ('proposes', 'pays_today', 'changes')]\n        if props:\n            st['held'] = props\n        evs = ([e for e in evs if e['type'] == 'hardship'] or [dict(product_id='all' if len(st['products']) > 1 else st['products'][0]['id'], type='hardship')]) \\\n            + [e for e in evs if e['type'] in ('dispute', 'paid')]\n    hardship_said = bool(st.get('hardship_handled')) or str(vars.get('hardship_done') or '') == 'yes'\n    hardship_turn = bool([e for e in evs if e['type'] in ('hardship', 'declines_support')]) or bool([p for p in st['products'] if p['status'] == 'hardship_offer'])\n    if hardship_turn:\n        st['hardship_handled'] = True\n        vars['hardship_done'] = 'yes'\n    ids = [p['id'] for p in st['products']]\n\n    def handle(e, dedupe=True):\n        global hardship_said\n        typ = e['type']\n        pid = e['product_id']\n        key = '|'.join([turn, pid, typ, str(e.get('date') or ''), str(e.get('amount') or '')])\n        if dedupe:\n            if key in st['seen']:\n                return\n            st['seen'].append(key)\n        if pid in ('all', '*', ''):\n            # a date/amount the customer names after a hardship is still handled (A32 last sentence)\n            # and an answer to the open support offer reaches the products it was made for\n            ok_st = ('open', 'offered', 'agreed') + (('hardship', 'hardship_offer') if typ in ('proposes', 'changes', 'pays_today') else\n                                                     ('hardship_offer',) if typ in ('declines_support', 'refuses', 'stop', 'too_much') else ())\n            scope = [p for p in st['products'] if p['status'] in ok_st]\n            if pid == '' and len(st['products']) > 1:\n                raise ValueError('product not named')\n        elif pid in ids:\n            scope = [p for p in st['products'] if p['id'] == pid]\n        else:\n            raise ValueError('unknown product ' + pid)\n        shared = len(scope) > 1\n        if typ == 'stop':\n            # A45 counts the statements ('says twice'); an earlier one is a non-answer to the offer (A30), not a close\n            st['stops'] = int(st.get('stops') or 0) + 1\n            if st['stops'] < int(CFG.get('stop_close') or 1):\n                typ = 'refuses'\n        if typ in ('proposes', 'changes', 'accepts', 'refuses', 'too_much', 'pays_today') and st['phase'] == 'readback':\n            st['phase'] = 'negotiate'\n            st['version'] += 1\n        if typ == 'confirms':\n            if st['phase'] == 'readback':\n                whole = pid in ('all', '*') or [x[0] for x in package(st)] == [pid]\n                if whole and can_confirm(st):\n                    st['phase'] = 'record'\n                    st['confirmed_pkg'] = package(st)\n                else:\n                    out.append(say('confirm_question'))\n                return\n            typ = 'accepts'\n        for p in scope:\n            if typ in ('pays_today', 'proposes', 'changes') and p['status'] in ('hardship', 'hardship_offer'):\n                p['status'] = 'open'\n                p['hs'] = True\n            if typ == 'pays_today':\n                propose(p, t.isoformat(), None, t, out, named, shared)\n            elif typ in ('proposes', 'changes'):\n                d_in, a_in = e.get('date'), e.get('amount')\n                if p['status'] == 'agreed' and p.get('agreed'):\n                    prev = p['agreed']\n                    d_in = d_in if d_in not in (None, '') else prev['date']\n                    a_in = a_in if a_in not in (None, '') else prev['amount']\n                    p['status'] = 'open'\n                    p['agreed'] = None\n                    p['clamped'] = False\n                propose(p, d_in, a_in, t, out, named, shared)\n            elif typ == 'accepts':\n                if p['offer'] and p['status'] == 'offered':\n                    p['agreed'] = dict(amount=p['offer']['amount'], date=p['offer']['date'])\n                    p['status'] = 'agreed'\n                    p['offer'] = None\n                    p['pending_amount'] = None\n            elif typ == 'refuses':\n                if p['status'] == 'hardship_offer':\n                    p['status'] = 'hardship'\n                    continue\n                if st['phase'] == 'first_ask' and not p['offer']:\n                    p['initial_refused'] = True\n                    continue\n                if p['status'] in ('open', 'offered'):\n                    refuse(p, t, out, named)\n            elif typ == 'too_much':\n                p['too_much'] = True\n                if p.get('hs'):\n                    next_attempt(p, t, out, named)\n                elif not p['floor_offered'] and p['floor'] is not None:\n                    p['floor_offered'] = True\n                    if p['used'] == 0 and len(CFG['ladder']) > 0 and p['allowed'] > 0:\n                        p['used'] = 1\n                        amt, d0 = ladder_offer(p, 1, t)\n                    else:\n                        d0 = D(p['offer']['date']) if p['offer'] else (t if isbd(t) else nbd(t))\n                    offer(p, p['floor'], d0, 'floor_too_much', out, named)\n                else:\n                    refuse(p, t, out, named)\n            elif typ == 'hardship':\n                p['status'] = 'hardship_offer'\n                p['offer'] = None\n                p['hs'] = True\n            elif typ == 'declines_support':\n                if p['status'] in ('hardship_offer', 'open', 'offered'):\n                    p['status'] = 'hardship'\n                    p['offer'] = None\n                    p['hs'] = True\n            elif typ in ('dispute', 'paid'):\n                p['status'] = typ\n                p['offer'] = None\n            elif typ == 'stop':\n                if p['status'] in ('open', 'offered', 'hardship_offer'):\n                    p['status'] = 'hardship' if p['status'] == 'hardship_offer' else 'refused'\n            else:\n                raise ValueError('unknown event type ' + typ)\n        if typ == 'hardship' and not hardship_said:\n            out.append(say('hardship'))\n            hardship_said = True\n        elif typ == 'paid':\n            out.append(say('paid'))\n        elif typ == 'dispute':\n            out.append(say('dispute'))\n\n    for e in evs:\n        handle(e)\n    # the support offer is answered (declined or passed over): the customer's own date/amount from the hardship turn\n    # is now handled under the date and amount rules (A32 last sentence); a held proposal never records by itself\n    if st.get('held') and not [p for p in st['products'] if p['status'] == 'hardship_offer']:\n        held, st['held'] = st['held'], None\n        if not [e for e in evs if e['type'] in ('proposes', 'pays_today', 'changes')]:\n            for e in held:\n                handle(e, dedupe=False)\n    if st['phase'] == 'first_ask':\n        st['phase'] = 'negotiate'\n    if st['phase'] == 'negotiate':\n        active = [p for p in st['products'] if p['status'] in ('open', 'offered', 'hardship_offer')]\n        if active and not out:\n            p = active[0]\n            if p['status'] == 'open':\n                if p['initial_refused'] or p['used'] > 0 or named:\n                    next_attempt(p, t, out, named)\n                else:\n                    out.append(say('first_ask_one') if not named else say('offer_named', amount=money(p['full']), date=sp(t) if isbd(t) else sp(nbd(t)), name=p['name']))\n                    if p['status'] == 'open':\n                        d0 = t if isbd(t) else nbd(t)\n                        p['offer'] = dict(amount=float(p['full']), date=d0.isoformat(), kind='initial')\n                        p['status'] = 'offered'\n        active = [p for p in st['products'] if p['status'] in ('open', 'offered', 'hardship_offer')]\n        if not active:\n            agreed = [p for p in st['products'] if p['status'] == 'agreed']\n            if agreed:\n                st['phase'] = 'readback'\n                st['version'] += 1\n                st['rb_version'] = st['version']\n                items = []\n                for p in agreed:\n                    it = say('readback_item', name=p['name'], amount=money(p['agreed']['amount']), date=sp(D(p['agreed']['date'])))\n                    if p['clamped']:\n                        it += ' ' + say('readback_clamped', name=p['name'], deadline=sp(D(p['agreed']['date'])))\n                    items.append(it)\n                out.append((say('readback_intro') + ' ' + '; '.join(i.rstrip(' .;') for i in items) + '. ' + say('confirm_question')).strip())\n                st['rb_pkg'] = package(st)\n            else:\n                st['phase'] = 'finish'\n    if not [x for x in out if x] and st['phase'] == 'negotiate':\n        pend = [p for p in st['products'] if p['status'] == 'offered' and p['offer']]\n        if pend:\n            p = pend[0]\n            out.append(say('offer_named' if named else 'offer', amount=money(p['offer']['amount']), date=sp(D(p['offer']['date'])), name=p['name']))\n        else:\n            out.append(say('error'))\n    ans = str(params.get('answer') or '').strip() if isinstance(params, dict) else ''\n    ans = re.sub(r'[{}]', '', ans)[:240]\n    if hardship_turn:\n        ans = ''          # the hardship reply has one owner (code): no second sympathy or extra offer from the model\n    save(st)\n    vars['neg_say'] = ' '.join(x for x in ([ans] if ans else []) + out if x)\n    vars['neg_final_say'] = vars['neg_say'] if st['phase'] == 'finish' else ''\n    vars['neg_flag'] = {'record': 'record', 'finish': 'finish'}.get(st['phase'], 'new')\n    vars['neg_phase'] = st['phase']\nexcept Exception as e:\n    vars['neg_error'] = str(e)[:160]\n    vars['neg_say'] = say('error')\n    vars['neg_flag'] = 'new'\n"
+   }
+  ],
+  [
+   "result",
+   "negotiation_event",
+   {
+    "status": "success",
+    "data": null,
+    "message": "Code executed successfully",
+    "status_code": 200
+   }
+  ],
+  [
+   "node",
+   "neg_consume"
+  ],
+  [
+   "call",
+   "code_exec",
+   {
+    "timeout_ms": 10000,
+    "code": "vars['neg_flag'] = 'used'\n"
+   }
+  ],
+  [
+   "result",
+   "code_exec",
+   {
+    "status": "success",
+    "data": null,
+    "message": "Code executed successfully",
+    "status_code": 200
+   }
+  ],
+  [
+   "node",
+   "neg_relay"
+  ],
+  [
+   "assistant",
+   "Sorry, could you please repeat that?"
+  ],
+  [
+   "user",
+   "Yes, I confirm."
+  ],
+  [
+   "node",
+   "negotiate"
+  ],
+  [
+   "assistant",
+   "One moment."
+  ],
+  [
+   "call",
+   "negotiation_event",
+   {
+    "params": {
+     "events": [
+      {
+       "amount": "300",
+       "date": "2026-10-16",
+       "product_id": "p1",
+       "type": "hardship"
+      },
+      {
+       "amount": "300",
+       "date": "2026-10-16",
+       "product_id": "p1",
+       "type": "proposes"
+      },
+      {
+       "product_id": "p1",
+       "type": "declines_support"
+      }
+     ]
+    },
+    "timeout_ms": 8000,
+    "code": "\nimport json, datetime, re, math\nCFG = json.loads(r\"\"\"{\n \"now_var\": \"now\",\n \"weekend_days\": [\n  5,\n  6\n ],\n \"holidays\": [\n  \"2026-10-26\",\n  \"2026-11-11\",\n  \"2026-11-26\",\n  \"2026-12-25\",\n  \"2027-01-01\"\n ],\n \"turn_vars\": [\n  \"negotiate.total_turns\",\n  \"neg_relay.total_turns\"\n ],\n \"ladder\": [\n  {\n   \"amount\": \"full_or_floor_if_too_much\",\n   \"date\": \"this_week_last_business_day_or_next_week_if_today\"\n  },\n  {\n   \"amount\": \"floor\",\n   \"date\": \"deadline\"\n  }\n ],\n \"vague_asks\": 1,\n \"shared_date_clamps\": false,\n \"say\": {\n  \"debt_intro\": \"I am calling from the collections team about a late payment.\",\n  \"product_line\": \"Your {name} has {amount} past due and is {days} days late.\",\n  \"first_ask_one\": \"Can you make this payment today?\",\n  \"first_ask_all\": \"Can you make this payment today?\",\n  \"offer\": \"Could you pay {amount} on {date}?\",\n  \"offer_named\": \"For your {name}, could you pay {amount} on {date}?\",\n  \"floor_offer\": \"I can record a payment of {amount} on {date}. The rest stays overdue.\",\n  \"below_floor\": \"That amount cannot be recorded. I can record {amount} on {date}.\",\n  \"not_business_day\": \"{day} is not a business day. I can offer {next}.\",\n  \"after_deadline\": \"The latest date I can record is {deadline}. Can you pay on {deadline}?\",\n  \"past\": \"That date has already passed. Which day would you like to pay?\",\n  \"ask_exact\": \"Which exact day would that be?\",\n  \"vague_deadline\": \"I can record the payment for {deadline}. Does that work for you?\",\n  \"readback_intro\": \"Let me read that back.\",\n  \"readback_item\": \"{name}: {amount} on {date}.\",\n  \"readback_clamped\": \"Please note that {deadline} is the latest date I can record for your {name}.\",\n  \"confirm_question\": \"Do you confirm?\",\n  \"recorded\": \"Your promise is recorded. You will receive a text message confirming this promise.\",\n  \"not_recorded\": \"I am sorry, I could not record the promise for your {name}.\",\n  \"hardship\": \"I am sorry to hear that. Would you like me to connect you with our customer support team?\",\n  \"paid\": \"Thank you. Payments can take one business day to appear.\",\n  \"dispute\": \"I understand. I will not take a promise today.\",\n  \"checking\": \"One moment.\",\n  \"robot_answer\": \"I am Freya Bank's digital assistant.\",\n  \"scam_answer\": \"You can verify this call by phoning Freya Bank's customer service number.\",\n  \"error\": \"Sorry, could you please repeat that?\"\n },\n \"rec_node\": \"record_one\",\n \"note_node\": \"note_one\",\n \"ok\": \"ok\",\n \"retries\": 1,\n \"queue_field\": \"queue\",\n \"queue_reason\": {\n  \"restructuring\": \"restructuring\",\n  \"general\": \"human\",\n  \"support\": \"support\"\n },\n \"transferred\": \"transferred\",\n \"promise\": \"promise\",\n \"paid\": \"paid\",\n \"no_promise\": \"no_promise\",\n \"statuses\": {\n  \"refused\": \"refused\",\n  \"hardship\": \"hardship\",\n  \"dispute\": \"dispute\",\n  \"paid\": \"paid\",\n  \"service_error\": \"service_error\"\n },\n \"no_reason\": [\n  \"promise\",\n  \"paid\"\n ],\n \"uses_notes\": false,\n \"after_promise_sentence\": \"You will receive a text message confirming this promise.\",\n \"goodbye\": \"Thank you for your time. Goodbye.\",\n \"technical\": {\n  \"outcome\": \"no_promise\",\n  \"reason\": \"service_error\"\n },\n \"stop_close\": 2\n}\"\"\")\nDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']\nMONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']\nclass Safe(dict):\n    def __missing__(self, k):\n        return ''\ndef say(key, **kw):\n    t = CFG['say'].get(key) or ''\n    return t.format_map(Safe(kw)).strip()\ndef sp(d):\n    return DAYS[d.weekday()] + ' ' + str(d.day) + ' ' + MONTHS[d.month - 1]\ndef money(x):\n    return '%.2f' % float(x)\ndef isbd(d):\n    return d.weekday() not in CFG['weekend_days'] and d.isoformat() not in CFG['holidays']\ndef nbd(d):\n    d = d + datetime.timedelta(days=1)\n    while not isbd(d):\n        d = d + datetime.timedelta(days=1)\n    return d\ndef last_bd(monday):\n    best = None\n    for i in range(7):\n        x = monday + datetime.timedelta(days=i)\n        if isbd(x):\n            best = x\n    return best\ndef today():\n    raw = str(vars.get(CFG['now_var']) or '')\n    return datetime.datetime.strptime(raw[:10], '%Y-%m-%d').date()\ndef D(s):\n    return datetime.date.fromisoformat(str(s)[:10])\ndef load():\n    s = vars.get('neg_state')\n    if isinstance(s, str) and s:\n        return json.loads(s)\n    prods = json.loads(vars.get('products_json'))\n    st = dict(phase='first_ask', version=0, rb_version=-1, seen=[], rec_pending=None, rec_sc=0, rec_fc=0, products=[])\n    for p in prods:\n        st['products'].append(dict(id=p['id'], name=p['name'], full=p['past_due'], floor=p['floor'], deadline=p['deadline'],\n                                   allowed=int(p.get('attempts') or 0), used=0, too_much=False, floor_offered=False, below_offered=False,\n                                   initial_refused=False, status='open', offer=None, agreed=None, refused=[], vague=0, clamped=False, rec_attempts=0))\n    return st\ndef save(st):\n    vars['neg_state'] = json.dumps(st)\ndef package(st):\n    return [[p['id'], money(p['agreed']['amount']), p['agreed']['date']] for p in st['products'] if p['status'] == 'agreed' and p.get('agreed')]\ndef can_confirm(st):\n    pkg = package(st)\n    return st['phase'] == 'readback' and st['rb_version'] == st['version'] and bool(pkg) and st.get('rb_pkg') == pkg\ndef transferred():\n    return str(vars.get('transfer_to_agent_response.data.' + CFG['ok']) or '').strip().lower() == 'true'\n\ndef ladder_offer(p, k, t):\n    step = CFG['ladder'][k - 1]\n    if step['amount'] == 'floor' and p['floor'] is not None:\n        amt = p['floor']\n    elif step['amount'] == 'full_or_floor_if_too_much' and p['too_much'] and p['floor'] is not None:\n        amt = p['floor']\n    else:\n        amt = p['full']\n    if step['date'] == 'deadline':\n        d = D(p['deadline'])\n    elif step['date'] == 'this_week_last_business_day_or_next_week_if_today':\n        mon = t - datetime.timedelta(days=t.weekday())\n        d = last_bd(mon)\n        if d is None or d <= t:\n            d = last_bd(mon + datetime.timedelta(days=7))\n    elif step['date'] == 'next_business_day':\n        d = nbd(t)\n    else:\n        d = t\n    return amt, d\ndef offer(p, amt, d, kind, out, named):\n    p['offer'] = dict(amount=float(amt), date=d.isoformat(), kind=kind)\n    p['status'] = 'offered'\n    key = {'floor_too_much': 'floor_offer', 'below_floor': 'below_floor'}.get(kind, 'offer')\n    txt = say(key, amount=money(amt), date=sp(d), name=p['name'])\n    if named and key == 'offer':\n        txt = say('offer_named', amount=money(amt), date=sp(d), name=p['name'])\n    out.append(txt)\ndef next_attempt(p, t, out, named):\n    if p.get('hs'):\n        # A32: after a hardship no persuasion attempt is made; a refusal closes the product as hardship\n        p['status'] = 'hardship'\n        p['offer'] = None\n        return\n    while p['used'] < min(p['allowed'], len(CFG['ladder'])):\n        p['used'] += 1\n        amt, d = ladder_offer(p, p['used'], t)\n        if [round(float(amt), 2), d.isoformat()] in p['refused']:\n            continue\n        offer(p, amt, d, 'attempt', out, named)\n        return\n    p['status'] = 'refused'\n    p['offer'] = None\ndef refuse(p, t, out, named):\n    if p['offer']:\n        p['refused'].append([round(p['offer']['amount'], 2), p['offer']['date']])\n    p['offer'] = None\n    next_attempt(p, t, out, named)\ndef judge_date(p, d, t):\n    dl = D(p['deadline'])\n    if d < t:\n        return 'past', None\n    if d > dl:\n        return 'after', dl\n    if not isbd(d):\n        return 'not_bd', nbd(d)\n    return 'ok', d\ndef current_amount(p):\n    if p.get('pending_amount') is not None:\n        return p['pending_amount']\n    if p['offer']:\n        return p['offer']['amount']\n    return p['full']\ndef propose(p, date_s, amt_s, t, out, named, shared):\n    amt = None\n    if amt_s not in (None, ''):\n        amt = float(amt_s)\n        if not math.isfinite(amt):\n            raise ValueError('amount not finite')\n        if p['floor'] is not None and amt < p['floor'] - 0.005:\n            if not p['below_offered']:\n                p['below_offered'] = True\n                d0 = t if isbd(t) else nbd(t)\n                if date_s not in (None, '', 'vague') and re.match(r'^\\d{4}-\\d{2}-\\d{2}$', str(date_s)):\n                    v, dd = judge_date(p, D(date_s), t)\n                    if v == 'ok':\n                        d0 = dd\n                offer(p, p['floor'], d0, 'below_floor', out, named)\n            else:\n                refuse(p, t, out, named)\n            return\n        amt = min(amt, p['full'])\n    ds = str(date_s or '').strip().lower()\n    if ds == '':\n        if amt is None:\n            out.append(say('error'))\n            return\n        d0 = D(p['offer']['date']) if p['offer'] else (t if isbd(t) else nbd(t))\n        offer(p, amt, d0, 'amount_only', out, named)\n        return\n    if ds == 'vague' or not re.match(r'^\\d{4}-\\d{2}-\\d{2}$', ds):\n        if amt is not None:\n            p['pending_amount'] = float(amt)\n        p['vague'] += 1\n        if p['vague'] <= int(CFG['vague_asks']):\n            out.append(say('ask_exact'))\n        else:\n            offer(p, amt if amt is not None else current_amount(p), D(p['deadline']), 'vague_deadline', out, named)\n            out[-1] = say('vague_deadline', deadline=sp(D(p['deadline'])), amount=money(p['offer']['amount']), name=p['name'])\n        return\n    v, dd = judge_date(p, D(ds), t)\n    a = amt if amt is not None else current_amount(p)\n    if v == 'ok':\n        p['agreed'] = dict(amount=float(a), date=dd.isoformat())\n        p['status'] = 'agreed'\n        p['offer'] = None\n        p['pending_amount'] = None\n    elif v == 'past':\n        out.append(say('past', day=sp(D(ds))))\n    elif v == 'not_bd':\n        offer(p, a, dd, 'next_bd', out, named)\n        out[-1] = say('not_business_day', day=sp(D(ds)), next=sp(dd), amount=money(a), name=p['name'])\n    else:\n        if shared and CFG['shared_date_clamps']:\n            p['agreed'] = dict(amount=float(a), date=dd.isoformat())\n            p['status'] = 'agreed'\n            p['clamped'] = True\n            p['offer'] = None\n            p['pending_amount'] = None\n        else:\n            offer(p, a, dd, 'after_deadline', out, named)\n            out[-1] = say('after_deadline', deadline=sp(dd), amount=money(a), name=p['name'])\nout, phase_note = [], ''\ntry:\n    st = load()\n    t = today()\n    named = len(st['products']) > 1\n    evs = params.get('events') if isinstance(params, dict) else None\n    if isinstance(evs, dict):\n        evs = [evs]\n    if not isinstance(evs, list) or not evs:\n        raise ValueError('no events')\n    turn = str(sum(int(float(vars.get(k) or 0)) for k in CFG['turn_vars']))\n    # one customer message is judged as a whole: a proposal is never a refusal (A29); 'not today' + 'too much' is one\n    # floor offer (A26/A30); a confirmation given together with any change is not a confirmation (A35, B7)\n    E = [dict(e, type=str(e.get('type') or '').strip().lower(), product_id=str(e.get('product_id') or '').strip()) for e in evs if isinstance(e, dict)]\n    def touches(a, b):\n        return a in ('all', '*') or b in ('all', '*') or a == b\n    keep = []\n    for e in E:\n        kinds = set(x['type'] for x in E if x is not e and touches(x['product_id'], e['product_id']))\n        if e['type'] in ('refuses', 'too_much') and kinds & set(['proposes', 'changes', 'pays_today', 'accepts']):\n            continue\n        if e['type'] == 'refuses' and 'too_much' in kinds:\n            continue\n        if e['type'] == 'confirms' and [x for x in E if x['type'] != 'confirms']:\n            continue\n        keep.append(e)\n    evs = keep\n    # A32: a hardship (named in this message, or mentioned anywhere earlier in the call = extracted flag) is answered once,\n    # before any persuasion: the brief's sympathy + support offer is the only reply of that turn (code owns the sentence).\n    # The customer's own date/amount said together with it is kept and handled under the date/amount rules after the\n    # support offer is answered (one question per turn); 'no' in that turn answered the payment question, not the offer.\n    hs_flag = 'yes' in (str(vars.get('hardship_seen') or '').strip().lower(), str(vars.get('hardship_early') or '').strip().lower())\n    kinds = [e['type'] for e in evs]\n    if not st.get('hardship_handled') and 'declines_support' not in kinds and ('hardship' in kinds or (hs_flag and not set(kinds) & set(['accepts', 'confirms']))):\n        props = [e for e in evs if e['type'] in ('proposes', 'pays_today', 'changes')]\n        if props:\n            st['held'] = props\n        evs = ([e for e in evs if e['type'] == 'hardship'] or [dict(product_id='all' if len(st['products']) > 1 else st['products'][0]['id'], type='hardship')]) \\\n            + [e for e in evs if e['type'] in ('dispute', 'paid')]\n    hardship_said = bool(st.get('hardship_handled')) or str(vars.get('hardship_done') or '') == 'yes'\n    hardship_turn = bool([e for e in evs if e['type'] in ('hardship', 'declines_support')]) or bool([p for p in st['products'] if p['status'] == 'hardship_offer'])\n    if hardship_turn:\n        st['hardship_handled'] = True\n        vars['hardship_done'] = 'yes'\n    ids = [p['id'] for p in st['products']]\n\n    def handle(e, dedupe=True):\n        global hardship_said\n        typ = e['type']\n        pid = e['product_id']\n        key = '|'.join([turn, pid, typ, str(e.get('date') or ''), str(e.get('amount') or '')])\n        if dedupe:\n            if key in st['seen']:\n                return\n            st['seen'].append(key)\n        if pid in ('all', '*', ''):\n            # a date/amount the customer names after a hardship is still handled (A32 last sentence)\n            # and an answer to the open support offer reaches the products it was made for\n            ok_st = ('open', 'offered', 'agreed') + (('hardship', 'hardship_offer') if typ in ('proposes', 'changes', 'pays_today') else\n                                                     ('hardship_offer',) if typ in ('declines_support', 'refuses', 'stop', 'too_much') else ())\n            scope = [p for p in st['products'] if p['status'] in ok_st]\n            if pid == '' and len(st['products']) > 1:\n                raise ValueError('product not named')\n        elif pid in ids:\n            scope = [p for p in st['products'] if p['id'] == pid]\n        else:\n            raise ValueError('unknown product ' + pid)\n        shared = len(scope) > 1\n        if typ == 'stop':\n            # A45 counts the statements ('says twice'); an earlier one is a non-answer to the offer (A30), not a close\n            st['stops'] = int(st.get('stops') or 0) + 1\n            if st['stops'] < int(CFG.get('stop_close') or 1):\n                typ = 'refuses'\n        if typ in ('proposes', 'changes', 'accepts', 'refuses', 'too_much', 'pays_today') and st['phase'] == 'readback':\n            st['phase'] = 'negotiate'\n            st['version'] += 1\n        if typ == 'confirms':\n            if st['phase'] == 'readback':\n                whole = pid in ('all', '*') or [x[0] for x in package(st)] == [pid]\n                if whole and can_confirm(st):\n                    st['phase'] = 'record'\n                    st['confirmed_pkg'] = package(st)\n                else:\n                    out.append(say('confirm_question'))\n                return\n            typ = 'accepts'\n        for p in scope:\n            if typ in ('pays_today', 'proposes', 'changes') and p['status'] in ('hardship', 'hardship_offer'):\n                p['status'] = 'open'\n                p['hs'] = True\n            if typ == 'pays_today':\n                propose(p, t.isoformat(), None, t, out, named, shared)\n            elif typ in ('proposes', 'changes'):\n                d_in, a_in = e.get('date'), e.get('amount')\n                if p['status'] == 'agreed' and p.get('agreed'):\n                    prev = p['agreed']\n                    d_in = d_in if d_in not in (None, '') else prev['date']\n                    a_in = a_in if a_in not in (None, '') else prev['amount']\n                    p['status'] = 'open'\n                    p['agreed'] = None\n                    p['clamped'] = False\n                propose(p, d_in, a_in, t, out, named, shared)\n            elif typ == 'accepts':\n                if p['offer'] and p['status'] == 'offered':\n                    p['agreed'] = dict(amount=p['offer']['amount'], date=p['offer']['date'])\n                    p['status'] = 'agreed'\n                    p['offer'] = None\n                    p['pending_amount'] = None\n            elif typ == 'refuses':\n                if p['status'] == 'hardship_offer':\n                    p['status'] = 'hardship'\n                    continue\n                if st['phase'] == 'first_ask' and not p['offer']:\n                    p['initial_refused'] = True\n                    continue\n                if p['status'] in ('open', 'offered'):\n                    refuse(p, t, out, named)\n            elif typ == 'too_much':\n                p['too_much'] = True\n                if p.get('hs'):\n                    next_attempt(p, t, out, named)\n                elif not p['floor_offered'] and p['floor'] is not None:\n                    p['floor_offered'] = True\n                    if p['used'] == 0 and len(CFG['ladder']) > 0 and p['allowed'] > 0:\n                        p['used'] = 1\n                        amt, d0 = ladder_offer(p, 1, t)\n                    else:\n                        d0 = D(p['offer']['date']) if p['offer'] else (t if isbd(t) else nbd(t))\n                    offer(p, p['floor'], d0, 'floor_too_much', out, named)\n                else:\n                    refuse(p, t, out, named)\n            elif typ == 'hardship':\n                p['status'] = 'hardship_offer'\n                p['offer'] = None\n                p['hs'] = True\n            elif typ == 'declines_support':\n                if p['status'] in ('hardship_offer', 'open', 'offered'):\n                    p['status'] = 'hardship'\n                    p['offer'] = None\n                    p['hs'] = True\n            elif typ in ('dispute', 'paid'):\n                p['status'] = typ\n                p['offer'] = None\n            elif typ == 'stop':\n                if p['status'] in ('open', 'offered', 'hardship_offer'):\n                    p['status'] = 'hardship' if p['status'] == 'hardship_offer' else 'refused'\n            else:\n                raise ValueError('unknown event type ' + typ)\n        if typ == 'hardship' and not hardship_said:\n            out.append(say('hardship'))\n            hardship_said = True\n        elif typ == 'paid':\n            out.append(say('paid'))\n        elif typ == 'dispute':\n            out.append(say('dispute'))\n\n    for e in evs:\n        handle(e)\n    # the support offer is answered (declined or passed over): the customer's own date/amount from the hardship turn\n    # is now handled under the date and amount rules (A32 last sentence); a held proposal never records by itself\n    if st.get('held') and not [p for p in st['products'] if p['status'] == 'hardship_offer']:\n        held, st['held'] = st['held'], None\n        if not [e for e in evs if e['type'] in ('proposes', 'pays_today', 'changes')]:\n            for e in held:\n                handle(e, dedupe=False)\n    if st['phase'] == 'first_ask':\n        st['phase'] = 'negotiate'\n    if st['phase'] == 'negotiate':\n        active = [p for p in st['products'] if p['status'] in ('open', 'offered', 'hardship_offer')]\n        if active and not out:\n            p = active[0]\n            if p['status'] == 'open':\n                if p['initial_refused'] or p['used'] > 0 or named:\n                    next_attempt(p, t, out, named)\n                else:\n                    out.append(say('first_ask_one') if not named else say('offer_named', amount=money(p['full']), date=sp(t) if isbd(t) else sp(nbd(t)), name=p['name']))\n                    if p['status'] == 'open':\n                        d0 = t if isbd(t) else nbd(t)\n                        p['offer'] = dict(amount=float(p['full']), date=d0.isoformat(), kind='initial')\n                        p['status'] = 'offered'\n        active = [p for p in st['products'] if p['status'] in ('open', 'offered', 'hardship_offer')]\n        if not active:\n            agreed = [p for p in st['products'] if p['status'] == 'agreed']\n            if agreed:\n                st['phase'] = 'readback'\n                st['version'] += 1\n                st['rb_version'] = st['version']\n                items = []\n                for p in agreed:\n                    it = say('readback_item', name=p['name'], amount=money(p['agreed']['amount']), date=sp(D(p['agreed']['date'])))\n                    if p['clamped']:\n                        it += ' ' + say('readback_clamped', name=p['name'], deadline=sp(D(p['agreed']['date'])))\n                    items.append(it)\n                out.append((say('readback_intro') + ' ' + '; '.join(i.rstrip(' .;') for i in items) + '. ' + say('confirm_question')).strip())\n                st['rb_pkg'] = package(st)\n            else:\n                st['phase'] = 'finish'\n    if not [x for x in out if x] and st['phase'] == 'negotiate':\n        pend = [p for p in st['products'] if p['status'] == 'offered' and p['offer']]\n        if pend:\n            p = pend[0]\n            out.append(say('offer_named' if named else 'offer', amount=money(p['offer']['amount']), date=sp(D(p['offer']['date'])), name=p['name']))\n        else:\n            out.append(say('error'))\n    ans = str(params.get('answer') or '').strip() if isinstance(params, dict) else ''\n    ans = re.sub(r'[{}]', '', ans)[:240]\n    if hardship_turn:\n        ans = ''          # the hardship reply has one owner (code): no second sympathy or extra offer from the model\n    save(st)\n    vars['neg_say'] = ' '.join(x for x in ([ans] if ans else []) + out if x)\n    vars['neg_final_say'] = vars['neg_say'] if st['phase'] == 'finish' else ''\n    vars['neg_flag'] = {'record': 'record', 'finish': 'finish'}.get(st['phase'], 'new')\n    vars['neg_phase'] = st['phase']\nexcept Exception as e:\n    vars['neg_error'] = str(e)[:160]\n    vars['neg_say'] = say('error')\n    vars['neg_flag'] = 'new'\n"
+   }
+  ],
+  [
+   "result",
+   "negotiation_event",
+   {
+    "status": "success",
+    "data": null,
+    "message": "Code executed successfully",
+    "status_code": 200
+   }
+  ],
+  [
+   "node",
+   "neg_consume"
+  ],
+  [
+   "call",
+   "code_exec",
+   {
+    "timeout_ms": 10000,
+    "code": "vars['neg_flag'] = 'used'\n"
+   }
+  ],
+  [
+   "result",
+   "code_exec",
+   {
+    "status": "success",
+    "data": null,
+    "message": "Code executed successfully",
+    "status_code": 200
+   }
+  ],
+  [
+   "node",
+   "neg_relay"
+  ],
+  [
+   "assistant",
+   "Sorry, could you please repeat that?"
+  ],
+  [
+   "user",
+   "Thank you, goodbye."
+  ],
+  [
+   "node",
+   "negotiate"
+  ],
+  [
+   "assistant",
+   "Thank you, goodbye."
+  ],
+  [
+   "node",
+   "negotiate"
+  ],
+  [
+   "assistant",
+   "Thank you, goodbye."
+  ]
+ ],
+ "ledger": {
+  "outcome": null,
+  "reason": null,
+  "promises": [],
+  "notes": [],
+  "callbacks": [],
+  "transfers": []
+ },
+ "ledger_tools": [
+  "verify_identity",
+  "verify_identity",
+  "get_account"
+ ]
+}

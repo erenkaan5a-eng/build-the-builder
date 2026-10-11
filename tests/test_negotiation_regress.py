@@ -2,7 +2,7 @@
 Expected values are worked out by hand from Brief A/B; the bank is a local imitation (counters + response fields).
 Section 1 = normal workflow event sequences; section 2 = defensive tests that enter a node directly."""
 import sys
-from negotiation_harness import Call, P, check, FAILS
+from negotiation_harness import Call, P, check, FAILS, platform_exec
 
 # now Wed 14 Oct 2026: this week's last business day Fri 16 Oct; late deadline 23 Oct; early deadline 2 Nov (26 Oct holiday).
 print("== 1. normal workflow sequences")
@@ -158,6 +158,11 @@ c.ev(("all", "declines_support", "", ""))
 check("G11 ... support declined: p1 read back alone, p2/p3 hardship (no persuasion)", c.st()["phase"] == "readback" and c.p("p2")["status"] == "hardship" and c.p("p3")["status"] == "hardship" and c.p("p3")["used"] == 0,
       (c.st()["phase"], [c.p(x)["status"] for x in ("p1", "p2", "p3")]))
 
+c = Call([P("p1", "credit card", 300.0, 90.0, "2026-11-02", 1), P("p2", "personal loan", 900.0, 300.0, "2026-10-23", 2)])
+c.ev(("all", "proposes", "2026-10-30", ""))
+check("G12 the deadline note of a clamped product is a separate sentence in the read-back (chat C3 showed '...23 October Friday 23 October...')",
+      "900.00 on Friday 23 October. (latest date for personal loan)" in c.v["neg_say"], c.v["neg_say"])
+
 # H) section 5 properties of the cloud review not covered above
 c = Call([P("p1", "credit card", 300.0, 90.0, "2026-11-02", 1), P("p2", "personal loan", 600.0, 200.0, "2026-10-23", 2)])
 c.ev(("all", "proposes", "2026-10-16", "")); c.ev(("all", "confirms", "", ""))
@@ -201,10 +206,10 @@ check("H8 ... then a whole confirmation records both", c.v["neg_flag"] == "recor
 
 c = Call([P("p1", "credit card", 300.0, 90.0, "2026-11-02", 1)], uses_notes=False)
 c.v["close_one_success_count"] = "1"; c.v["close_one_response.data.ok"] = "true"
-exec(NGc := __import__("negotiation").embed(__import__("negotiation").CLOSE_CHECK, {"ok": "ok"}), {"vars": c.v})
+platform_exec(NGc := __import__("negotiation").embed(__import__("negotiation").CLOSE_CHECK, {"ok": "ok"}), {"vars": c.v})
 r1 = c.v["close_result"]
 c.v["close_one_success_count"] = "0"; c.v["close_one_failure_count"] = "1"
-exec(NGc, {"vars": c.v})
+platform_exec(NGc, {"vars": c.v})
 check("H9 close_check makes the bank's close result visible (ok / failed)", (r1, c.v["close_result"]) == ("ok", "failed"), (r1, c.v["close_result"]))
 
 # I) A45 'says twice that they do not want to talk' (count from the policy, not from code)

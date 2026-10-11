@@ -1,0 +1,10 @@
+2026-10-11T02:10:24+0000 [RECHECK] candidate candidates/cl-ab/20261011-015018 workflow 06d2cae1-ed27-4d3a-8ac1-dc664cb91cca published version 1 live hash 3390a84c8ad3f3ee exported hash 3390a84c8ad3f3ee
+2026-10-11T02:10:35+0000 [TEST] behaviour[PASS] opening line spoken :: Hello, I am a digital assistant calling from Freya Bank, and we record this call. Am I speaking with Mr Reyes? (chat e58dbef5-5038-4467-92eb-a00778d29aca)
+2026-10-11T02:10:35+0000 [TEST] behaviour[PASS] identity stage entered after confirmation :: opening > identity > identity (chat e58dbef5-5038-4467-92eb-a00778d29aca)
+2026-10-11T02:10:35+0000 [TEST] behaviour[PASS] first security answer reaches verify_identity with the right field :: {"field": "date_of_birth", "answer": "1988-03-14", "customer_id": "c_behaviour_check"} (chat e58dbef5-5038-4467-92eb-a00778d29aca)
+2026-10-11T02:10:35+0000 [TEST] behaviour[PASS] no account or write call before verification ::  (chat e58dbef5-5038-4467-92eb-a00778d29aca)
+2026-10-11T02:10:54+0000 [TEST] practice[PUB-13][PASS] both answers sent to verify_identity :: 2 verify calls (chat 1ec4df26-9efa-4b12-8bf5-8e7ad82ca10a)
+2026-10-11T02:10:54+0000 [TEST] practice[PUB-13][PASS] account fetched after verification :: opening > identity > identity > identity > fetch_account > build_deal > negotiate (chat 1ec4df26-9efa-4b12-8bf5-8e7ad82ca10a)
+2026-10-11T02:10:54+0000 [TEST] practice[PUB-13][PASS] negotiation stage reached with account facts ::  (chat 1ec4df26-9efa-4b12-8bf5-8e7ad82ca10a)
+2026-10-11T02:10:54+0000 [TEST] practice[PUB-13][PASS] every product's past-due amount stated in the debt statement, before any offer :: I am calling from the collections team about a late payment. Your credit card ending 6604 has 300.00 past due and is 4 days late. Your personal loan has 900.00 past due and is 20 days late. Can you pay all of them today? (chat 1ec4df26-9efa-4b12-8bf5-8e7ad82ca10a)
+2026-10-11T02:10:54+0000 [RECHECK] PASSED; written candidates/cl-ab/20261011-015018/recheck-20261011-021054.json

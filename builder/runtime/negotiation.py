@@ -244,7 +244,8 @@ try:
         # a hardship is the customer's, not a product's: it covers every open product of the call
         evs = [dict(product_id='all' if len(st['products']) > 1 else st['products'][0]['id'], type='hardship')] \
             + [e for e in evs if e['type'] in ('dispute', 'paid')]
-    hardship_said = bool(st.get('hardship_handled')) or str(vars.get('hardship_done') or '') == 'yes'
+    # a dict, not a rebound name: the platform runs this code inside a function, where 'global' fails (chat C2, 11 Oct)
+    said = dict(hardship=bool(st.get('hardship_handled')) or str(vars.get('hardship_done') or '') == 'yes')
     hardship_turn = bool([e for e in evs if e['type'] in ('hardship', 'declines_support')]) or bool([p for p in st['products'] if p['status'] == 'hardship_offer'])
     if hardship_turn:
         st['hardship_handled'] = True
@@ -252,7 +253,6 @@ try:
     ids = [p['id'] for p in st['products']]
 
     def handle(e, dedupe=True):
-        global hardship_said
         typ = e['type']
         pid = e['product_id']
         key = '|'.join([turn, pid, typ, str(e.get('date') or ''), str(e.get('amount') or '')])
@@ -354,9 +354,9 @@ try:
                     p['status'] = 'hardship' if p['status'] == 'hardship_offer' else 'refused'
             else:
                 raise ValueError('unknown event type ' + typ)
-        if typ == 'hardship' and not hardship_said:
+        if typ == 'hardship' and not said['hardship']:
             out.append(say('hardship'))
-            hardship_said = True
+            said['hardship'] = True
         elif typ == 'paid':
             out.append(say('paid'))
         elif typ == 'dispute':
@@ -397,7 +397,7 @@ try:
                 for p in agreed:
                     it = say('readback_item', name=p['name'], amount=money(p['agreed']['amount']), date=sp(D(p['agreed']['date'])))
                     if p['clamped']:
-                        it += ' ' + say('readback_clamped', name=p['name'], deadline=sp(D(p['agreed']['date'])))
+                        it = it.rstrip(' .;,') + '. ' + say('readback_clamped', name=p['name'], deadline=sp(D(p['agreed']['date'])))
                     items.append(it)
                 out.append((say('readback_intro') + ' ' + '; '.join(i.rstrip(' .;') for i in items) + '. ' + say('confirm_question')).strip())
                 st['rb_pkg'] = package(st)

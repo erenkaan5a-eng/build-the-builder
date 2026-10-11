@@ -1,0 +1,42 @@
+{
+ "candidate": "candidates/cl-ab/20261011-015018",
+ "workflow_id": "06d2cae1-ed27-4d3a-8ac1-dc664cb91cca",
+ "published_version": 1,
+ "live_hash": "3390a84c8ad3f3ee",
+ "exported_hash": "3390a84c8ad3f3ee",
+ "checks": [
+  [
+   "opening line spoken",
+   true
+  ],
+  [
+   "identity stage entered after confirmation",
+   true
+  ],
+  [
+   "first security answer reaches verify_identity with the right field",
+   true
+  ],
+  [
+   "no account or write call before verification",
+   true
+  ],
+  [
+   "both answers sent to verify_identity",
+   true
+  ],
+  [
+   "account fetched after verification",
+   true
+  ],
+  [
+   "negotiation stage reached with account facts",
+   true
+  ],
+  [
+   "every product's past-due amount stated in the debt statement, before any offer",
+   true
+  ]
+ ],
+ "all_passed": true
+}

@@ -1,0 +1,13 @@
+== 1. normal workflow sequences
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-user-build-the-builder/a05d22cc-149a-5154-a736-4f17e47e488e/scratchpad/run_old.py", line 6, in <module>
+    runpy.run_path(sys.argv[1] if len(sys.argv) > 1 else "/home/user/build-the-builder/tests/test_negotiation_regress.py", run_name="__main__")
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen runpy>", line 294, in run_path
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/user/build-the-builder/tests/test_negotiation_regress.py", line 114, in <module>
+    c.v["neg_say"] == "Sorry to hear. Support team?" and [e.get("amount") for e in c.st().get("held") or []] == ["150"], (c.v["neg_say"], c.st().get("held")))
+                                                                                                                                          ^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'get'
+cl-a engine (59e0ba2) under platform-like execution, G1 events -> neg_error: name 'hardship_said' is not defined | neg_say: Please repeat.

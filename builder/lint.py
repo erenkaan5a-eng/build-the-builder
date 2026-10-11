@@ -115,6 +115,13 @@ def check_fn(t, where, ops, base, probs):
         code = (props.get("code") or {}).get("default", "")
         if "{{" in code or "}}" in code:
             probs.append(f"{where}: code_exec code contains '{{{{' or '}}}}'")
+        if re.search(r"^\s*(global|nonlocal)\s", code, re.M):
+            # the platform runs code inside a function: 'global' rebinding fails there (seen in a chat run, 11 Oct)
+            probs.append(f"{where}: code_exec code uses a global/nonlocal statement (the platform runs code inside a function)")
+        try:
+            compile("def _run(vars, params):\n" + "\n".join("    " + l for l in code.splitlines()) + "\n", "<code>", "exec")
+        except SyntaxError as e:
+            probs.append(f"{where}: code_exec code does not compile inside a function: {e}")
         return 0
     if h in ENGINE_HANDLERS:
         return 0

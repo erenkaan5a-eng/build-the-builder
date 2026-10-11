@@ -4,6 +4,8 @@ import json, pathlib, sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "builder" / "runtime"))
 import negotiation as NG
+sys.path.insert(0, str(ROOT / "tests"))
+from negotiation_harness import platform_exec  # noqa: E402  (platform-like execution)
 
 SAY = {"debt_intro": "I am calling about a late payment.", "product_line": "Your {name}: {amount} past due, {days} days late.",
        "first_ask_one": "Can you make this payment today?", "first_ask_all": "Can you pay all of them today?",
@@ -47,7 +49,7 @@ class Call:
                 self.v["negotiate.total_turns"] = "1"
             else:
                 self.v["neg_relay.total_turns"] = str(int(self.v.get("neg_relay.total_turns") or 0) + 1)
-        exec(self.c["ENGINE"], {"vars": self.v, "params": {"answer": answer, "events": [dict(zip(("product_id", "type", "date", "amount"), e)) for e in events]}})
+        platform_exec(self.c["ENGINE"], {"vars": self.v, "params": {"answer": answer, "events": [dict(zip(("product_id", "type", "date", "amount"), e)) for e in events]}})
         return self.st()
 
     def st(self):
@@ -59,7 +61,7 @@ class Call:
     def rec(self, results):
         """results: list of 'ok' | 'http_error' | 'ok_false' applied to successive record attempts."""
         sent = []
-        exec(self.c["REC_NEXT"], {"vars": self.v, "params": {}})
+        platform_exec(self.c["REC_NEXT"], {"vars": self.v, "params": {}})
         for r in results:
             if self.v["rec_go"] != "yes":
                 break
@@ -72,14 +74,14 @@ class Call:
                 self.v["record_one_response.data.ok"] = "false"
             else:
                 self.v["record_one_failure_count"] = str(int(self.v.get("record_one_failure_count") or 0) + 1)
-            exec(self.c["REC_NEXT"], {"vars": self.v, "params": {}})
+            platform_exec(self.c["REC_NEXT"], {"vars": self.v, "params": {}})
         return sent
 
     def finish(self):
-        exec(self.c["FINISH"], {"vars": self.v, "params": {}})
+        platform_exec(self.c["FINISH"], {"vars": self.v, "params": {}})
         notes = []
         while True:
-            exec(self.c["NOTES_NEXT"], {"vars": self.v, "params": {}})
+            platform_exec(self.c["NOTES_NEXT"], {"vars": self.v, "params": {}})
             if self.v["note_go"] != "yes":
                 break
             notes.append((self.v["note_product"], self.v["note_reason"]))
@@ -260,12 +262,12 @@ check("T16 answer comes first, then the code's offer", c.v["neg_say"].startswith
 # T17 deterministic read-back confirmation (extraction path): records only for the current read-back
 c = Call([CARD13, LOAN13])
 c.ev(("all", "proposes", "2026-10-30", ""))
-exec(c.c["CONFIRM"], {"vars": c.v, "params": {}})
+platform_exec(c.c["CONFIRM"], {"vars": c.v, "params": {}})
 check("T17 confirmation of the current read-back -> record", c.v["neg_flag"] == "record" and c.st()["phase"] == "record", (c.v["neg_flag"], c.st()["phase"]))
 c = Call([P("p1", "personal loan", 540.0, 180.0, "2026-11-02", 1)])
 c.ev(("p1", "proposes", "2026-10-16", ""))
 c.ev(("p1", "changes", "2026-10-26", ""))   # holiday: the next business day is only OFFERED, no new read-back yet
-exec(c.c["CONFIRM"], {"vars": c.v, "params": {}})
+platform_exec(c.c["CONFIRM"], {"vars": c.v, "params": {}})
 check("T17b a 'yes' after a change but before the new read-back does not record", c.v["neg_flag"] != "record" and c.st()["phase"] != "record", (c.v["neg_flag"], c.st()["phase"]))
 
 # T18 'already paid' ends the talk: its sentence is kept for the closing line; the required sentence is said once

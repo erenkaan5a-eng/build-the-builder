@@ -1,7 +1,7 @@
 """Shared harness for negotiation runtime tests: runs the generated code snippets with a local vars dict and a
 local imitation of the engine-run bank nodes (record_one / note_one counters and response fields).
 All bank answers here are local imitations, not live evidence."""
-import json, pathlib, sys
+import json, pathlib, sys, textwrap
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "builder" / "runtime"))
 import negotiation as NG
@@ -23,6 +23,14 @@ BASE = {"now_var": "now", "weekend_days": [5, 6], "holidays": ["2026-10-26", "20
         "paid": "paid", "no_promise": "no_promise", "statuses": {"refused": "refused", "hardship": "hardship", "dispute": "dispute", "paid": "paid", "service_error": "service_error"},
         "no_reason": ["promise", "paid"], "uses_notes": True, "after_promise_sentence": "You will receive a text message.", "goodbye": "Goodbye.",
         "technical": {"outcome": "no_promise", "reason": "service_error"}, "turn_vars": ["negotiate.total_turns", "neg_relay.total_turns"]}
+def platform_exec(code, g):
+    """Run generated code the way the platform runs it: inside a function, with vars/params as its arguments.
+    Observed 11 Oct (chat C2): a 'global' statement that works under a plain exec() fails there with NameError."""
+    ns = {}
+    exec(compile("def __platform_run(vars, params):\n" + textwrap.indent(code, "    ", lambda line: True) + "\n", "<generated>", "exec"), ns)
+    ns["__platform_run"](g.get("vars"), g.get("params", {}))
+
+
 SNIPPETS = ("ENGINE", "REC_NEXT", "FINISH", "NOTES_NEXT", "CONFIRM", "HARDSHIP")
 
 
@@ -43,7 +51,7 @@ class Call:
             self.log.append(name + ":missing")
             return
         self.log.append(name)
-        exec(self.c[name], {"vars": self.v, "params": params if params is not None else {}})
+        platform_exec(self.c[name], {"vars": self.v, "params": params if params is not None else {}})
 
     def ev(self, *events, same_turn=False, answer=""):
         if not same_turn:

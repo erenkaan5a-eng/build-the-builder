@@ -26,10 +26,44 @@ def main():
     pv = common.published_version(st["workflow_id"])
     sess = http("/v1/practice/sessions", {"case": case_id})["variables"]
     t0 = time.time()
-    call_id, replies, ev = behavior.chat(st["workflow_id"], sess, msgs)
+    call_id, replies, error = None, [], None
+    for m in msgs:                      # stop at the first platform error: a turn is never re-sent blindly
+        body = {"workflowId": st["workflow_id"], "message": m, "customerVariables": sess}
+        if call_id:
+            body["callId"] = call_id
+        try:
+            r = common.freya.api("POST", "/api/v2/chat/message", body)
+        except RuntimeError as e:
+            error = f"turn {len(replies) + 1} ({m!r}): {str(e)[:200]}"
+            break
+        call_id = r.get("callId") or call_id
+        replies.append(r.get("response") or "")
+    ev = []
+    if call_id:
+        try:
+            for mm in common.freya.get_call(call_id).get("messages", []):
+                if mm.get("role") in ("assistant", "user"):
+                    ev.append(("assistant" if mm["role"] == "assistant" else "user", mm.get("message") or ""))
+                elif mm.get("role") == "system":
+                    try:
+                        x = json.loads(mm.get("message") or "")
+                    except Exception:
+                        continue
+                    if x.get("event") == "node_enter":
+                        ev.append(("node", x.get("node")))
+                    elif x.get("event") == "function_call_start":
+                        a = x.get("args") or {}
+                        ev.append(("call", x.get("function"), a.get("body", a)))
+                    elif x.get("event") in ("function_call_complete", "function_call_error"):
+                        ev.append(("result" if x["event"].endswith("complete") else "error", x.get("function"), x.get("result")))
+        finally:
+            try:
+                common.freya.api("POST", "/api/v2/chat/end", {"callId": call_id})
+            except Exception:
+                pass
     led = http("/v1/practice/ledger/" + sess["customer_id"])
     out = {"slot": slot, "workflow_id": st["workflow_id"], "published_version": pv["version_number"], "live_hash": live, "case": case_id,
-           "name": name, "call_id": call_id, "seconds": round(time.time() - t0), "turns": [[m, r] for m, r in zip(msgs, replies)],
+           "name": name, "call_id": call_id, "platform_error": error, "seconds": round(time.time() - t0), "turns": [[m, r] for m, r in zip(msgs, replies)],
            "events": ev, "ledger": {k: led.get(k) for k in ("outcome", "reason", "promises", "notes", "callbacks", "transfers")},
            "ledger_tools": [c["tool"] for c in led.get("calls", [])]}
     p = ROOT / "research" / "cloud-runs" / f"chat-{name}.json"
@@ -39,6 +73,8 @@ def main():
         print("CUSTOMER:", m, "\n   AGENT:", r)
     print("nodes:", " > ".join(e[1] for e in ev if e[0] == "node"))
     print("ledger:", json.dumps(out["ledger"]), "| tools:", " > ".join(out["ledger_tools"]))
+    if error:
+        print("PLATFORM ERROR at", error)
     print("saved", p, "| version", pv["version_number"], "hash", live)
 
 

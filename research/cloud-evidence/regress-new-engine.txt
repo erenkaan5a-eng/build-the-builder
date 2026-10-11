@@ -29,6 +29,8 @@ ok   G6 'lost my job, I can't pay' in one message: the 'no' answers the payment 
 ok   G7 after a hardship the customer names a date+amount for 'all': still handled (scope includes the hardship product) 
 ok   G8 a new proposal while the support offer is open replaces the kept one (no double handling) 
 ok   G9 B: kept proposal for p1 after the support offer, p2 closes as hardship (no persuasion on p2) 
+ok   G10 B: a hardship the model scoped to one product covers every open product; p1's agreed date is kept 
+ok   G11 ... support declined: p1 read back alone, p2/p3 hardship (no persuasion) 
 ok   H1 p1 ok then p2 fails twice: p1's earlier ok is not carried to p2; one retry only (single layer); p2 service_error 
 ok   H2 ... close promise; p2 gets a service_error note (B11); spoken result names the failed product 
 ok   H3 a brief with no retry: exactly one attempt, then service_error, no SMS sentence 
@@ -38,6 +40,9 @@ ok   H6 FINISH 'not ready' is bounded: twice back to the negotiation, then a clo
 ok   H7 repeated single-product confirmations of a 2-product package: confirmation question repeated, package kept, nothing recorded, no refusal 
 ok   H8 ... then a whole confirmation records both 
 ok   H9 close_check makes the bank's close result visible (ok / failed) 
+ok   I1 the first 'I do not want to talk' (said twice in one message counts once) is a non-answer: next attempt, no close 
+ok   I2 the second statement closes: no_promise/refused 
+ok   I3 a policy without the count keeps the earlier behaviour (one statement closes) 
 == 2. defensive tests (a node entered directly)
 ok   X1 REC_NEXT entered at the read-back (no confirmation): no write is planned 
 ok   X2 a package that differs from the one read back cannot be confirmed 
