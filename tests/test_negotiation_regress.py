@@ -149,6 +149,15 @@ c.ev(("all", "declines_support", "", ""))
 check("G9 B: kept proposal for p1 after the support offer, p2 closes as hardship (no persuasion on p2)",
       c.p("p1")["status"] == "agreed" and c.p("p2")["status"] == "hardship" and c.p("p2")["used"] == 0 and c.st()["phase"] == "readback", (c.p("p1")["status"], c.p("p2")))
 
+c = Call([P("p1", "credit card", 300.0, 90.0, "2026-11-02", 1), P("p2", "personal loan", 600.0, 200.0, "2026-10-23", 2), P("p3", "car loan", 140.0, 46.0, "2026-11-02", 1)])
+c.ev(("p1", "proposes", "2026-10-16", ""))
+c.ev(("p2", "hardship", "", ""))
+check("G10 B: a hardship the model scoped to one product covers every open product; p1's agreed date is kept",
+      c.p("p1")["status"] == "agreed" and c.p("p2")["status"] == "hardship_offer" and c.p("p3")["status"] == "hardship_offer", [c.p(x)["status"] for x in ("p1", "p2", "p3")])
+c.ev(("all", "declines_support", "", ""))
+check("G11 ... support declined: p1 read back alone, p2/p3 hardship (no persuasion)", c.st()["phase"] == "readback" and c.p("p2")["status"] == "hardship" and c.p("p3")["status"] == "hardship" and c.p("p3")["used"] == 0,
+      (c.st()["phase"], [c.p(x)["status"] for x in ("p1", "p2", "p3")]))
+
 # H) section 5 properties of the cloud review not covered above
 c = Call([P("p1", "credit card", 300.0, 90.0, "2026-11-02", 1), P("p2", "personal loan", 600.0, 200.0, "2026-10-23", 2)])
 c.ev(("all", "proposes", "2026-10-16", "")); c.ev(("all", "confirms", "", ""))

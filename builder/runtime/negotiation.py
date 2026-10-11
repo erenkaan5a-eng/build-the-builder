@@ -241,7 +241,8 @@ try:
         props = [e for e in evs if e['type'] in ('proposes', 'pays_today', 'changes')]
         if props:
             st['held'] = props
-        evs = ([e for e in evs if e['type'] == 'hardship'] or [dict(product_id='all' if len(st['products']) > 1 else st['products'][0]['id'], type='hardship')]) \
+        # a hardship is the customer's, not a product's: it covers every open product of the call
+        evs = [dict(product_id='all' if len(st['products']) > 1 else st['products'][0]['id'], type='hardship')] \
             + [e for e in evs if e['type'] in ('dispute', 'paid')]
     hardship_said = bool(st.get('hardship_handled')) or str(vars.get('hardship_done') or '') == 'yes'
     hardship_turn = bool([e for e in evs if e['type'] in ('hardship', 'declines_support')]) or bool([p for p in st['products'] if p['status'] == 'hardship_offer'])
@@ -336,9 +337,10 @@ try:
                 else:
                     refuse(p, t, out, named)
             elif typ == 'hardship':
-                p['status'] = 'hardship_offer'
-                p['offer'] = None
                 p['hs'] = True
+                if p['status'] != 'agreed':       # a date/amount already agreed with the customer is kept
+                    p['status'] = 'hardship_offer'
+                    p['offer'] = None
             elif typ == 'declines_support':
                 if p['status'] in ('hardship_offer', 'open', 'offered'):
                     p['status'] = 'hardship'
